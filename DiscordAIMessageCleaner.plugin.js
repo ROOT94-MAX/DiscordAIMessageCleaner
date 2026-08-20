@@ -2,7 +2,7 @@
  * @name DiscordAIMessageCleaner
  * @author ROOT94
  * @authorLink https://github.com/ROOT94-MAX/DiscordAIMessageCleaner
- * @version 0.6.4
+ * @version 0.6.5
  * @description Scan your own message history in any channel / DM / group DM, review it with an AI policy of your choice, and delete flagged messages after manual confirmation. Native BdApi, no library dependency.
  * @source https://github.com/ROOT94-MAX/DiscordAIMessageCleaner
  * @website https://github.com/ROOT94-MAX/DiscordAIMessageCleaner
@@ -15,7 +15,7 @@ module.exports = (() => {
 	// ==================== 01. CONSTANTS ====================
 
 	const PLUGIN_ID = "DiscordAIMessageCleaner";
-	const PLUGIN_VERSION = "0.6.4";
+	const PLUGIN_VERSION = "0.6.5";
 	const CSS_PREFIX = "damc";
 	const DISCORD_EPOCH = 1420070400000n;
 	// Guild: 0 text, 5 announcement, 10/11/12 threads. Private: 1 DM, 3 group DM.
@@ -2447,7 +2447,7 @@ module.exports = (() => {
 		.${CSS_PREFIX}-pill {
 			position: fixed;
 			right: 24px;
-			bottom: 32px;
+			bottom: 24px;
 			z-index: 9999;
 			display: flex;
 			align-items: center;
@@ -3056,10 +3056,15 @@ module.exports = (() => {
 	};
 
 	// Floating progress pill shown while a minimized review runs. Plain DOM:
-	// it must outlive the modal's React tree.
+	// it must outlive the modal's React tree. Anchored bottom-right like the
+	// sibling translator plugin's capsule, but stacks itself ABOVE any other
+	// floating pill already parked in that corner (the translator's capsule,
+	// toasts, etc.) instead of covering it.
 	const MiniPill = {
 		_el: null,
 		_unsub: null,
+		_resizeHandler: null,
+		_resizeTimer: null,
 		show() {
 			if (MiniPill._el) { MiniPill.render(); return; }
 			const el = document.createElement("div");
@@ -3086,6 +3091,11 @@ module.exports = (() => {
 			document.body.appendChild(el);
 			MiniPill._el = el;
 			MiniPill._unsub = ReviewSession.subscribe(() => MiniPill.render());
+			MiniPill._resizeHandler = () => {
+				clearTimeout(MiniPill._resizeTimer);
+				MiniPill._resizeTimer = setTimeout(() => MiniPill._reposition(), 200);
+			};
+			window.addEventListener("resize", MiniPill._resizeHandler, { passive: true });
 			MiniPill.render();
 		},
 		render() {
@@ -3095,17 +3105,56 @@ module.exports = (() => {
 			const label = MiniPill._el.querySelector(`.${CSS_PREFIX}-pill-label`);
 			MiniPill._el.classList.toggle(`${CSS_PREFIX}-pill-done`, session.phase === "done");
 			MiniPill._el.classList.toggle(`${CSS_PREFIX}-pill-fail`, session.phase === "error");
-			if (!label) return;
-			if (session.phase === "reviewing") {
-				label.textContent = t("pill_reviewing", { i: session.progress.i, k: session.progress.k || "?" });
-			} else if (session.phase === "done") {
-				label.textContent = t("pill_done", { n: session.verdicts.size });
-			} else {
-				label.textContent = t("pill_error");
+			if (label) {
+				if (session.phase === "reviewing") {
+					label.textContent = t("pill_reviewing", { i: session.progress.i, k: session.progress.k || "?" });
+				} else if (session.phase === "done") {
+					label.textContent = t("pill_done", { n: session.verdicts.size });
+				} else {
+					label.textContent = t("pill_error");
+				}
 			}
+			MiniPill._reposition();
+		},
+		// Dodge whatever already floats in the bottom-right corner: the
+		// translator plugin's status capsule is matched explicitly, everything
+		// else through a cheap scan of fixed-position top-level elements. The
+		// pill parks 8px above the tallest occupant.
+		_reposition() {
+			const el = MiniPill._el;
+			if (!el) return;
+			try {
+				const viewW = window.innerWidth;
+				const viewH = window.innerHeight;
+				let bottom = 24;
+				const seen = new Set([el]);
+				const candidates = [];
+				for (const node of document.querySelectorAll("#DiscordAITranslator-loaded-status, .translator-loaded-status-floating")) {
+					candidates.push(node);
+				}
+				for (const node of document.body.children) candidates.push(node);
+				for (const node of candidates) {
+					if (!node || seen.has(node) || el.contains(node)) continue;
+					seen.add(node);
+					const style = window.getComputedStyle(node);
+					if (style.position !== "fixed" || style.display === "none" || style.visibility === "hidden") continue;
+					const rect = node.getBoundingClientRect();
+					if (!rect.width || !rect.height) continue;
+					// Only the bottom-right corner band matters.
+					if (rect.right < viewW - 320 || rect.bottom < viewH - 200 || rect.top < viewH / 2) continue;
+					bottom = Math.max(bottom, Math.round(viewH - rect.top) + 8);
+				}
+				el.style.bottom = `${bottom}px`;
+			} catch (e) { /* positioning must never break the pill */ }
 		},
 		hide() {
 			if (MiniPill._unsub) { MiniPill._unsub(); MiniPill._unsub = null; }
+			if (MiniPill._resizeHandler) {
+				window.removeEventListener("resize", MiniPill._resizeHandler, { passive: true });
+				clearTimeout(MiniPill._resizeTimer);
+				MiniPill._resizeHandler = null;
+				MiniPill._resizeTimer = null;
+			}
 			if (MiniPill._el) { try { MiniPill._el.remove(); } catch (e) { /* ignore */ } MiniPill._el = null; }
 		}
 	};

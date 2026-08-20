@@ -571,7 +571,7 @@
 		.${CSS_PREFIX}-pill {
 			position: fixed;
 			right: 24px;
-			bottom: 32px;
+			bottom: 24px;
 			z-index: 9999;
 			display: flex;
 			align-items: center;
