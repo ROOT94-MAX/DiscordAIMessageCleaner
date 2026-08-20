@@ -15,7 +15,7 @@ A BetterDiscord plugin that uses AI to review and clean up **your own** past mes
 
 **Current version: v0.6.5** · **Runtime: BetterDiscord (no third-party library)**
 
-[Download plugin](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/raw/main/DiscordAIMessageCleaner.plugin.js) · [简体中文](README.md) · [Architecture & plan](./PLAN.md)
+[Download plugin](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/raw/main/DiscordAIMessageCleaner.plugin.js) · [简体中文](README.md) · [Architecture](./ARCHITECTURE.md)
 
 </div>
 
@@ -115,7 +115,8 @@ tools/build.js                      deterministic build: assembles src/ into the
 tools/verify.js                     checks byte-exact source/artifact consistency, syntax, version match
 tools/smoke_test.js                 offline smoke test (lifecycle + settings render + migration)
 tools/test_harness.js               offline functional tests (delete queue / search / batching / verdict parsing, etc.)
-PLAN.md                             architecture & implementation plan (module map, state machine, safety design) — in Chinese
+ARCHITECTURE.md                     architecture doc (module map, data flows, touch points; kept in sync with the code) — in Chinese
+PLAN.md                             the original implementation plan (historical) — in Chinese
 ```
 
 ## Development

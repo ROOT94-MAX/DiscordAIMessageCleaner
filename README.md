@@ -15,7 +15,7 @@
 
 **当前版本：v0.6.5** · **运行环境：BetterDiscord（无需第三方库）**
 
-[下载插件](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/raw/main/DiscordAIMessageCleaner.plugin.js) · [English](README.en.md) · [架构与计划](./PLAN.md)
+[下载插件](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/raw/main/DiscordAIMessageCleaner.plugin.js) · [English](README.en.md) · [架构文档](./ARCHITECTURE.md)
 
 </div>
 
@@ -115,7 +115,8 @@ tools/build.js                      确定性构建：把 src/ 拼装为插件�
 tools/verify.js                     校验源码与产物逐字节一致、语法、版本号一致
 tools/smoke_test.js                 离线冒烟测试（生命周期 + 设置页渲染 + 迁移）
 tools/test_harness.js               离线功能测试（删除队列 / 搜索 / 批处理 / 判定解析等）
-PLAN.md                             架构与实现计划（模块地图、状态机、安全设计）
+ARCHITECTURE.md                     架构文档（模块地图、数据流、触点清单，随代码同步更新）
+PLAN.md                             最初的实现计划（历史文档）
 ```
 
 ## 开发
