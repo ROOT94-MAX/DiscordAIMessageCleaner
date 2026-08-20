@@ -84,7 +84,7 @@ tools/test_harness.js        离线功能测试（21 项）：注入方式暴露
 ```
 入口（按钮 / 右键菜单 / /aiclean）
   → [setup]    范围（当前频道|整个服务器，仅服务器内可选）+ 时间段
-  → [fetching] 服务器内走 SearchService（author_id 过滤，702ms/页节流，
+  → [fetching] 服务器内走 SearchService（author_id 过滤，700ms/页节流，
                失败回退 MessageService 逐页扫描）；DM 恒走扫描
   → [results]  勾选列表（三态全选、只看命中、频道下拉筛选、表情/缩略图/灯箱）
                ├─ AI 审查：并发工作池逐批判定 → 命中标注+自动勾选
@@ -114,7 +114,6 @@ tools/test_harness.js        离线功能测试（21 项）：注入方式暴露
 - 每次改动：`node tools/build.js` → `node tools/verify.js` → 两套测试全绿 → 复制到 BD plugins 实测 → **本地 git 提交（快照，可回退）**。
 - **`git push` 与 GitHub Release 只在用户于 Discord 实测确认后执行**，绝不自动发布。
 - 发布后发现问题的版本：修复版沿用同一版本号替换发布（删除坏 Release+标签后重发），不跳号。
-- 本地分支：`release`（跟踪 origin/main，公开干净历史）；`master`/`dev-history`（完整开发历史，永不推送）。
 
 ## 10. 路线图
 
