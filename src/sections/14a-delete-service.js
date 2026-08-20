@@ -41,7 +41,12 @@
 					consecutiveRateLimits = 0;
 				} else if (outcome.status === "forbidden") {
 					// Permission/channel state changed: abort the whole queue.
-					throw mkError("DELETE_FORBIDDEN", t("err_delete_forbidden", { status: outcome.code }), { status: outcome.code });
+					// Carry what was already done: the caller still has to prune
+					// those ids from its working set and can export the audit log.
+					throw mkError("DELETE_FORBIDDEN", t("err_delete_forbidden", { status: outcome.code }), {
+						status: outcome.code,
+						partial: { deleted, skipped, failed, cancelled: true }
+					});
 				} else if (outcome.status === "cancelled") {
 					return { deleted, skipped, failed, cancelled: true };
 				} else {

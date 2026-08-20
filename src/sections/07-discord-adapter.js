@@ -129,6 +129,7 @@
 		health() {
 			DiscordAdapter.rest();
 			DiscordAdapter.chatButtonsModule();
+			DiscordAdapter.chatButtonChrome();
 			DiscordAdapter.modalSystem();
 			DiscordAdapter.getStore("ChannelStore");
 			DiscordAdapter.getStore("SelectedChannelStore");

@@ -568,6 +568,25 @@
 		.${CSS_PREFIX}-check:hover .${CSS_PREFIX}-checkbox:not(.${CSS_PREFIX}-checkbox-on) {
 			border-color: var(--damc-icon, #b5bac1);
 		}
+		/* delete confirmation: body + in-dialog backup opt-in */
+		.${CSS_PREFIX}-confirm-body {
+			display: flex;
+			flex-direction: column;
+			gap: 10px;
+			font-size: 14px;
+			line-height: 1.4;
+			color: var(--damc-text, #dbdee1);
+			text-align: left;
+		}
+		.${CSS_PREFIX}-backup-choice {
+			align-items: flex-start;
+			font-weight: 500;
+			text-align: left;
+		}
+		.${CSS_PREFIX}-backup-choice-locked {
+			cursor: default;
+			color: var(--damc-text-faint, #949ba4);
+		}
 		.${CSS_PREFIX}-pill {
 			position: fixed;
 			right: 24px;

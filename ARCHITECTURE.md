@@ -1,6 +1,6 @@
 # DiscordAIMessageCleaner 架构文档
 
-对应版本：v0.6.5 ｜ 更新日期：2026-08-21
+对应版本：v0.6.6 ｜ 更新日期：2026-08-21
 本文描述**当前实现**，随代码同步更新；最初的实现计划（历史文档）见 [PLAN.md](./PLAN.md)。
 
 ## 1. 项目定位与安全模型
@@ -8,7 +8,8 @@
 用 AI 审查并删除**当前登录账号自己**在 Discord 发过的历史消息。安全模型是全部设计的出发点：
 
 - 只搜索、只审查、只删除自己的消息；他人消息永不删除。
-- 删除不可逆，因此永不静默删除：先审后删 → 人工勾选 → 二次确认 → 可选 JSON 备份 → 节流执行。
+- 删除不可逆，因此永不静默删除：先审后删 → 人工勾选 → 危险确认（内含备份勾选）→ 可选 JSON 备份 → 节流执行。
+- 不可逆动作只挂在确认按钮上：取消按钮、Esc、点击背板、确认弹窗打开失败，任一路径都不会删除任何消息。
 - AI 只见文本（表情转 `:name:`、附件转文件名占位符），图片/附件内容不上传。
 - 消息内容只发往用户自配的 AI 端点，无遥测；日志不落消息正文与密钥。
 
@@ -29,6 +30,7 @@ tools/build.js               确定性构建：零依赖、零转换，按文件
 tools/verify.js              三条不变量：src 重建与产物逐字节一致；产物通过 node --check；@version == PLUGIN_VERSION
 tools/smoke_test.js          离线冒烟：桩化 BdApi 跑生命周期、设置页各标签渲染、配置迁移
 tools/test_harness.js        离线功能测试（21 项）：注入方式暴露内部服务，用假 REST/假 AI 驱动
+REGRESSION.md                发版前的人工回归清单（自动化测不到的 UI/真实删除路径）
 .github/workflows/verify.yml 每次推送跑 verify + 两套测试
 ```
 
@@ -54,7 +56,7 @@ tools/test_harness.js        离线功能测试（21 项）：注入方式暴露
 | 11-normalizer | 原始消息 → {id, channelId, content, attachments{url,isImage}, edited} |
 | 12-review-batcher | 按条数+字符预算切审查批次、token 估算 |
 | 13-ai-service | 多平台配置解析、验证/取模型、并发工作池审查、容错判定解析（解析失败进重试桶，绝不误标） |
-| 14a-delete-service | 单并发节流删除队列：404=跳过、403=中止全队、429 风暴自动暂停、逐条 channelId 路由 |
+| 14a-delete-service | 单并发节流删除队列：404=跳过、403=中止全队（错误带出已删部分供调用方收尾）、429 风暴自动暂停、逐条 channelId 路由 |
 | 14b-export-service | 删除前备份/删除记录 JSON，三级保存链（openDialog → saveWithDialog → Downloads） |
 | 15-styles | `--damc-*` 设计令牌层（映射 Discord CSS 变量）+ 全部组件样式 |
 | 16-lifecycle-registries | Disposables/ActiveRuns；**ReviewSession**（后台审查会话，唯一写入点）；**MiniPill**（悬浮胶囊，锚定聊天输入框列并避让其他悬浮元素）；**ScanCache**（误关弹窗恢复） |
@@ -77,7 +79,7 @@ tools/test_harness.js        离线功能测试（21 项）：注入方式暴露
 
 诊断页展示各触点 ok/missing 与入口状态，可一键复制诊断 JSON。
 
-**已知坑（务必遵守）**：BD 弹窗的 onConfirm/onCancel/onClose 在关闭动画后**异步**触发，跨关闭传递状态必须用"回调自己消费的一次性标志"；弹窗卡片带 CSS transform，内部 `position: fixed` 会退化为卡片相对定位，全屏覆盖层（灯箱）必须 `ReactDOM.createPortal` 到 `document.body`；弹窗底部的下拉必须向上展开且用 mousedown 选中。
+**已知坑（务必遵守）**：BD 弹窗的 onConfirm/onCancel/onClose 在关闭动画后**异步**触发，跨关闭传递状态必须用"回调自己消费的一次性标志"；BD 只是把 onConfirm/onCancel 透传给 Discord 的 ConfirmModal，取消/Esc/背板三者如何映射到 onCancel 由 Discord 决定且会随客户端更新变化，所以**不可逆动作绝不能挂在 onCancel 上**（曾经"直接删除"就在取消位）；弹窗卡片带 CSS transform，内部 `position: fixed` 会退化为卡片相对定位，全屏覆盖层（灯箱）必须 `ReactDOM.createPortal` 到 `document.body`；弹窗底部的下拉必须向上展开且用 mousedown 选中。
 
 ## 6. 核心数据流
 
@@ -90,12 +92,15 @@ tools/test_harness.js        离线功能测试（21 项）：注入方式暴露
                ├─ AI 审查：并发工作池逐批判定 → 命中标注+自动勾选
                │   可「后台运行」：关弹窗，ReviewSession 继续跑，MiniPill 显示进度
                ├─ 继续扫描更早的消息（cancelled/capped 时，resumeCursor 续扫合并）
-               └─ 删除选中 → 二次确认 → 备份门(ask/always/never) → [deleting]
+               └─ 删除选中 → 危险确认弹窗（正文含条数/超上限提示 + 备份勾选，
+                   初始值来自 delete.backupBeforeDelete，always 锁定为勾选）
+                   → 勾选则先导出 JSON 备份（保存失败/取消即放弃删除）→ [deleting]
   → [deleting] 单并发节流 + 暂停/恢复 + 429 风暴自动暂停
   → [done]     成功/跳过/失败报告 + 删除记录导出；已删项从工作集移除
+               403 中途中止也进入本阶段（部分报告 + 错误横幅同时显示）
 ```
 
-**状态归属**：审查管道只写模块级 `ReviewSession`（弹窗是订阅视图），这是"后台运行"能存活的原因；`ScanCache` 按频道缓存最近扫描结果，误关弹窗（背板/Esc）重开即恢复；取消语义 = 每次运行一个 AbortController（ActiveRuns 登记），stop() 逆序清理。
+**状态归属**：审查管道只写模块级 `ReviewSession`（弹窗是订阅视图），这是"后台运行"能存活的原因；`ScanCache` 按频道缓存最近扫描结果，误关弹窗（背板/Esc）重开即恢复；取消语义 = 每次运行一个 AbortController（ActiveRuns 登记），stop() 逆序清理。删除结束（含取消、含 403 部分中止）后，已删/已消失的 id 会从 `ScanCache`、`ReviewSession.fetchResult`、判定表一并剔除，且**这些模块级写入排在 mounted 检查之前**——中途关掉弹窗不能让缓存继续声称已删消息还在。
 
 ## 7. AI 审查契约
 

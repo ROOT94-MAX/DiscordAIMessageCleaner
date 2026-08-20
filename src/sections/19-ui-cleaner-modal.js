@@ -94,6 +94,32 @@
 		);
 	};
 
+	// Backup opt-in rendered inside the delete confirmation. Local state is
+	// display only: the decision is written into the caller's plain object,
+	// which the confirm handler reads at click time.
+	const BackupChoice = props => {
+		const [on, setOn] = useState(Boolean(props.initial));
+		return h("button", {
+			type: "button",
+			role: "checkbox",
+			"aria-checked": on,
+			"aria-disabled": Boolean(props.locked),
+			className: `${CSS_PREFIX}-check ${CSS_PREFIX}-backup-choice${props.locked ? ` ${CSS_PREFIX}-backup-choice-locked` : ""}`,
+			onClick: () => {
+				if (props.locked) return;
+				const next = !on;
+				setOn(next);
+				props.onChange(next);
+			}
+		},
+			h("span", {
+				className: `${CSS_PREFIX}-checkbox${on ? ` ${CSS_PREFIX}-checkbox-on` : ""}`,
+				dangerouslySetInnerHTML: { __html: on ? CHECK_MARK_SVG : "" }
+			}),
+			h("span", null, props.label)
+		);
+	};
+
 	const CleanerModalContent = props => {
 		const ctx = props.ctx;
 		const now = Date.now();
@@ -481,6 +507,39 @@
 			if (!next) setStormPaused(false);
 		};
 
+		// Drop deleted (and already-gone) messages from every surface that
+		// remembers them, so nothing re-targets them later. Module-level state
+		// (scan cache, background session, verdict map) is written BEFORE the
+		// mount check: closing the modal mid-delete must not leave those caches
+		// claiming that deleted messages still exist.
+		const applyDeletion = report => {
+			const removed = new Set(report.deleted.map(item => item.id));
+			for (const item of report.skipped) removed.add(item.id);
+			if (!removed.size) return;
+			const nextPayload = fetchResult ? Object.assign({}, fetchResult, {
+				messages: fetchResult.messages.filter(message => !removed.has(message.id))
+			}) : null;
+			if (nextPayload) {
+				if (nextPayload.messages.length) ScanCache.set(ctx.channelId, nextPayload, nextPayload.scope);
+				else ScanCache.clear();
+				// The background session is what hydrates the modal on reopen;
+				// leaving its list untouched would resurrect deleted rows.
+				const session = ReviewSession.state;
+				if (session && session.channelId === ctx.channelId && session.fetchResult) {
+					ReviewSession.update({ fetchResult: nextPayload });
+				}
+			}
+			for (const id of removed) verdictsRef.current.delete(id);
+			if (!mountedRef.current) return;
+			if (nextPayload) setFetchResult(nextPayload);
+			setSelected(prev => {
+				const next = new Set(prev);
+				for (const id of removed) next.delete(id);
+				return next;
+			});
+			setVerdicts(new Map(verdictsRef.current));
+		};
+
 		const executeDelete = async items => {
 			setError(null);
 			setDeleteReport(null);
@@ -502,39 +561,27 @@
 						setStormPaused(true);
 					}
 				});
+				applyDeletion(report);
 				if (!mountedRef.current) return;
 				setDeleteReport(report);
-				// Drop successfully deleted messages from the working set so a
-				// second pass never re-targets them.
-				const removed = new Set(report.deleted.map(item => item.id));
-				for (const item of report.skipped) removed.add(item.id);
-				if (removed.size) {
-					const nextPayload = fetchResult ? Object.assign({}, fetchResult, {
-						messages: fetchResult.messages.filter(message => !removed.has(message.id))
-					}) : null;
-					if (nextPayload) {
-						setFetchResult(nextPayload);
-						// Keep the accidental-close cache in step with reality.
-						if (nextPayload.messages.length) ScanCache.set(ctx.channelId, nextPayload, nextPayload.scope);
-						else ScanCache.clear();
-					}
-					setSelected(prev => {
-						const next = new Set(prev);
-						for (const id of removed) next.delete(id);
-						return next;
-					});
-					for (const id of removed) verdictsRef.current.delete(id);
-					setVerdicts(new Map(verdictsRef.current));
-				}
 				setStage("done");
 			} catch (e) {
+				// A 403/401 abort still deleted everything up to that message:
+				// prune those ids and keep the partial run reportable.
+				const partial = e instanceof PluginError && e.extra && e.extra.partial;
+				if (partial) applyDeletion(partial);
 				if (!mountedRef.current) return;
 				if (e instanceof PluginError && e.code === "CANCELLED") {
 					setStage("results");
 				} else {
 					Logger.error("delete failed", e);
 					setError({ message: e instanceof PluginError ? e.message : Utils.truncate(String(e && e.message || e), 200) });
-					setStage("results");
+					if (partial) {
+						setDeleteReport(partial);
+						setStage("done");
+					} else {
+						setStage("results");
+					}
 				}
 			} finally {
 				endRun(controller);
@@ -557,31 +604,51 @@
 			}));
 		};
 
+		// Second confirmation: explicit, danger-styled, irreversible. The backup
+		// choice rides INSIDE it as a checkbox instead of being a second modal:
+		// a dismissal (Esc, backdrop, cancel) must never be able to start a
+		// deletion, and "delete without backup" must never sit on a cancel
+		// button. The danger confirm button is the only path that deletes.
 		const confirmAndDelete = () => {
 			const items = buildDeleteItems();
 			if (!items.length) return;
 			const maxPerRun = Utils.clamp(Utils.num(SettingsStore.get("delete.maxPerRun"), 200), 1, 1000);
 			const overCap = selected.size > maxPerRun;
-			const body = overCap
-				? `${t("delete_confirm_over_cap", { n: selected.size, max: maxPerRun })}\n\n${t("delete_confirm_body", { n: items.length })}`
-				: t("delete_confirm_body", { n: items.length });
-			// Second confirmation: explicit, danger-styled, irreversible.
-			const proceed = () => startBackupThenDelete(items);
+			const mode = String(SettingsStore.get("delete.backupBeforeDelete") || "ask");
+			// "always" is a guarantee the user configured, so it is not togglable here.
+			const locked = mode === "always";
+			const choice = { backup: mode !== "never" };
+			const content = h("div", { className: `${CSS_PREFIX}-ui ${CSS_PREFIX}-confirm-body` },
+				overCap ? h("div", { className: `${CSS_PREFIX}-warn` },
+					t("delete_confirm_over_cap", { n: selected.size, max: maxPerRun })) : null,
+				h("div", null, t("delete_confirm_body", { n: items.length })),
+				h(BackupChoice, {
+					initial: choice.backup,
+					locked,
+					label: locked ? t("backup_choice_locked") : t("backup_choice_label"),
+					onChange: value => { choice.backup = value; }
+				})
+			);
 			try {
-				BdApi.UI.showConfirmationModal(t("delete_confirm_title"), body, {
+				BdApi.UI.showConfirmationModal(t("delete_confirm_title"), content, {
 					danger: true,
 					confirmText: t("delete_confirm_ok"),
 					cancelText: t("cancel"),
-					onConfirm: proceed
+					onConfirm: () => {
+						if (choice.backup) backupThenDelete(items);
+						else executeDelete(items);
+					}
 				});
 			} catch (e) {
-				proceed();
+				// Never delete without an explicit confirmation: no modal, no run.
+				Logger.error("delete confirmation failed to open", e);
+				try { BdApi.UI.showToast(t("err_confirm_unavailable"), { type: "error" }); } catch (e2) { /* ignore */ }
 			}
 		};
 
-		// Backup gate before deletion, driven by delete.backupBeforeDelete.
-		const startBackupThenDelete = async items => {
-			const mode = String(SettingsStore.get("delete.backupBeforeDelete") || "ask");
+		// Export the JSON backup first; a failed or cancelled save cancels the
+		// deletion (the user asked for a backup, so proceeding would betray it).
+		const backupThenDelete = async items => {
 			const doBackup = async () => {
 				const chosenIds = new Set(items.map(item => item.id));
 				const messages = fetchResult.messages.filter(message => chosenIds.has(message.id));
@@ -603,26 +670,7 @@
 				}
 			};
 
-			if (mode === "never") {
-				executeDelete(items);
-				return;
-			}
-			if (mode === "always") {
-				if (await doBackup()) executeDelete(items);
-				return;
-			}
-			// ask
-			try {
-				BdApi.UI.showConfirmationModal(t("backup_prompt_title"), t("backup_prompt_body", { n: items.length }), {
-					confirmText: t("backup_yes"),
-					cancelText: t("backup_no"),
-					onConfirm: async () => { if (await doBackup()) executeDelete(items); },
-					// "Delete without backup" is the cancel button here.
-					onCancel: () => executeDelete(items)
-				});
-			} catch (e) {
-				executeDelete(items);
-			}
+			if (await doBackup()) executeDelete(items);
 		};
 
 		const exportDeletionLog = async () => {

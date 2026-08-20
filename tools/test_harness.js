@@ -130,6 +130,12 @@ const ctx = { channelId: "200000000000000001", isPrivate: false };
 		catch (e) { thrown = e; }
 		assert.ok(thrown && thrown.code === "DELETE_FORBIDDEN", "throws DELETE_FORBIDDEN");
 		assert.deepStrictEqual(rest.calls, ["a", "b"], "stops at the forbidden message; c untouched");
+		// The caller must still learn what was already deleted, or its working
+		// set (and the audit log) would silently lose the partial run.
+		const partial = thrown.extra && thrown.extra.partial;
+		assert.ok(partial, "error carries the partial report");
+		assert.deepStrictEqual(partial.deleted.map(item => item.id), ["a"], "partial lists what went through");
+		assert.strictEqual(partial.cancelled, true, "partial run is marked incomplete");
 	});
 
 	await test("abort mid-run returns cancelled with partial results", async () => {
