@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Private vulnerability report / 私密漏洞报告
+    url: https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/security/advisories/new
+    about: Report confirmation bypasses, unintended deletion, data exposure, or other security-sensitive behavior privately / 私密报告确认绕过、非预期删除、数据泄露等安全问题
