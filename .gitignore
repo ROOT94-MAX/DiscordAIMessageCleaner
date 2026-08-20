@@ -1,4 +1,16 @@
+# Dependencies, logs, and generated reports
 node_modules/
 *.log
+coverage/
+
+# Local secrets (a sanitized example may still be committed)
+.env
+.env.*
+!.env.example
+
+# Editor and operating-system metadata
+.vscode/
+.idea/
+.DS_Store
 Thumbs.db
 Desktop.ini
