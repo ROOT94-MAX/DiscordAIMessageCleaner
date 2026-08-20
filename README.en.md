@@ -141,6 +141,8 @@ node tools/test_harness.js # functional tests
 
 Edit the section modules under `src/sections/`, then rebuild; **never edit the generated plugin file directly** (`verify` catches it). Dependencies between sections are strictly one-way — later sections may use earlier ones, never the reverse — and only `07-discord-adapter` may touch Discord internals. CI (GitHub Actions) runs all of the above on every push.
 
+`main` is protected by a GitHub Ruleset. Open a Pull Request from a non-`main` branch and merge only after `verify` passes; direct updates, force pushes, and deletion of `main` are blocked.
+
 ## Acknowledgements
 
 - Architecture and implementation follow the same author's channel-summary plugin DiscordChannelExportSummary (likewise native BdApi, single file, no library dependency).
