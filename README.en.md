@@ -97,6 +97,12 @@ The settings panel has four tabs:
 - **Deep-paging cap:** the Discord search endpoint reaches back ~5000 results at most; beyond that it truncates with a notice, so use time ranges to work in passes.
 - **Bulk deletion is anti-spam sensitive:** default single-concurrency, 1200ms + jitter between deletes, auto-pause on repeated rate limits. Don't set the pacing too low.
 
+## Known issues (v0.6.6)
+
+- **Export is currently unusable**: the pre-deletion JSON backup and the deletion-log export can fail end-to-end on some setups (all three tiers of the save chain — BD save dialog → Discord native save dialog → silent write to Downloads). Under investigation; a fix will ship in a later version.
+- It fails safe: if the backup box is ticked and the save fails or is cancelled, **the deletion is abandoned** — "deleted but not backed up" cannot happen.
+- Workaround: untick the backup box in the delete confirmation (or set the backup mode to "never" under Settings → Behavior). Deletion then proceeds, but without a backup net — keep runs small and be careful.
+
 ## Security & privacy
 
 - Deletion is **irreversible**. The default flow is review-then-delete with manual selection and a second confirmation; nothing is deleted silently. For your first runs, set the backup mode to "ask each time" and export a JSON backup before deleting.
