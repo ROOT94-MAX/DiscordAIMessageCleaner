@@ -1,0 +1,21 @@
+name: verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Source/artifact consistency, syntax, version
+        run: node tools/verify.js
+      - name: Smoke test
+        run: node tools/smoke_test.js
+      - name: Functional harness
+        run: node tools/test_harness.js

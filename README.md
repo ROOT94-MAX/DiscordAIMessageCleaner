@@ -8,6 +8,7 @@
 [![加载器](https://img.shields.io/badge/Loader-BetterDiscord-4E5D94?style=flat-square)](https://betterdiscord.app)
 [![版本](https://img.shields.io/badge/Version-0.6.3-success?style=flat-square)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner)
 [![依赖](https://img.shields.io/badge/Dependency-None-brightgreen?style=flat-square)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner)
+[![验证](https://img.shields.io/github/actions/workflow/status/ROOT94-MAX/DiscordAIMessageCleaner/verify.yml?branch=main&style=flat-square&label=verify)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/actions/workflows/verify.yml)
 [![许可证](https://img.shields.io/badge/License-GPL%20v2-blue?style=flat-square)](./LICENSE)
 
 一款 BetterDiscord 插件，用 AI 审查并清理**你自己**在 Discord 里发过的历史消息：按账号搜索、自定义策略审查、备份后确认删除。
@@ -26,7 +27,7 @@
 - **一次覆盖整个服务器：**范围可切「当前频道 / 整个服务器」，服务器范围一次扫遍所有你可见的频道，不必逐个进。
 - **违规标准你说了算：**内置六类模板（辱骂 / 隐私 / 色情 / 政治 / 广告 / 其他），也能保存多套命名策略随时切换。
 - **删除安全第一：**先审后删、人工勾选、二次确认、可选 JSON 备份；删除严格单并发 + 节流 + 限流自动暂停 + 单次上限。永不静默删除。
-- **单文件安装：**只依赖 BetterDiscord 自带的 `BdApi`，无第三方库、无构建步骤，一个 `.plugin.js` 文件即可。
+- **单文件安装：**只依赖 BetterDiscord 自带的 `BdApi`，无第三方库；模块化源码确定性构建为一份可读的插件单文件。
 
 ## 核心功能
 
@@ -107,13 +108,28 @@
 ## 文件结构
 
 ```
-DiscordAIMessageCleaner.plugin.js   插件本体（单文件，按 22 个分区组织）
-PLAN.md                             架构与实现计划（模块地图、状态机、安全设计）
+DiscordAIMessageCleaner.plugin.js   构建产物：安装用的插件单文件
+src/                                模块化源码（header / 24 个分区模块 / footer）
+src/sections/                       01-constants … 22-plugin-class，按依赖顺序编号
+tools/build.js                      确定性构建：把 src/ 拼装为插件单文件（零依赖、零转换）
+tools/verify.js                     校验源码与产物逐字节一致、语法、版本号一致
 tools/smoke_test.js                 离线冒烟测试（生命周期 + 设置页渲染 + 迁移）
 tools/test_harness.js               离线功能测试（删除队列 / 搜索 / 批处理 / 判定解析等）
+PLAN.md                             架构与实现计划（模块地图、状态机、安全设计）
 ```
 
-开发者自测：`node tools/smoke_test.js` 与 `node tools/test_harness.js`，两者均需全绿。
+## 开发
+
+要求 Node.js 18+，无任何 npm 依赖：
+
+```bash
+node tools/build.js        # 由 src/ 生成插件单文件
+node tools/verify.js       # 源码/产物一致性、语法、版本号
+node tools/smoke_test.js   # 冒烟测试
+node tools/test_harness.js # 功能测试
+```
+
+修改代码请编辑 `src/sections/` 下的分区模块，然后重新构建；**请勿直接编辑生成的插件文件**（`verify` 会发现并拒绝）。分区间依赖严格单向：后区可用前区，反向禁止；只有 `07-discord-adapter` 允许触碰 Discord 内部模块。CI（GitHub Actions）在每次推送时自动执行以上全部校验。
 
 ## 致谢
 

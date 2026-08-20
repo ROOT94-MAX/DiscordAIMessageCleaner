@@ -8,6 +8,7 @@
 [![Loader](https://img.shields.io/badge/Loader-BetterDiscord-4E5D94?style=flat-square)](https://betterdiscord.app)
 [![Version](https://img.shields.io/badge/Version-0.6.3-success?style=flat-square)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner)
 [![Dependency](https://img.shields.io/badge/Dependency-None-brightgreen?style=flat-square)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner)
+[![Verify](https://img.shields.io/github/actions/workflow/status/ROOT94-MAX/DiscordAIMessageCleaner/verify.yml?branch=main&style=flat-square&label=verify)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/actions/workflows/verify.yml)
 [![License](https://img.shields.io/badge/License-GPL%20v2-blue?style=flat-square)](./LICENSE)
 
 A BetterDiscord plugin that uses AI to review and clean up **your own** past messages on Discord: search by account, review against your own policy, back up and confirm before deleting.
@@ -26,7 +27,7 @@ The messages you regret — violations, private info, throwaway lines — are sc
 - **Whole server in one pass:** switch scope between "this channel" and "whole server"; server scope sweeps every channel you can see at once, no channel-by-channel visits.
 - **You define the standard:** six built-in categories (abuse / privacy / NSFW / political / spam / other), plus any number of named custom policies you can switch between.
 - **Deletion safety first:** review-then-delete, manual selection, a second confirmation, optional JSON backup; deletion is strictly serial + throttled + rate-limit auto-pause + a per-run cap. Never deletes silently.
-- **Single-file install:** depends only on BetterDiscord's own `BdApi` — no third-party library, no build step, one `.plugin.js` file.
+- **Single-file install:** depends only on BetterDiscord's own `BdApi`, no third-party library; modular sources build deterministically into one readable plugin file.
 
 ## Features
 
@@ -107,13 +108,28 @@ The settings panel has four tabs:
 ## Layout
 
 ```
-DiscordAIMessageCleaner.plugin.js   the plugin (single file, organized into 22 sections)
-PLAN.md                             architecture & implementation plan (module map, state machine, safety design) — in Chinese
+DiscordAIMessageCleaner.plugin.js   build artifact: the single plugin file you install
+src/                                modular sources (header / 24 section modules / footer)
+src/sections/                       01-constants … 22-plugin-class, numbered in dependency order
+tools/build.js                      deterministic build: assembles src/ into the plugin file (zero deps, zero transforms)
+tools/verify.js                     checks byte-exact source/artifact consistency, syntax, version match
 tools/smoke_test.js                 offline smoke test (lifecycle + settings render + migration)
 tools/test_harness.js               offline functional tests (delete queue / search / batching / verdict parsing, etc.)
+PLAN.md                             architecture & implementation plan (module map, state machine, safety design) — in Chinese
 ```
 
-Developer self-test: `node tools/smoke_test.js` and `node tools/test_harness.js`; both must pass.
+## Development
+
+Node.js 18+, no npm dependencies:
+
+```bash
+node tools/build.js        # assemble the plugin file from src/
+node tools/verify.js       # source/artifact consistency, syntax, version
+node tools/smoke_test.js   # smoke test
+node tools/test_harness.js # functional tests
+```
+
+Edit the section modules under `src/sections/`, then rebuild; **never edit the generated plugin file directly** (`verify` catches it). Dependencies between sections are strictly one-way — later sections may use earlier ones, never the reverse — and only `07-discord-adapter` may touch Discord internals. CI (GitHub Actions) runs all of the above on every push.
 
 ## Acknowledgements
 
