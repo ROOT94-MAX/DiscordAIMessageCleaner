@@ -15,7 +15,7 @@
 
 **当前版本：v0.6.6** · **运行环境：BetterDiscord（无需第三方库）**
 
-[下载插件](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/raw/main/DiscordAIMessageCleaner.plugin.js) · [English](README.en.md) · [架构文档](./ARCHITECTURE.md)
+[下载稳定版](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/releases/latest/download/DiscordAIMessageCleaner.plugin.js) · [English](README.en.md) · [架构文档](./ARCHITECTURE.md)
 
 </div>
 
@@ -60,7 +60,7 @@
 
 ### 安装步骤
 
-1. [下载 `DiscordAIMessageCleaner.plugin.js`](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/raw/main/DiscordAIMessageCleaner.plugin.js)。
+1. [从最新稳定版 Release 下载 `DiscordAIMessageCleaner.plugin.js`](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/releases/latest/download/DiscordAIMessageCleaner.plugin.js)。
 2. 把文件放进 BetterDiscord 插件目录（Discord → **用户设置** → **BetterDiscord** → **插件** → 「Open Plugins Folder」可直接打开）。
 3. 在插件列表启用 **DiscordAIMessageCleaner**。
 4. 打开插件设置 → **AI 平台**，选一个平台填入 API Key 与模型（本地 Ollama / LM Studio 无需密钥），点「验证配置」确认连通。
@@ -110,6 +110,7 @@
 - 消息内容只发送到**你自己配置的 AI 端点**，无任何遥测或第三方上报；用本地模型可做到内容完全不出本机。
 - 日志只记录进度与结果，不写入消息正文与密钥。
 - 自动化批量删除有触发 Discord 风控的固有风险，请自行控制频率、量力而行。
+- 安全问题请按 [SECURITY.md](./SECURITY.md) 私密报告；公开 Issue 中不要粘贴 API Key、登录凭据或真实消息正文。
 
 ## 文件结构
 
@@ -123,6 +124,7 @@ tools/smoke_test.js                 离线冒烟测试（生命周期 + 设置�
 tools/test_harness.js               离线功能测试（删除队列 / 搜索 / 批处理 / 判定解析等）
 ARCHITECTURE.md                     架构文档（模块地图、数据流、触点清单，随代码同步更新）
 REGRESSION.md                       发版前的人工回归清单（含删除链路的安全走查流程）
+SECURITY.md                         支持版本、漏洞私密报告方式与脱敏要求
 PLAN.md                             最初的实现计划（历史文档）
 ```
 

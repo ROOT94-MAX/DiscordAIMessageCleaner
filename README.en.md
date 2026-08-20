@@ -15,7 +15,7 @@ A BetterDiscord plugin that uses AI to review and clean up **your own** past mes
 
 **Current version: v0.6.6** · **Runtime: BetterDiscord (no third-party library)**
 
-[Download plugin](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/raw/main/DiscordAIMessageCleaner.plugin.js) · [简体中文](README.md) · [Architecture](./ARCHITECTURE.md)
+[Download stable release](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/releases/latest/download/DiscordAIMessageCleaner.plugin.js) · [简体中文](README.md) · [Architecture](./ARCHITECTURE.md)
 
 </div>
 
@@ -60,7 +60,7 @@ Any OpenAI-compatible endpoint; each provider keeps its own key and model, switc
 
 ### Steps
 
-1. [Download `DiscordAIMessageCleaner.plugin.js`](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/raw/main/DiscordAIMessageCleaner.plugin.js).
+1. [Download `DiscordAIMessageCleaner.plugin.js` from the latest stable release](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/releases/latest/download/DiscordAIMessageCleaner.plugin.js).
 2. Put it in your BetterDiscord plugins folder (Discord → **User Settings** → **BetterDiscord** → **Plugins** → "Open Plugins Folder").
 3. Enable **DiscordAIMessageCleaner** in the plugin list.
 4. Open the plugin's settings → **AI Providers**, pick a provider, enter its API key and model (local Ollama / LM Studio need no key), and click "Validate Config".
@@ -110,6 +110,7 @@ The settings panel has four tabs:
 - Your message contents are sent only to the AI endpoint **you configure** — no telemetry, no third-party reporting. With a local model, content can stay entirely on your machine.
 - Logs record only progress and results, never message bodies or keys.
 - Automated bulk deletion carries an inherent risk of tripping Discord's anti-abuse measures; pace yourself accordingly.
+- Report security issues privately as described in [SECURITY.md](./SECURITY.md). Do not paste API keys, login credentials, or real message content into public issues.
 
 ## Layout
 
@@ -123,6 +124,7 @@ tools/smoke_test.js                 offline smoke test (lifecycle + settings ren
 tools/test_harness.js               offline functional tests (delete queue / search / batching / verdict parsing, etc.)
 ARCHITECTURE.md                     architecture doc (module map, data flows, touch points; kept in sync with the code) — in Chinese
 REGRESSION.md                       pre-release manual regression checklist (incl. the safe deletion walkthrough) — in Chinese
+SECURITY.md                         supported versions, private vulnerability reporting, and redaction rules
 PLAN.md                             the original implementation plan (historical) — in Chinese
 ```
 

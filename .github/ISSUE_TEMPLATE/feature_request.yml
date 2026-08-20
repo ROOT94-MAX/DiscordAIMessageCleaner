@@ -1,0 +1,31 @@
+name: Feature request / 功能建议
+description: Suggest a focused improvement / 提交明确、聚焦的改进建议
+title: "[Feature] "
+labels: []
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / 要解决的问题
+      description: Describe the user need rather than only the implementation / 请描述用户需求，而不只是实现方案
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior / 建议行为
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered / 考虑过的其他方案
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Checklist / 检查项
+      options:
+        - label: This request concerns the plugin's existing purpose / 此建议符合插件现有用途
+          required: true
+        - label: I searched existing issues / 我已搜索现有 Issue
+          required: true
