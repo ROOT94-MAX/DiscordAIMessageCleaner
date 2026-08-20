@@ -141,6 +141,8 @@ node tools/test_harness.js # 功能测试
 
 修改代码请编辑 `src/sections/` 下的分区模块，然后重新构建；**请勿直接编辑生成的插件文件**（`verify` 会发现并拒绝）。分区间依赖严格单向：后区可用前区，反向禁止；只有 `07-discord-adapter` 允许触碰 Discord 内部模块。CI（GitHub Actions）在每次推送时自动执行以上全部校验。
 
+`main` 受 GitHub Ruleset 保护。请从非 `main` 分支发起 Pull Request，等待 `verify` 通过后再合并；直接更新、强推和删除 `main` 均被规则拦截。
+
 ## 致谢
 
 - 架构与实现参照同作者的频道总结插件 DiscordChannelExportSummary（同样是原生 BdApi、单文件、无库依赖）。

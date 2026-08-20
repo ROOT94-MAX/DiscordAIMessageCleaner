@@ -117,7 +117,8 @@ REGRESSION.md                发版前的人工回归清单（自动化测不到
 ## 9. 测试与发布纪律
 
 - 每次改动：`node tools/build.js` → `node tools/verify.js` → 两套测试全绿 → 复制到 BD plugins 实测 → **本地 git 提交（快照，可回退）**。
-- **`git push` 与 GitHub Release 只在用户于 Discord 实测确认后执行**，绝不自动发布。
+- `main` 受 GitHub Ruleset 保护：变更从非 `main` 分支发起 Pull Request，`verify` 通过后合并；禁止删除和非快进更新。
+- 涉及插件运行行为或安装产物的版本，只在用户于 Discord 实测确认后合并对应 Pull Request 并发布 Release；纯文档与仓库配置改动通过文档校验和 CI 后即可合并。
 - 已发布的标签、Release 与资产保持不可变；发布后发现问题时递增补丁版本（例如 `v0.6.6` → `v0.6.7`），保留旧版本及其问题说明，不移动标签、不覆盖同名资产。
 
 ## 10. 路线图
