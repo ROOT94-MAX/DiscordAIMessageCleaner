@@ -96,6 +96,7 @@
 		_unsub: null,
 		_resizeHandler: null,
 		_resizeTimer: null,
+		_resizeObserver: null,
 		show() {
 			if (MiniPill._el) { MiniPill.render(); return; }
 			const el = document.createElement("div");
@@ -127,6 +128,14 @@
 				MiniPill._resizeTimer = setTimeout(() => MiniPill._reposition(), 200);
 			};
 			window.addEventListener("resize", MiniPill._resizeHandler, { passive: true });
+			// Layout shifts that keep the window size (member list toggling,
+			// sidebar resize) still move the chat input the pill anchors to.
+			try {
+				if (typeof ResizeObserver === "function") {
+					MiniPill._resizeObserver = new ResizeObserver(MiniPill._resizeHandler);
+					MiniPill._resizeObserver.observe(document.body);
+				}
+			} catch (e) { /* observer is best-effort */ }
 			MiniPill.render();
 		},
 		render() {
@@ -147,17 +156,32 @@
 			}
 			MiniPill._reposition();
 		},
-		// Dodge whatever already floats in the bottom-right corner: the
-		// translator plugin's status capsule is matched explicitly, everything
-		// else through a cheap scan of fixed-position top-level elements. The
-		// pill parks 8px above the tallest occupant.
+		// Anchor INSIDE the chat column, like the translator capsule: right
+		// edge aligned to the message input's right edge, floating just above
+		// it. The window corner is only the fallback when no input exists.
+		// Then dodge whatever already floats there (the translator's capsule
+		// matched explicitly, anything else via a scan of fixed top-level
+		// elements) by stacking 8px above the tallest occupant.
 		_reposition() {
 			const el = MiniPill._el;
 			if (!el) return;
 			try {
 				const viewW = window.innerWidth;
 				const viewH = window.innerHeight;
+				let right = 24;
 				let bottom = 24;
+				const input = document.querySelector('form [class*="channelTextArea"]');
+				if (input) {
+					const rect = input.getBoundingClientRect();
+					if (rect.width && rect.height) {
+						right = Math.max(8, Math.round(viewW - rect.right));
+						bottom = Math.max(8, Math.round(viewH - rect.top) + 8);
+					}
+				}
+				// Collision test against the pill's own projected footprint.
+				const pillWidth = (el.getBoundingClientRect().width) || 180;
+				const intendedRight = viewW - right;
+				const intendedLeft = intendedRight - pillWidth;
 				const seen = new Set([el]);
 				const candidates = [];
 				for (const node of document.querySelectorAll("#DiscordAITranslator-loaded-status, .translator-loaded-status-floating")) {
@@ -165,21 +189,29 @@
 				}
 				for (const node of document.body.children) candidates.push(node);
 				for (const node of candidates) {
-					if (!node || seen.has(node) || el.contains(node)) continue;
+					if (!node || seen.has(node) || el.contains(node) || node.contains(el)) continue;
 					seen.add(node);
 					const style = window.getComputedStyle(node);
 					if (style.position !== "fixed" || style.display === "none" || style.visibility === "hidden") continue;
 					const rect = node.getBoundingClientRect();
 					if (!rect.width || !rect.height) continue;
-					// Only the bottom-right corner band matters.
-					if (rect.right < viewW - 320 || rect.bottom < viewH - 200 || rect.top < viewH / 2) continue;
+					if (rect.top < viewH / 2) continue; // upper-half floats are irrelevant
+					// Must overlap the pill's horizontal span (with margin)…
+					if (rect.right < intendedLeft - 16 || rect.left > intendedRight + 16) continue;
+					// …and sit in the pill's vertical zone, not far above it.
+					if (viewH - rect.bottom > bottom + 160) continue;
 					bottom = Math.max(bottom, Math.round(viewH - rect.top) + 8);
 				}
+				el.style.right = `${right}px`;
 				el.style.bottom = `${bottom}px`;
 			} catch (e) { /* positioning must never break the pill */ }
 		},
 		hide() {
 			if (MiniPill._unsub) { MiniPill._unsub(); MiniPill._unsub = null; }
+			if (MiniPill._resizeObserver) {
+				try { MiniPill._resizeObserver.disconnect(); } catch (e) { /* ignore */ }
+				MiniPill._resizeObserver = null;
+			}
 			if (MiniPill._resizeHandler) {
 				window.removeEventListener("resize", MiniPill._resizeHandler, { passive: true });
 				clearTimeout(MiniPill._resizeTimer);

@@ -39,6 +39,8 @@
 		}
 		onSwitch() {
 			ChatEntry.onSwitch();
+			// Channel switches can relayout the chat input the pill anchors to.
+			try { MiniPill._reposition(); } catch (e) { /* ignore */ }
 		}
 		openCleaner(channel) {
 			CleanerModal.open(this, channel);
