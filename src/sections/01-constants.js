@@ -1,7 +1,7 @@
 	// ==================== 01. CONSTANTS ====================
 
 	const PLUGIN_ID = "DiscordAIMessageCleaner";
-	const PLUGIN_VERSION = "0.6.3";
+	const PLUGIN_VERSION = "0.6.4";
 	const CSS_PREFIX = "damc";
 	const DISCORD_EPOCH = 1420070400000n;
 	// Guild: 0 text, 5 announcement, 10/11/12 threads. Private: 1 DM, 3 group DM.
