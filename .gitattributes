@@ -1,1 +1,6 @@
-* -text
+# Keep text files on LF across Windows, macOS, and Linux so the deterministic
+# source-to-plugin build remains byte-for-byte reproducible.
+* text=auto eol=lf
+
+# BetterDiscord's installable artifact is generated from src/ and must retain LF.
+*.plugin.js text eol=lf
