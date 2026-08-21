@@ -115,6 +115,14 @@
 			color: var(--damc-text-faint, #949ba4);
 			margin: 4px 0 12px;
 		}
+		/* Cleaner-modal field labels: same 16px scale as the settings tabs. */
+		.${CSS_PREFIX}-modal-flabel {
+			font-size: 16px;
+			font-weight: 500;
+			line-height: 20px;
+			color: var(--damc-text, #dbdee1);
+			margin: 14px 0 8px;
+		}
 		.${CSS_PREFIX}-banner {
 			padding: 10px 12px;
 			border-radius: 8px;
@@ -734,11 +742,30 @@
 		.${CSS_PREFIX}-hero-context {
 			flex: 1 1 auto;
 			min-width: 0;
-			font-size: 14px;
+		}
+		.${CSS_PREFIX}-hero-context-k {
+			font-size: 11px;
+			letter-spacing: 0.02em;
 			color: var(--damc-text-faint, #949ba4);
+		}
+		.${CSS_PREFIX}-hero-context-v {
+			margin-top: 1px;
+			font-size: 13px;
+			color: var(--damc-text, #dbdee1);
+			display: flex;
+			align-items: center;
+			gap: 6px;
+			min-width: 0;
 			overflow: hidden;
 			text-overflow: ellipsis;
 			white-space: nowrap;
+		}
+		.${CSS_PREFIX}-hero-context-dot {
+			flex: 0 0 auto;
+			width: 6px;
+			height: 6px;
+			border-radius: 50%;
+			background: var(--damc-ok, #23a55a);
 		}
 		.${CSS_PREFIX}-badge.${CSS_PREFIX}-badge-flag {
 			background: color-mix(in srgb, var(--damc-danger, #f23f43) 14%, transparent);

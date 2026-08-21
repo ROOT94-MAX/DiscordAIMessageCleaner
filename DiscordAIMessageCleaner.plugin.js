@@ -232,7 +232,9 @@ module.exports = (() => {
 			end_label: "结束时间",
 			all_range_note: "「全部」按最大扫描条数（{max} 条）从最新往回扫。",
 			scope_channel: "当前频道",
-			scope_guild: "整个服务器",
+			scan_scope_label: "扫描范围",
+			scan_model_label: "审查模型",
+			scope_guild: "服务器",
 			scope_note_channel: "按你的账号 ID 搜索本频道，只命中你自己的消息。",
 			scope_note_guild: "一次覆盖此服务器所有你可见的频道，只命中你自己的消息。",
 			hero_fetch: "扫描我的消息",
@@ -490,7 +492,9 @@ module.exports = (() => {
 			end_label: "End time",
 			all_range_note: "\"All\" scans backwards from the newest message up to the cap ({max}).",
 			scope_channel: "This channel",
-			scope_guild: "Whole server",
+			scan_scope_label: "Scan scope",
+			scan_model_label: "Review model",
+			scope_guild: "Server",
 			scope_note_channel: "Searches this channel by your account id; only your own messages are hit.",
 			scope_note_guild: "Covers every channel you can see in this server in one pass; only your own messages are hit.",
 			hero_fetch: "Scan my messages",
@@ -2395,6 +2399,14 @@ module.exports = (() => {
 			color: var(--damc-text-faint, #949ba4);
 			margin: 4px 0 12px;
 		}
+		/* Cleaner-modal field labels: same 16px scale as the settings tabs. */
+		.${CSS_PREFIX}-modal-flabel {
+			font-size: 16px;
+			font-weight: 500;
+			line-height: 20px;
+			color: var(--damc-text, #dbdee1);
+			margin: 14px 0 8px;
+		}
 		.${CSS_PREFIX}-banner {
 			padding: 10px 12px;
 			border-radius: 8px;
@@ -3014,11 +3026,30 @@ module.exports = (() => {
 		.${CSS_PREFIX}-hero-context {
 			flex: 1 1 auto;
 			min-width: 0;
-			font-size: 14px;
+		}
+		.${CSS_PREFIX}-hero-context-k {
+			font-size: 11px;
+			letter-spacing: 0.02em;
 			color: var(--damc-text-faint, #949ba4);
+		}
+		.${CSS_PREFIX}-hero-context-v {
+			margin-top: 1px;
+			font-size: 13px;
+			color: var(--damc-text, #dbdee1);
+			display: flex;
+			align-items: center;
+			gap: 6px;
+			min-width: 0;
 			overflow: hidden;
 			text-overflow: ellipsis;
 			white-space: nowrap;
+		}
+		.${CSS_PREFIX}-hero-context-dot {
+			flex: 0 0 auto;
+			width: 6px;
+			height: 6px;
+			border-radius: 50%;
+			background: var(--damc-ok, #23a55a);
 		}
 		.${CSS_PREFIX}-badge.${CSS_PREFIX}-badge-flag {
 			background: color-mix(in srgb, var(--damc-danger, #f23f43) 14%, transparent);
@@ -4920,7 +4951,19 @@ module.exports = (() => {
 
 		if (stage === "setup") {
 			if (!aiReady) children.push(h("div", { key: "banner", className: `${CSS_PREFIX}-warn` }, t("banner_no_ai")));
-			if (SearchService.supported(ctx)) {
+			// Field labels mirror the settings-page 16px scale; the per-scope
+			// explanation lives in the label's info hint instead of a text row
+			// sandwiched between two controls.
+			const fieldLabel = (key, text, hint) => h("div", { key, className: `${CSS_PREFIX}-modal-flabel` },
+				h("span", { className: `${CSS_PREFIX}-set-title` },
+					h("span", { className: `${CSS_PREFIX}-set-title-text` }, text),
+					hint ? h(InfoHint, { text: hint }) : null
+				)
+			);
+			const searchSupported = SearchService.supported(ctx);
+			if (searchSupported) {
+				children.push(fieldLabel("scopelabel", t("scan_scope_label"),
+					t(scope === "guild" ? "scope_note_guild" : "scope_note_channel")));
 				children.push(h("div", { key: "scope", className: `${CSS_PREFIX}-seg`, role: "radiogroup" },
 					[["channel", "scope_channel", HASH_ICON_SVG], ["guild", "scope_guild", GLOBE_ICON_SVG]].map(entry => h("button", {
 						key: entry[0],
@@ -4934,11 +4977,8 @@ module.exports = (() => {
 						t(entry[1])
 					))
 				));
-				children.push(h("div", { key: "scopenote", className: `${CSS_PREFIX}-note` },
-					t(scope === "guild" ? "scope_note_guild" : "scope_note_channel")));
-			} else {
-				children.push(h("div", { key: "note", className: `${CSS_PREFIX}-note` }, t("range_note")));
 			}
+			children.push(fieldLabel("timelabel", t("range_title"), searchSupported ? null : t("range_note")));
 			children.push(h("div", { key: "presets", className: `${CSS_PREFIX}-presets` },
 				[["1d", 1], ["7d", 7], ["30d", 30], ["all", null]].map(entry => h("button", {
 					key: entry[0],
@@ -4985,7 +5025,13 @@ module.exports = (() => {
 			if (aiReady) {
 				const activeConfig = AIService.config();
 				const contextText = `${AIService.displayName(activeConfig.provider)}${activeConfig.model ? ` · ${activeConfig.model}` : ""}`;
-				heroChildren.push(h("div", { key: "aictx", className: `${CSS_PREFIX}-hero-context`, title: contextText }, contextText));
+				heroChildren.push(h("div", { key: "aictx", className: `${CSS_PREFIX}-hero-context`, title: contextText },
+					h("div", { className: `${CSS_PREFIX}-hero-context-k` }, t("scan_model_label")),
+					h("div", { className: `${CSS_PREFIX}-hero-context-v` },
+						h("span", { className: `${CSS_PREFIX}-hero-context-dot` }),
+						contextText
+					)
+				));
 			}
 			heroChildren.push(h(Btn, { key: "go", onClick: runScan }, t("hero_fetch")));
 			children.push(h("div", { key: "hero", className: `${CSS_PREFIX}-hero` }, heroChildren));

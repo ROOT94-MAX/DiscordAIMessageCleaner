@@ -715,7 +715,19 @@
 
 		if (stage === "setup") {
 			if (!aiReady) children.push(h("div", { key: "banner", className: `${CSS_PREFIX}-warn` }, t("banner_no_ai")));
-			if (SearchService.supported(ctx)) {
+			// Field labels mirror the settings-page 16px scale; the per-scope
+			// explanation lives in the label's info hint instead of a text row
+			// sandwiched between two controls.
+			const fieldLabel = (key, text, hint) => h("div", { key, className: `${CSS_PREFIX}-modal-flabel` },
+				h("span", { className: `${CSS_PREFIX}-set-title` },
+					h("span", { className: `${CSS_PREFIX}-set-title-text` }, text),
+					hint ? h(InfoHint, { text: hint }) : null
+				)
+			);
+			const searchSupported = SearchService.supported(ctx);
+			if (searchSupported) {
+				children.push(fieldLabel("scopelabel", t("scan_scope_label"),
+					t(scope === "guild" ? "scope_note_guild" : "scope_note_channel")));
 				children.push(h("div", { key: "scope", className: `${CSS_PREFIX}-seg`, role: "radiogroup" },
 					[["channel", "scope_channel", HASH_ICON_SVG], ["guild", "scope_guild", GLOBE_ICON_SVG]].map(entry => h("button", {
 						key: entry[0],
@@ -729,11 +741,8 @@
 						t(entry[1])
 					))
 				));
-				children.push(h("div", { key: "scopenote", className: `${CSS_PREFIX}-note` },
-					t(scope === "guild" ? "scope_note_guild" : "scope_note_channel")));
-			} else {
-				children.push(h("div", { key: "note", className: `${CSS_PREFIX}-note` }, t("range_note")));
 			}
+			children.push(fieldLabel("timelabel", t("range_title"), searchSupported ? null : t("range_note")));
 			children.push(h("div", { key: "presets", className: `${CSS_PREFIX}-presets` },
 				[["1d", 1], ["7d", 7], ["30d", 30], ["all", null]].map(entry => h("button", {
 					key: entry[0],
@@ -780,7 +789,13 @@
 			if (aiReady) {
 				const activeConfig = AIService.config();
 				const contextText = `${AIService.displayName(activeConfig.provider)}${activeConfig.model ? ` · ${activeConfig.model}` : ""}`;
-				heroChildren.push(h("div", { key: "aictx", className: `${CSS_PREFIX}-hero-context`, title: contextText }, contextText));
+				heroChildren.push(h("div", { key: "aictx", className: `${CSS_PREFIX}-hero-context`, title: contextText },
+					h("div", { className: `${CSS_PREFIX}-hero-context-k` }, t("scan_model_label")),
+					h("div", { className: `${CSS_PREFIX}-hero-context-v` },
+						h("span", { className: `${CSS_PREFIX}-hero-context-dot` }),
+						contextText
+					)
+				));
 			}
 			heroChildren.push(h(Btn, { key: "go", onClick: runScan }, t("hero_fetch")));
 			children.push(h("div", { key: "hero", className: `${CSS_PREFIX}-hero` }, heroChildren));
