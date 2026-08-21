@@ -3618,17 +3618,34 @@ module.exports = (() => {
 		   body = the prompt text. Builtin reads as a document (surface bg),
 		   custom reads as editable (input bg + focus ring on the card). */
 		.${CSS_PREFIX}-policy-card {
+			position: relative;
 			margin-top: 8px;
 			background: var(--damc-surface, #2b2d31);
 			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
 			border-radius: 8px;
 			overflow: hidden;
 		}
+		/* Replaces the native textarea resize grip (hidden below) with a quiet
+		   diagonal-stripe corner; the native drag hit-area still does the work. */
+		.${CSS_PREFIX}-policy-card::after {
+			content: "";
+			position: absolute;
+			right: 5px;
+			bottom: 5px;
+			width: 9px;
+			height: 9px;
+			pointer-events: none;
+			color: var(--damc-text-faint, #949ba4);
+			background: repeating-linear-gradient(135deg, transparent, transparent 2px, currentColor 2px, currentColor 3.5px);
+			clip-path: polygon(100% 0, 100% 100%, 0 100%);
+			opacity: 0.65;
+		}
 		.${CSS_PREFIX}-policy-head {
 			display: flex;
 			align-items: center;
 			gap: 8px;
 			padding: 7px 11px;
+			background: color-mix(in srgb, var(--damc-text, #dbdee1) 3%, transparent);
 			border-bottom: 1px solid color-mix(in srgb, var(--damc-text, #dbdee1) 7%, transparent);
 		}
 		.${CSS_PREFIX}-policy-title {
@@ -3666,7 +3683,8 @@ module.exports = (() => {
 			min-height: 150px;
 			padding: 10px 12px;
 			border: 0;
-			background: transparent;
+			/* One step darker than the head strip so the card reads as two zones. */
+			background: color-mix(in srgb, var(--damc-input-bg, #1e1f22) 55%, transparent);
 			color: var(--damc-text-sub, #b5bac1);
 			font-size: 14px;
 			line-height: 1.55;
@@ -3676,6 +3694,7 @@ module.exports = (() => {
 			scrollbar-width: thin;
 			scrollbar-color: var(--damc-scroll-thumb) transparent;
 		}
+		.${CSS_PREFIX}-policy-body::-webkit-resizer { background: transparent; }
 		.${CSS_PREFIX}-policy-body::-webkit-scrollbar { width: 8px; }
 		.${CSS_PREFIX}-policy-body::-webkit-scrollbar-thumb { background: var(--damc-scroll-thumb); border-radius: 4px; }
 		.${CSS_PREFIX}-policy-editable .${CSS_PREFIX}-policy-body {
@@ -5469,7 +5488,7 @@ module.exports = (() => {
 		});
 	};
 
-	const INFO_SVG = `<svg width="13" height="13" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M504.5-288.63q8.5-8.62 8.5-21.37v-180q0-12.75-8.68-21.38-8.67-8.62-21.5-8.62-12.82 0-21.32 8.62-8.5 8.63-8.5 21.38v180q0 12.75 8.68 21.37 8.67 8.63 21.5 8.63 12.82 0 21.32-8.63Zm-1-314.57q9.5-9.2 9.5-22.8 0-14.45-9.48-24.22-9.48-9.78-23.5-9.78t-23.52 9.78Q447-640.45 447-626q0 13.6 9.48 22.8 9.48 9.2 23.5 9.2t23.52-9.2ZM480.27-80q-82.74 0-155.5-31.5Q252-143 197.5-197.5t-86-127.34Q80-397.68 80-480.5t31.5-155.66Q143-709 197.5-763t127.34-85.5Q397.68-880 480.5-880t155.66 31.5Q709-817 763-763t85.5 127Q880-563 880-480.27q0 82.74-31.5 155.5Q817-252 763-197.68q-54 54.31-127 86Q563-80 480.27-80Z"/></svg>`;
+	const INFO_SVG = `<svg width="13" height="13" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M511-258.03q11-11.03 11-27T510.97-312q-11.03-11-27-11T457-311.97q-11 11.03-11 27T457.03-258q11.03 11 27 11T511-258.03ZM480.27-80q-82.74 0-155.5-31.5Q252-143 197.5-197.5t-86-127.34Q80-397.68 80-480.5t31.5-155.66Q143-709 197.5-763t127.34-85.5Q397.68-880 480.5-880t155.66 31.5Q709-817 763-763t85.5 127Q880-563 880-480.27q0 82.74-31.5 155.5Q817-252 763-197.68q-54 54.31-127 86Q563-80 480.27-80Zm.23-60Q622-140 721-239.5t99-241Q820-622 721.19-721T480-820q-141 0-240.5 98.81T140-480q0 141 99.5 240.5t241 99.5Zm-.5-340Zm2.77-180Q513-660 536-641.5q23 18.5 23 47.2 0 26.3-15.65 45.73Q527.7-529.14 508-512q-23 19-40 42.38-17 23.39-17 52.62 0 11 8.4 17.5T479-393q12 0 19.88-8 7.87-8 10.12-20 3-21 16-38t30.23-30.78Q580-510 596-537q16-27 16-58.61 0-50.39-37.5-83.89T485.55-713Q450-713 417-698t-54 44q-7 10-6.5 21.5t9.47 18.5q11.41 8 23.65 5 12.23-3 20.38-14 12.75-17.9 31.88-27.45Q461-660 482.77-660Z"/></svg>`;
 
 	const InfoHint = props => {
 		const renderIcon = tipProps => {

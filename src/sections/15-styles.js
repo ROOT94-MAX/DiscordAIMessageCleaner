@@ -1338,17 +1338,34 @@
 		   body = the prompt text. Builtin reads as a document (surface bg),
 		   custom reads as editable (input bg + focus ring on the card). */
 		.${CSS_PREFIX}-policy-card {
+			position: relative;
 			margin-top: 8px;
 			background: var(--damc-surface, #2b2d31);
 			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
 			border-radius: 8px;
 			overflow: hidden;
 		}
+		/* Replaces the native textarea resize grip (hidden below) with a quiet
+		   diagonal-stripe corner; the native drag hit-area still does the work. */
+		.${CSS_PREFIX}-policy-card::after {
+			content: "";
+			position: absolute;
+			right: 5px;
+			bottom: 5px;
+			width: 9px;
+			height: 9px;
+			pointer-events: none;
+			color: var(--damc-text-faint, #949ba4);
+			background: repeating-linear-gradient(135deg, transparent, transparent 2px, currentColor 2px, currentColor 3.5px);
+			clip-path: polygon(100% 0, 100% 100%, 0 100%);
+			opacity: 0.65;
+		}
 		.${CSS_PREFIX}-policy-head {
 			display: flex;
 			align-items: center;
 			gap: 8px;
 			padding: 7px 11px;
+			background: color-mix(in srgb, var(--damc-text, #dbdee1) 3%, transparent);
 			border-bottom: 1px solid color-mix(in srgb, var(--damc-text, #dbdee1) 7%, transparent);
 		}
 		.${CSS_PREFIX}-policy-title {
@@ -1386,7 +1403,8 @@
 			min-height: 150px;
 			padding: 10px 12px;
 			border: 0;
-			background: transparent;
+			/* One step darker than the head strip so the card reads as two zones. */
+			background: color-mix(in srgb, var(--damc-input-bg, #1e1f22) 55%, transparent);
 			color: var(--damc-text-sub, #b5bac1);
 			font-size: 14px;
 			line-height: 1.55;
@@ -1396,6 +1414,7 @@
 			scrollbar-width: thin;
 			scrollbar-color: var(--damc-scroll-thumb) transparent;
 		}
+		.${CSS_PREFIX}-policy-body::-webkit-resizer { background: transparent; }
 		.${CSS_PREFIX}-policy-body::-webkit-scrollbar { width: 8px; }
 		.${CSS_PREFIX}-policy-body::-webkit-scrollbar-thumb { background: var(--damc-scroll-thumb); border-radius: 4px; }
 		.${CSS_PREFIX}-policy-editable .${CSS_PREFIX}-policy-body {
