@@ -1221,23 +1221,21 @@
 			font-weight: 400;
 		}
 		/* model combo with an attached fetch (refresh) button */
-		/* Model row: combo group and validate button share one 38px-high row. */
+		/* Model row: combo, standalone refresh and validate share one 38px row. */
 		.${CSS_PREFIX}-model-row { display: flex; align-items: stretch; gap: 8px; }
-		.${CSS_PREFIX}-model-row .${CSS_PREFIX}-combo-group { flex: 1 1 auto; min-width: 0; }
+		.${CSS_PREFIX}-model-row .${CSS_PREFIX}-combo { flex: 1 1 auto; min-width: 0; }
 		.${CSS_PREFIX}-model-row .${CSS_PREFIX}-btn-sm { height: 38px; padding: 0 14px; }
-		.${CSS_PREFIX}-combo-group { display: flex; align-items: stretch; }
-		.${CSS_PREFIX}-combo-group .${CSS_PREFIX}-combo { flex: 1 1 auto; min-width: 0; }
-		.${CSS_PREFIX}-combo-group .${CSS_PREFIX}-combo .${CSS_PREFIX}-input { border-radius: 6px 0 0 6px; }
 		.${CSS_PREFIX}-combo-fetch {
 			flex: 0 0 auto;
-			width: 36px;
-			margin-left: -1px;
+			width: 38px;
+			height: 38px;
+			box-sizing: border-box;
 			display: flex;
 			align-items: center;
 			justify-content: center;
 			border: 1px solid var(--damc-input-border, rgba(78, 80, 88, 0.48));
-			border-radius: 0 6px 6px 0;
-			background: var(--damc-sunken, #1e1f22);
+			border-radius: 6px;
+			background: var(--damc-input-bg, #1e1f22);
 			color: var(--damc-icon, #b5bac1);
 			cursor: pointer;
 		}
@@ -1273,10 +1271,11 @@
 		.${CSS_PREFIX}-intro-body { font-size: 14px; color: var(--damc-text-faint, #949ba4); margin-top: 2px; line-height: 1.5; }
 		/* settings: select menu */
 		.${CSS_PREFIX}-select-wrap { position: relative; flex: 0 0 auto; }
+		/* Same control family as the model combo: text zone + hairline chevron cell. */
 		.${CSS_PREFIX}-select-trigger {
 			width: 200px;
 			height: 32px;
-			padding: 0 8px 0 10px;
+			padding: 0 0 0 10px;
 			box-sizing: border-box;
 			display: flex;
 			align-items: center;
@@ -1285,8 +1284,9 @@
 			border: 1px solid var(--damc-input-border, rgba(78, 80, 88, 0.48));
 			background: var(--damc-input-bg, #1e1f22);
 			color: var(--damc-text, #dbdee1);
-			font-size: 16px;
+			font-size: 15px;
 			cursor: pointer;
+			overflow: hidden;
 		}
 		.${CSS_PREFIX}-select-trigger:hover { background: var(--damc-hover, rgba(255, 255, 255, 0.06)); }
 		.${CSS_PREFIX}-select-trigger.${CSS_PREFIX}-open { border-color: var(--damc-brand, #5865f2); }
@@ -1298,9 +1298,18 @@
 			white-space: nowrap;
 			text-align: left;
 		}
-		.${CSS_PREFIX}-sel-arrow { display: flex; color: var(--damc-icon, #b5bac1); transition: transform 120ms ease; }
-		.${CSS_PREFIX}-sel-arrow svg { width: 16px; height: 16px; }
-		.${CSS_PREFIX}-select-trigger.${CSS_PREFIX}-open .${CSS_PREFIX}-sel-arrow { transform: rotate(180deg); }
+		.${CSS_PREFIX}-sel-arrow {
+			align-self: stretch;
+			width: 26px;
+			flex: 0 0 auto;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border-left: 1px solid var(--damc-input-border, rgba(78, 80, 88, 0.48));
+			color: var(--damc-icon, #b5bac1);
+		}
+		.${CSS_PREFIX}-sel-arrow svg { width: 16px; height: 16px; transition: transform 120ms ease; }
+		.${CSS_PREFIX}-select-trigger.${CSS_PREFIX}-open .${CSS_PREFIX}-sel-arrow svg { transform: rotate(180deg); }
 		/* settings: switch */
 		.${CSS_PREFIX}-switch {
 			position: relative;

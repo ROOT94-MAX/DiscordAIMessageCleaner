@@ -487,33 +487,31 @@
 			),
 			h("div", { className: `${CSS_PREFIX}-prov-split` }),
 			h(Field, { label: t("set_model") },
-				// Fetch lives inside the combo as an attached refresh button and
-				// validate sits beside it at input height, so the label row
-				// carries no floating buttons.
+				// One input-height row: the combo (with its own chevron cell), a
+				// standalone refresh button and validate — separated by gaps, no
+				// fused icon cells and no floating buttons on the label row.
 				h("div", { className: `${CSS_PREFIX}-model-row` },
-					h("div", { className: `${CSS_PREFIX}-combo-group` },
-						h(ModelCombo, {
-							value: record.model,
-							models,
-							openSignal,
-							placeholder: preset && preset.model ? preset.model : "model-id",
-							onCommit: (value, availableModels) => {
-								AIService.setProviderField(id, "model", value);
-								if (Array.isArray(availableModels) && availableModels.length) {
-									AIService.setProviderField(id, "models", availableModels.slice());
-								}
-								props.onChanged();
+					h(ModelCombo, {
+						value: record.model,
+						models,
+						openSignal,
+						placeholder: preset && preset.model ? preset.model : "model-id",
+						onCommit: (value, availableModels) => {
+							AIService.setProviderField(id, "model", value);
+							if (Array.isArray(availableModels) && availableModels.length) {
+								AIService.setProviderField(id, "models", availableModels.slice());
 							}
-						}),
-						h("button", {
-							type: "button",
-							className: `${CSS_PREFIX}-combo-fetch`,
-							title: t("btn_fetch_models"),
-							"aria-label": t("btn_fetch_models"),
-							onClick: fetchModels,
-							dangerouslySetInnerHTML: { __html: REFRESH_SVG }
-						})
-					),
+							props.onChanged();
+						}
+					}),
+					h("button", {
+						type: "button",
+						className: `${CSS_PREFIX}-combo-fetch`,
+						title: t("btn_fetch_models"),
+						"aria-label": t("btn_fetch_models"),
+						onClick: fetchModels,
+						dangerouslySetInnerHTML: { __html: REFRESH_SVG }
+					}),
 					h(SmallBtn, { secondary: true, onClick: validate }, t("btn_validate"))
 				),
 				h(StatusLine, { text: status.text, tone: status.tone })
