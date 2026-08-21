@@ -219,9 +219,11 @@ check("all setting labels share one typography scale", () => {
 		'`${CSS_PREFIX}-prov-form`',
 		"--damc-settings-label-size: 16px;", "--damc-settings-label-weight: 500;",
 		"--damc-settings-label-line-height: 20px;", "--damc-settings-label-color: var(--damc-text, #dbdee1);",
-		// Field labels above full-width inputs use the small bold eyebrow scale.
-		"--damc-field-label-size: 12px;", "--damc-field-label-weight: 700;",
-		"font-size: var(--damc-field-label-size);", "text-transform: uppercase;",
+		// Field labels above full-width inputs share the exact row-label scale:
+		// one 16px/500 label ramp across every settings tab, no eyebrow variant.
+		"--damc-field-label-size: 16px;", "--damc-field-label-weight: 500;",
+		"--damc-field-label-color: var(--damc-text, #dbdee1);",
+		"font-size: var(--damc-field-label-size);",
 		"font-size: var(--damc-settings-label-size);", "font-weight: var(--damc-settings-label-weight);",
 		"line-height: var(--damc-settings-label-line-height);", "color: var(--damc-settings-label-color);",
 		'.${CSS_PREFIX}-prov-form .${CSS_PREFIX}-input', "font-size: 15px;", "font-weight: 400;",
@@ -235,6 +237,30 @@ check("all setting labels share one typography scale", () => {
 	if (pluginSource.includes('.${CSS_PREFIX}-prompt-content-field .${CSS_PREFIX}-f-label')) {
 		throw new Error("policy-content-only field label typography override remains");
 	}
+	if (pluginSource.includes("text-transform: uppercase;")) {
+		throw new Error("eyebrow uppercase label styling remains");
+	}
+});
+
+check("provider visuals: native brand marks, rail icons, inline rename", () => {
+	for (const needle of [
+		// DeepSeek keeps its official blue; Gemini its gradient; mono marks inherit.
+		'fill="#5786FE"', "damcGemGrad",
+		// Rail rows carry brand icons with a "configured" corner dot.
+		"prov-ic", "prov-mini", "prov-ic-custom",
+		// Neutral head-card tile; custom providers use the plugin's own mark.
+		"prov-tile-custom",
+		// Inline rename replaces the separate name field row.
+		"prov-rename", 't("provider_rename")', "prov-name-input",
+		// Model combo and validate share one input-height row.
+		"model-row",
+		// Diagnostics rows read state from a color dot.
+		"diag-dot"
+	]) {
+		if (!pluginSource.includes(needle)) throw new Error(`provider visual missing: ${needle}`);
+	}
+	if (pluginSource.includes('t("provider_name")')) throw new Error("separate provider name field row remains");
+	if (pluginSource.includes("prov-dot-ok")) throw new Error("legacy rail status dot remains");
 });
 
 check("observer()/onSwitch() are safe", () => { instance.observer(); instance.onSwitch(); });

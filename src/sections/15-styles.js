@@ -464,9 +464,9 @@
 			--damc-settings-label-color: var(--damc-text, #dbdee1);
 			/* Eyebrow labels above full-width inputs: small, bold, muted, so the
 			   user's own value is the brightest thing in each field. */
-			--damc-field-label-size: 12px;
-			--damc-field-label-weight: 700;
-			--damc-field-label-color: var(--damc-text-sub, #b5bac1);
+			--damc-field-label-size: 16px;
+			--damc-field-label-weight: 500;
+			--damc-field-label-color: var(--damc-text, #dbdee1);
 			display: flex;
 			flex-direction: column;
 			color: var(--damc-text, #dbdee1);
@@ -802,9 +802,7 @@
 		.${CSS_PREFIX}-f-label {
 			font-size: var(--damc-field-label-size);
 			font-weight: var(--damc-field-label-weight);
-			line-height: 16px;
-			letter-spacing: 0.02em;
-			text-transform: uppercase;
+			line-height: var(--damc-settings-label-line-height);
 			color: var(--damc-field-label-color);
 			margin: 0 0 var(--damc-settings-label-control-gap);
 		}
@@ -854,12 +852,13 @@
 			padding: 0 12px;
 			font-size: 15px;
 			font-weight: 500;
-			border-radius: 4px;
+			border-radius: 6px;
 			border: 0;
 			cursor: pointer;
 			display: inline-flex;
 			align-items: center;
 			justify-content: center;
+			gap: 6px;
 			background: var(--damc-brand, #5865f2);
 			color: var(--damc-on-brand, #fff);
 		}
@@ -948,7 +947,7 @@
 			left: 0;
 			right: 0;
 			background: var(--damc-floating, #1e1f22);
-			border-radius: 4px;
+			border-radius: 8px;
 			padding: 4px;
 			box-shadow: var(--damc-shadow, 0 8px 16px rgba(0, 0, 0, 0.24));
 			z-index: 10;
@@ -981,7 +980,7 @@
 			height: 28px;
 			line-height: 28px;
 			padding: 0 8px;
-			border-radius: 3px;
+			border-radius: 4px;
 			font-size: 15px;
 			display: block;
 			/* Long channel names must truncate, never wrap into neighbors. */
@@ -1025,7 +1024,7 @@
 		/* settings: provider rail */
 		.${CSS_PREFIX}-prov-grid {
 			display: grid;
-			grid-template-columns: 148px minmax(0, 1fr);
+			grid-template-columns: 160px minmax(0, 1fr);
 			gap: 16px;
 		}
 		.${CSS_PREFIX}-prov-rail { display: flex; flex-direction: column; }
@@ -1038,9 +1037,9 @@
 		.${CSS_PREFIX}-prov-rows::-webkit-scrollbar { width: 8px; }
 		.${CSS_PREFIX}-prov-rows::-webkit-scrollbar-thumb { background: var(--damc-scroll-thumb); border-radius: 4px; }
 		.${CSS_PREFIX}-prov-row {
-			height: 32px;
+			height: 34px;
 			padding: 0 8px 0 10px;
-			border-radius: 4px;
+			border-radius: 6px;
 			margin-bottom: 2px;
 			display: flex;
 			align-items: center;
@@ -1056,19 +1055,31 @@
 		}
 		.${CSS_PREFIX}-prov-row.${CSS_PREFIX}-prov-selected,
 		.${CSS_PREFIX}-prov-row.${CSS_PREFIX}-prov-selected:hover {
-			background: color-mix(in srgb, var(--damc-brand, #5865f2) 13%, transparent);
+			background: var(--damc-selected, rgba(255, 255, 255, 0.09));
 			color: var(--damc-text-strong, #f2f3f5);
 			font-weight: 600;
-			box-shadow: inset 2px 0 0 var(--damc-brand, #5865f2);
 		}
-		.${CSS_PREFIX}-prov-dot {
+		/* Rail rows carry the provider's own mark; a corner dot means "configured". */
+		.${CSS_PREFIX}-prov-ic {
+			position: relative;
 			flex: 0 0 auto;
+			width: 18px;
+			height: 18px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+		.${CSS_PREFIX}-prov-ic svg { width: 16px; height: 16px; display: block; }
+		.${CSS_PREFIX}-prov-ic.${CSS_PREFIX}-prov-ic-custom { color: var(--damc-brand, #5865f2); }
+		.${CSS_PREFIX}-prov-mini {
+			position: absolute;
+			right: -3px;
+			bottom: -2px;
 			width: 6px;
 			height: 6px;
 			border-radius: 50%;
-			background: var(--damc-border, rgba(78, 80, 88, 0.48));
+			background: var(--damc-ok, #23a55a);
 		}
-		.${CSS_PREFIX}-prov-dot.${CSS_PREFIX}-prov-dot-ok { background: var(--damc-ok, #23a55a); }
 		.${CSS_PREFIX}-prov-name {
 			flex: 1 1 auto;
 			min-width: 0;
@@ -1108,25 +1119,72 @@
 			margin-bottom: var(--damc-settings-field-gap);
 		}
 		.${CSS_PREFIX}-prov-tile {
-			width: 30px;
-			height: 30px;
+			width: 32px;
+			height: 32px;
 			border-radius: 8px;
 			flex: 0 0 auto;
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			background: color-mix(in srgb, var(--damc-brand, #5865f2) 16%, transparent);
-			color: color-mix(in srgb, var(--damc-brand, #5865f2) 45%, var(--damc-text-strong, #f2f3f5));
+			box-sizing: border-box;
+			background: var(--damc-sunken, #1e1f22);
+			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
+			color: var(--damc-text-strong, #f2f3f5);
 		}
+		.${CSS_PREFIX}-prov-tile.${CSS_PREFIX}-prov-tile-custom { color: var(--damc-brand, #5865f2); }
 		.${CSS_PREFIX}-prov-tile svg { width: 18px; height: 18px; display: block; }
 		.${CSS_PREFIX}-prov-card-copy { flex: 1 1 auto; min-width: 0; }
 		.${CSS_PREFIX}-prov-card-name {
-			font-size: 15px;
+			font-size: 16px;
 			font-weight: 700;
 			color: var(--damc-text-strong, #f2f3f5);
 			overflow: hidden;
 			text-overflow: ellipsis;
 			white-space: nowrap;
+		}
+		/* Inline rename: the card name doubles as the editor for custom providers. */
+		.${CSS_PREFIX}-prov-rename {
+			display: flex;
+			align-items: center;
+			gap: 6px;
+			min-width: 0;
+			max-width: 100%;
+			padding: 0;
+			border: 0;
+			background: transparent;
+			color: inherit;
+			font: inherit;
+			text-align: left;
+			cursor: text;
+		}
+		.${CSS_PREFIX}-prov-rename .${CSS_PREFIX}-prov-card-name { min-width: 0; }
+		.${CSS_PREFIX}-prov-pencil {
+			flex: 0 0 auto;
+			display: inline-flex;
+			color: var(--damc-text-faint, #949ba4);
+		}
+		.${CSS_PREFIX}-prov-pencil svg { width: 12px; height: 12px; display: block; }
+		.${CSS_PREFIX}-prov-rename:hover .${CSS_PREFIX}-prov-pencil,
+		.${CSS_PREFIX}-prov-rename:focus-visible .${CSS_PREFIX}-prov-pencil { color: var(--damc-text, #dbdee1); }
+		.${CSS_PREFIX}-prov-rename:hover .${CSS_PREFIX}-prov-card-name {
+			text-decoration: underline;
+			text-decoration-color: var(--damc-text-faint, #949ba4);
+			text-underline-offset: 3px;
+		}
+		.${CSS_PREFIX}-prov-name-input {
+			width: 100%;
+			min-width: 0;
+			box-sizing: border-box;
+			padding: 0 0 1px;
+			border: 0;
+			border-bottom: 1.5px solid var(--damc-brand, #5865f2);
+			border-radius: 0;
+			background: transparent;
+			color: var(--damc-text-strong, #f2f3f5);
+			font-size: 16px;
+			font-weight: 700;
+			font-family: inherit;
+			outline: none;
 		}
 		.${CSS_PREFIX}-prov-card-sub {
 			margin-top: 1px;
@@ -1163,6 +1221,10 @@
 			font-weight: 400;
 		}
 		/* model combo with an attached fetch (refresh) button */
+		/* Model row: combo group and validate button share one 38px-high row. */
+		.${CSS_PREFIX}-model-row { display: flex; align-items: stretch; gap: 8px; }
+		.${CSS_PREFIX}-model-row .${CSS_PREFIX}-combo-group { flex: 1 1 auto; min-width: 0; }
+		.${CSS_PREFIX}-model-row .${CSS_PREFIX}-btn-sm { height: 38px; padding: 0 14px; }
 		.${CSS_PREFIX}-combo-group { display: flex; align-items: stretch; }
 		.${CSS_PREFIX}-combo-group .${CSS_PREFIX}-combo { flex: 1 1 auto; min-width: 0; }
 		.${CSS_PREFIX}-combo-group .${CSS_PREFIX}-combo .${CSS_PREFIX}-input { border-radius: 6px 0 0 6px; }
@@ -1219,7 +1281,7 @@
 			display: flex;
 			align-items: center;
 			gap: 8px;
-			border-radius: 4px;
+			border-radius: 6px;
 			border: 1px solid var(--damc-input-border, rgba(78, 80, 88, 0.48));
 			background: var(--damc-input-bg, #1e1f22);
 			color: var(--damc-text, #dbdee1);
@@ -1391,26 +1453,71 @@
 			text-decoration: none;
 		}
 		.${CSS_PREFIX}-update-link:hover { text-decoration: underline; }
-		.${CSS_PREFIX}-diag-version {
-			font-size: 13px;
-			color: var(--damc-text-faint, #949ba4);
-			margin-bottom: 8px;
-		}
 		.${CSS_PREFIX}-diag-card {
 			background: var(--damc-surface, #2b2d31);
+			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
 			border-radius: 8px;
-			padding: 8px 12px;
+			padding: 2px 12px;
 		}
 		.${CSS_PREFIX}-diag-row {
-			height: 22px;
+			min-height: 30px;
 			display: flex;
 			align-items: center;
+			gap: 12px;
+		}
+		.${CSS_PREFIX}-diag-row + .${CSS_PREFIX}-diag-row {
+			border-top: 1px solid color-mix(in srgb, var(--damc-text, #dbdee1) 5%, transparent);
 		}
 		.${CSS_PREFIX}-diag-key {
 			flex: 1 1 auto;
+			min-width: 0;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
 			font-family: var(--font-code, Consolas, "Courier New", monospace);
 			font-size: 14px;
 			color: var(--damc-text, #dbdee1);
 		}
-		.${CSS_PREFIX}-diag-val { font-size: 14px; font-weight: 600; }
+		.${CSS_PREFIX}-diag-val {
+			flex: 0 0 auto;
+			font-size: 14px;
+			font-weight: 600;
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+		}
+		.${CSS_PREFIX}-diag-dot {
+			flex: 0 0 auto;
+			width: 6px;
+			height: 6px;
+			border-radius: 50%;
+			background: currentColor;
+		}
+		.${CSS_PREFIX}-btn-ic { display: inline-flex; }
+		.${CSS_PREFIX}-btn-ic svg { width: 14px; height: 14px; display: block; }
+		/* consistency: shared hover transition + visible keyboard focus (settings) */
+		.${CSS_PREFIX}-btn-sm,
+		.${CSS_PREFIX}-input,
+		.${CSS_PREFIX}-select-trigger,
+		.${CSS_PREFIX}-combo-fetch,
+		.${CSS_PREFIX}-prov-row,
+		.${CSS_PREFIX}-icon-btn,
+		.${CSS_PREFIX}-prov-rename,
+		.${CSS_PREFIX}-about-badges .${CSS_PREFIX}-badge {
+			transition: background 120ms ease, color 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+		}
+		.${CSS_PREFIX}-btn-sm:focus-visible,
+		.${CSS_PREFIX}-icon-btn:focus-visible,
+		.${CSS_PREFIX}-select-trigger:focus-visible,
+		.${CSS_PREFIX}-combo-fetch:focus-visible,
+		.${CSS_PREFIX}-switch:focus-visible,
+		.${CSS_PREFIX}-tab:focus-visible,
+		.${CSS_PREFIX}-prov-row:focus-visible,
+		.${CSS_PREFIX}-prov-rename:focus-visible,
+		.${CSS_PREFIX}-combo-chevron:focus-visible,
+		.${CSS_PREFIX}-input-eye:focus-visible,
+		.${CSS_PREFIX}-about-badges .${CSS_PREFIX}-badge:focus-visible {
+			outline: none;
+			box-shadow: 0 0 0 2px color-mix(in srgb, var(--damc-brand, #5865f2) 42%, transparent);
+		}
 	`;
