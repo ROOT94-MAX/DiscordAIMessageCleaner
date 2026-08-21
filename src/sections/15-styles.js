@@ -453,19 +453,12 @@
 			font-size: 15px;
 		}
 		.${CSS_PREFIX}-group-header {
-			font-size: 13px;
+			font-size: 14px;
 			font-weight: 700;
-			letter-spacing: 0.3px;
-			color: var(--damc-text-sub, #b5bac1);
-			margin: 0 0 8px;
+			color: var(--damc-text-faint, #949ba4);
+			margin: 24px 0 8px;
 		}
-		/* Match the sibling summary plugin's ~24px section rhythm while keeping
-		   a hairline divider: 14px outer gap + 10px inner padding. */
-		.${CSS_PREFIX}-group-header:not(:first-child) {
-			margin-top: 14px;
-			padding-top: 10px;
-			border-top: 1px solid var(--damc-border, rgba(78, 80, 88, 0.32));
-		}
+		.${CSS_PREFIX}-group-header:first-child { margin-top: 0; }
 		.${CSS_PREFIX}-set-row {
 			min-height: 36px;
 			display: flex;

@@ -138,9 +138,10 @@ check("model popup uses a viewport-bounded adaptive portal", () => {
 });
 
 check("settings sections use compact summary-plugin spacing", () => {
-	for (const needle of ["margin-top: 14px;", "padding-top: 10px;", "min-height: 36px;", "margin-top: 12px;"]) {
+	for (const needle of ["margin: 24px 0 8px;", "group-header:first-child { margin-top: 0; }", "min-height: 36px;", "margin-top: 12px;"]) {
 		if (!pluginSource.includes(needle)) throw new Error(`compact settings spacing missing: ${needle}`);
 	}
+	if (pluginSource.includes("group-header:not(:first-child)")) throw new Error("obsolete group divider remains");
 });
 
 check("observer()/onSwitch() are safe", () => { instance.observer(); instance.onSwitch(); });
