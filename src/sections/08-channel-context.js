@@ -2,16 +2,20 @@
 
 	const ChannelContext = {
 		from(channel) {
-			const isGuild = Boolean(channel && channel.guild_id && SUPPORTED_GUILD_TYPES.includes(channel.type));
-			const isPrivate = Boolean(channel && !channel.guild_id && PRIVATE_CHANNEL_TYPES.includes(channel.type));
+			// Discord channel models have historically exposed guild_id, while
+			// some wrappers/fixtures expose guildId. Normalize both at this edge so
+			// guild-scoped cache identity survives channel navigation reliably.
+			const guildId = channel && (channel.guild_id || channel.guildId) || null;
+			const isGuild = Boolean(guildId && SUPPORTED_GUILD_TYPES.includes(channel.type));
+			const isPrivate = Boolean(channel && !guildId && PRIVATE_CHANNEL_TYPES.includes(channel.type));
 			return {
 				supported: isGuild || isPrivate,
 				isPrivate,
 				channelId: channel && channel.id || null,
 				channelName: ChannelContext.label(channel),
 				channelType: channel ? channel.type : null,
-				guildId: channel && channel.guild_id || null,
-				guildName: channel && channel.guild_id ? (DiscordAdapter.getGuildName(channel.guild_id) || channel.guild_id) : null,
+				guildId,
+				guildName: guildId ? (DiscordAdapter.getGuildName(guildId) || guildId) : null,
 				channel: channel || null
 			};
 		},
@@ -28,4 +32,3 @@
 			return ChannelContext.from(DiscordAdapter.getCurrentChannel());
 		}
 	};
-

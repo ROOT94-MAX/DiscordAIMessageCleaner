@@ -1,6 +1,6 @@
 # DiscordAIMessageCleaner 架构文档
 
-对应版本：v0.6.8 ｜ 更新日期：2026-08-21
+对应版本：v0.6.8 ｜ 更新日期：2026-08-22
 本文描述**当前实现**，随代码同步更新；最初的实现计划（历史文档）见 [PLAN.md](./PLAN.md)。
 
 ## 1. 项目定位与安全模型
@@ -24,12 +24,12 @@
 
 ```
 src/header.js                BD 元数据头 + IIFE 包装开头（@version 在此）
-src/sections/NN-*.js         24 个分区模块，文件名编号 = 拼装顺序 = 依赖顺序
+src/sections/NN-*.js         25 个分区模块，文件名编号 = 拼装顺序 = 依赖顺序
 src/footer.js                IIFE 包装收尾
 tools/build.js               确定性构建：零依赖、零转换，按文件名序逐字节拼装出根目录插件文件
 tools/verify.js              三条不变量：src 重建与产物逐字节一致；产物通过 node --check；@version == PLUGIN_VERSION
 tools/smoke_test.js          离线冒烟：桩化 BdApi 跑生命周期、设置页各标签渲染、配置迁移
-tools/test_harness.js        离线功能测试（21 项）：注入方式暴露内部服务，用假 REST/假 AI 驱动
+tools/test_harness.js        离线功能测试（46 项）：注入方式暴露内部服务，用假 REST/假 AI 驱动
 REGRESSION.md                发版前的人工回归清单（自动化测不到的 UI/真实删除路径）
 .github/workflows/verify.yml 每次推送跑 verify + 两套测试
 ```
@@ -60,10 +60,10 @@ REGRESSION.md                发版前的人工回归清单（自动化测不到
 | 14b-export-service | 删除前消息导出（MD/TXT/JSON）；三级保存链（openDialog → saveWithDialog2/saveWithDialog → Downloads），返回路径与落盘字节数验证后才算成功；遵循 BD 加载器约束，不裸加载 os/buffer |
 | 14c-update-service | 手动 GitHub Release 检查与安装：API 403 时回退 Release 页面且禁用直接安装；禁止降级；官方 URL + SHA-256 + 元数据校验；备份、写入复验、失败恢复；无后台更新 |
 | 15-styles | `--damc-*` 设计令牌层（映射 Discord CSS 变量）+ 全部组件样式 |
-| 16-lifecycle-registries | Disposables/ActiveRuns；**ReviewSession**（后台审查会话，唯一写入点）；**MiniPill**（悬浮胶囊，锚定聊天输入框列并避让其他悬浮元素）；**ScanCache**（误关弹窗恢复） |
+| 16-lifecycle-registries | Disposables/ActiveRuns；**ReviewSession**（后台审查会话，唯一写入点）；**MiniPill**（悬浮胶囊，锚定聊天输入框列并避让其他悬浮元素）；**ScanCache**（按作用域保存最近扫描，跨频道恢复，最多 20 项） |
 | 17-ui-react-helpers | h、Btn、ProgressStrip 等 |
 | 18-ui-chat-button | 输入框按钮组件 |
-| 19-ui-cleaner-modal | 清理弹窗：状态机、结果列表、表情/缩略图渲染、灯箱（body Portal） |
+| 19-ui-cleaner-modal | 清理弹窗：状态机、结果列表、表情/图片直接预览、附件与链接、灯箱（body Portal） |
 | 20-chat-entry | 三入口：按钮注入（webpack patch，DOM 兜底）、右键菜单 ×3、`/aiclean` 命令 |
 | 21-settings-panel | 自绘 React 设置面板：统一 16/24/8/36/16/4 间距 Token；全部设置项标题共用 16px/500/20px/正文色字体 Token（提供商标题保持 16px/700，输入 15px/400）；About/GitHub、独立更新、InfoHint、模型 body Portal |
 | 22-plugin-class | start/stop 生命周期、onSwitch、openCleaner |
@@ -89,7 +89,7 @@ REGRESSION.md                发版前的人工回归清单（自动化测不到
   → [setup]    范围（当前频道|整个服务器，仅服务器内可选）+ 时间段
   → [fetching] 服务器内走 SearchService（author_id 过滤，700ms/页节流，
                失败回退 MessageService 逐页扫描）；DM 恒走扫描
-  → [results]  勾选列表（三态全选、只看命中、频道下拉筛选、表情/缩略图/灯箱）
+  → [results]  勾选列表（三态全选、只看命中、频道下拉筛选、表情/图片直显/灯箱）
                ├─ AI 审查：并发工作池逐批判定 → 命中标注+自动勾选
                │   可「后台运行」：关弹窗，ReviewSession 继续跑，MiniPill 显示进度
                ├─ 继续扫描更早的消息（cancelled/capped 时，resumeCursor 续扫合并）
@@ -102,7 +102,7 @@ REGRESSION.md                发版前的人工回归清单（自动化测不到
                403 中途中止也进入本阶段（部分报告 + 错误横幅同时显示）
 ```
 
-**状态归属**：审查管道只写模块级 `ReviewSession`（弹窗是订阅视图），这是"后台运行"能存活的原因；`ScanCache` 按频道缓存最近扫描结果，误关弹窗（背板/Esc）重开即恢复；取消语义 = 每次运行一个 AbortController（ActiveRuns 登记），stop() 逆序清理。删除结束（含取消、含 403 部分中止）后，已删/已消失的 id 会从 `ScanCache`、`ReviewSession.fetchResult`、判定表一并剔除，且**这些模块级写入排在 mounted 检查之前**——中途关掉弹窗不能让缓存继续声称已删消息还在。
+**状态归属**：审查管道只写模块级 `ReviewSession`（弹窗是订阅视图），这是"后台运行"能存活的原因；`ScanCache` 是运行期内存注册表：服务器扫描以 `guild:<guildId>` 为键，可从同一服务器任意频道恢复；频道/DM 扫描以 `channel:<channelId>` 为键互相隔离；按更新时间选择当前上下文最相关的结果，最多保留 20 项。新扫描只替换自己的作用域，stop()/插件重载统一清空。误关弹窗或从结果跳转后重开均恢复结果和视图选择；取消语义 = 每次运行一个 AbortController（ActiveRuns 登记），stop() 逆序清理。删除结束（含取消、含 403 部分中止）后，已删/已消失的 id 会从对应 `ScanCache`、`ReviewSession.fetchResult`、判定表一并剔除，且**这些模块级写入排在 mounted 检查之前**——中途关掉弹窗不能让缓存继续声称已删消息还在。
 
 ## 7. AI 审查契约
 

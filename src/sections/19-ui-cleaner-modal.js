@@ -15,9 +15,77 @@
 
 	// Material Symbols Rounded "history" (load-more / resume-scan row).
 	const HISTORY_ICON_SVG = `<svg width="14" height="14" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M477-120q-142 0-243.5-95.5T121-451q-1-12 7.5-21t21.5-9q12 0 20.5 8.5T181-451q11 115 95 193t201 78q127 0 215-89t88-216q0-124-89-209.5T477-780q-68 0-127.5 31T246-667h75q13 0 21.5 8.5T351-637q0 13-8.5 21.5T321-607H172q-13 0-21.5-8.5T142-637v-148q0-13 8.5-21.5T172-815q13 0 21.5 8.5T202-785v76q52-61 123.5-96T477-840q75 0 141 28t115.5 76.5Q783-687 811.5-622T840-482q0 75-28.5 141t-78 115Q684-177 618-148.5T477-120Zm34-374 115 113q9 9 9 21.5t-9 21.5q-9 9-21 9t-21-9L460-460q-5-5-7-10.5t-2-11.5v-171q0-13 8.5-21.5T481-683q13 0 21.5 8.5T511-653v159Z"/></svg>`;
+	const FILE_ICON_SVG = `<svg viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M320-120q-33 0-56.5-23.5T240-200v-560q0-33 23.5-56.5T320-840h280l120 120v520q0 33-23.5 56.5T640-120H320Zm240-560v-100H320q-8 0-14 6t-6 14v560q0 8 6 14t14 6h320q8 0 14-6t6-14v-480H560Z"/></svg>`;
+	const OPEN_ICON_SVG = `<svg viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h240v60H200q-8 0-14 6t-6 14v560q0 8 6 14t14 6h560q8 0 14-6t6-14v-240h60v240q0 33-23.5 56.5T760-120H200Zm194-232-42-42 386-386H540v-60h300v300h-60v-198L394-352Z"/></svg>`;
+	const JUMP_ICON_SVG = `<svg viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M480-160v-60h280q8 0 14-6t6-14v-480q0-8-6-14t-14-6H480v-60h280q33 0 56.5 23.5T840-720v480q0 33-23.5 56.5T760-160H480Zm-80-160-42-43 87-87H120v-60h325l-87-87 42-43 160 160-160 160Z"/></svg>`;
 
 	// Custom emoji tags render as the real emoji image from Discord's CDN.
 	const EMOJI_TAG_RE = /<(a?):(\w+):(\d{5,})>/g;
+	const emojiSources = (id, animated) => animated
+		? [
+			`https://cdn.discordapp.com/emojis/${id}.gif?size=48`,
+			`https://cdn.discordapp.com/emojis/${id}.webp?size=48&animated=true`,
+			`https://cdn.discordapp.com/emojis/${id}.png?size=48`
+		]
+		: [
+			`https://cdn.discordapp.com/emojis/${id}.webp?size=48`,
+			`https://cdn.discordapp.com/emojis/${id}.png?size=48`
+		];
+	const URL_RE = /https?:\/\/(?:(?![,，]https?:\/\/)[^\s<>])+/gi;
+	const TRAILING_URL_PUNCTUATION_RE = /[.,!?;:'"。，！？；：、]+$/;
+	const splitLinkTarget = value => {
+		let url = String(value || "");
+		let suffix = "";
+		const punctuation = url.match(TRAILING_URL_PUNCTUATION_RE);
+		if (punctuation) {
+			suffix = punctuation[0];
+			url = url.slice(0, -suffix.length);
+		}
+		// Keep balanced brackets that genuinely belong to a URL, but detach an
+		// unmatched closer contributed by surrounding prose/Markdown.
+		let changed = true;
+		while (changed) {
+			changed = false;
+			for (const pair of [["(", ")"], ["[", "]"], ["{", "}"]]) {
+				while (url.endsWith(pair[1])) {
+					const opens = url.split(pair[0]).length - 1;
+					const closes = url.split(pair[1]).length - 1;
+					if (closes <= opens) break;
+					url = url.slice(0, -1);
+					suffix = pair[1] + suffix;
+					changed = true;
+				}
+			}
+		}
+		return { url, suffix };
+	};
+	const renderLinkedText = (text, prefix) => {
+		const out = [];
+		const source = String(text || "");
+		let last = 0;
+		let index = 0;
+		let match;
+		URL_RE.lastIndex = 0;
+		while ((match = URL_RE.exec(source))) {
+			const split = splitLinkTarget(match[0]);
+			const url = split.url;
+			if (match.index > last) out.push(source.slice(last, match.index));
+			out.push(h("a", {
+				key: `${prefix}-link-${index++}`,
+				className: `${CSS_PREFIX}-row-link`,
+				href: url,
+				target: "_blank",
+				rel: "noopener noreferrer",
+				title: url,
+				onClick: event => event.stopPropagation()
+			}, url));
+			if (split.suffix) out.push(split.suffix);
+			last = match.index + match[0].length;
+		}
+		if (last < source.length) out.push(source.slice(last));
+		return out;
+	};
+
 	const renderContentSegments = text => {
 		const out = [];
 		let last = 0;
@@ -26,36 +94,66 @@
 		EMOJI_TAG_RE.lastIndex = 0;
 		const source = String(text || "");
 		while ((match = EMOJI_TAG_RE.exec(source))) {
-			if (match.index > last) out.push(source.slice(last, match.index).replace(/\s+/g, " "));
-			out.push(h("img", {
+			if (match.index > last) out.push(...renderLinkedText(source.slice(last, match.index).replace(/\s+/g, " "), `t${key}`));
+			const label = `:${match[2]}:`;
+			const sources = emojiSources(match[3], Boolean(match[1]));
+			out.push(h("span", {
 				key: `e${key++}`,
-				className: `${CSS_PREFIX}-emoji`,
-				src: `https://cdn.discordapp.com/emojis/${match[3]}.${match[1] ? "gif" : "png"}?size=32&quality=lossless`,
-				alt: `:${match[2]}:`,
-				title: `:${match[2]}:`,
-				loading: "lazy",
-				draggable: false
-			}));
+				className: `${CSS_PREFIX}-emoji-token`,
+				role: "img",
+				"aria-label": label,
+				title: label
+			},
+				h("img", {
+					className: `${CSS_PREFIX}-emoji`,
+					src: sources[0],
+					alt: "",
+					"aria-hidden": true,
+					loading: "lazy",
+					draggable: false,
+					onError: event => {
+						const image = event.currentTarget || event.target;
+						const next = Utils.num(image && image.dataset && image.dataset.sourceIndex, 0) + 1;
+						if (image && next < sources.length) {
+							image.dataset.sourceIndex = String(next);
+							image.src = sources[next];
+							return;
+						}
+						try {
+							const token = image && image.closest(`.${CSS_PREFIX}-emoji-token`);
+							if (token) token.classList.add(`${CSS_PREFIX}-emoji-failed`);
+						} catch (e) { /* text fallback remains */ }
+					}
+				}),
+				h("span", { className: `${CSS_PREFIX}-emoji-fallback`, "aria-hidden": true }, label)
+			));
 			last = match.index + match[0].length;
 		}
-		if (last < source.length) out.push(source.slice(last).replace(/\s+/g, " "));
+		if (last < source.length) out.push(...renderLinkedText(source.slice(last).replace(/\s+/g, " "), `t${key}`));
 		return out;
+	};
+
+	const formatAttachmentSize = bytes => {
+		const value = Utils.num(bytes, 0);
+		if (value <= 0) return "";
+		if (value < 1024) return `${value} B`;
+		if (value < 1024 * 1024) return `${Math.round(value / 1024)} KB`;
+		if (value >= 1024 * 1024 * 1024) return `${(value / (1024 * 1024 * 1024)).toFixed(value >= 10 * 1024 * 1024 * 1024 ? 0 : 1)} GB`;
+		return `${(value / (1024 * 1024)).toFixed(value >= 10 * 1024 * 1024 ? 0 : 1)} MB`;
 	};
 
 	const MessageRow = props => {
 		const message = props.message;
 		const verdict = props.verdict || null;
 		const hasText = Boolean(message.content);
+		const attachments = Array.isArray(message.attachments) ? message.attachments : [];
 		const badges = [];
 		if (props.showChannel && message.channelId) {
-			badges.push(h("span", { key: "chan", className: `${CSS_PREFIX}-badge` },
+			badges.push(h("span", { key: "chan", className: `${CSS_PREFIX}-meta-badge ${CSS_PREFIX}-channel-badge` },
 				`#${DiscordAdapter.getChannelName(message.channelId) || message.channelId}`));
 		}
-		if (message.attachments.length && hasText) {
-			badges.push(h("span", { key: "att", className: `${CSS_PREFIX}-badge` }, t("attachment_badge", { n: message.attachments.length })));
-		}
 		if (message.edited) {
-			badges.push(h("span", { key: "edit", className: `${CSS_PREFIX}-badge` }, t("edited_badge")));
+			badges.push(h("span", { key: "edit", className: `${CSS_PREFIX}-meta-badge` }, t("edited_badge")));
 		}
 		// Role-color category label, right-aligned on the meta line; the same
 		// hue paints the card's left bar via --damc-flag.
@@ -63,49 +161,107 @@
 			badges.push(h("span", { key: "cat", className: `${CSS_PREFIX}-cat` },
 				`${t(`cat_${verdict.category}`)}${verdict.severity >= 3 ? " !!!" : verdict.severity === 2 ? " !!" : ""}`));
 		}
-		// Up to 3 tiny thumbnails for image attachments; lazy so a long list
-		// only loads what scrolls into view.
-		const thumbs = message.attachments.filter(att => att.isImage && att.url).slice(0, 3);
-		return h("button", {
-			type: "button",
-			role: "checkbox",
-			"aria-checked": props.selected,
-			className: `${CSS_PREFIX}-mcard${verdict ? ` ${CSS_PREFIX}-mcard-flagged` : ""}`,
+		const channelId = message.channelId || props.channelId;
+		const messagePath = DiscordAdapter.messagePath(props.guildId, channelId, message.id);
+		const attachmentNodes = attachments.map((att, index) => {
+			const name = String(att.filename || t("attachment_unnamed"));
+			const url = /^https?:\/\//i.test(att.url || "") ? att.url : "";
+			const noLinkClass = url ? "" : ` ${CSS_PREFIX}-attachment-no-link`;
+			const previewUrl = att.proxyUrl || url;
+			const size = formatAttachmentSize(att.size);
+			const copy = h("span", { className: `${CSS_PREFIX}-attachment-copy` },
+				h("span", { className: `${CSS_PREFIX}-attachment-name`, title: name }, name),
+				size ? h("span", { className: `${CSS_PREFIX}-attachment-size` }, size) : null
+			);
+			const linkProps = url ? {
+				href: url,
+				target: "_blank",
+				rel: "noopener noreferrer",
+				title: t("attachment_open", { name }),
+				onClick: event => event.stopPropagation()
+			} : {};
+			if (att.isImage && previewUrl) {
+				const fallbackTag = url ? "a" : "span";
+				return h("div", { key: `${message.id}-att-${index}`, className: `${CSS_PREFIX}-image-direct-wrap${noLinkClass}` },
+					h("button", {
+						type: "button",
+						className: `${CSS_PREFIX}-image-direct`,
+						title: name,
+						"aria-label": t("attachment_preview", { name }),
+						onClick: event => {
+							event.stopPropagation();
+							if (props.onPreview) props.onPreview({ url: previewUrl, filename: name });
+						}
+					}, h("img", {
+						className: `${CSS_PREFIX}-image-direct-img`,
+						src: previewUrl,
+						alt: name,
+						loading: "lazy",
+						draggable: false,
+						onError: event => {
+							const image = event.currentTarget || event.target;
+							if (url && previewUrl !== url && image && image.dataset.originalTried !== "true") {
+								image.dataset.originalTried = "true";
+								image.src = url;
+								return;
+							}
+							try {
+								const wrap = image && image.closest(`.${CSS_PREFIX}-image-direct-wrap`);
+								if (wrap) wrap.classList.add(`${CSS_PREFIX}-image-direct-failed`);
+							} catch (e) { /* file fallback remains */ }
+						}
+					})),
+					h(fallbackTag, Object.assign({ className: `${CSS_PREFIX}-attachment ${CSS_PREFIX}-attachment-file ${CSS_PREFIX}-image-direct-fallback${noLinkClass}` }, linkProps),
+						h("span", { className: `${CSS_PREFIX}-attachment-file-icon`, dangerouslySetInnerHTML: { __html: FILE_ICON_SVG } }),
+						copy,
+						url ? h("span", { className: `${CSS_PREFIX}-attachment-open`, dangerouslySetInnerHTML: { __html: OPEN_ICON_SVG } }) : null
+					)
+				);
+			}
+			const tag = url ? "a" : "div";
+			return h(tag, Object.assign({ key: `${message.id}-att-${index}`, className: `${CSS_PREFIX}-attachment ${CSS_PREFIX}-attachment-file${noLinkClass}` }, linkProps),
+				h("span", { className: `${CSS_PREFIX}-attachment-file-icon`, dangerouslySetInnerHTML: { __html: FILE_ICON_SVG } }),
+				copy,
+				url ? h("span", { className: `${CSS_PREFIX}-attachment-open`, dangerouslySetInnerHTML: { __html: OPEN_ICON_SVG } }) : null
+			);
+		});
+		return h("div", {
+			className: `${CSS_PREFIX}-mcard${props.selected ? ` ${CSS_PREFIX}-mcard-selected` : ""}${verdict ? ` ${CSS_PREFIX}-mcard-flagged` : ""}`,
 			style: verdict ? { "--damc-flag": CATEGORY_COLORS[verdict.category] || CATEGORY_COLORS.other } : undefined,
 			onClick: () => props.onToggle(message.id)
 		},
-			h("span", {
-				className: `${CSS_PREFIX}-checkbox${props.selected ? ` ${CSS_PREFIX}-checkbox-on` : ""}`,
-				dangerouslySetInnerHTML: { __html: props.selected ? CHECK_MARK_SVG : "" }
-			}),
+			h("button", {
+				type: "button",
+				role: "checkbox",
+				"aria-checked": props.selected,
+				"aria-label": t("select_message"),
+				className: `${CSS_PREFIX}-row-select`,
+				title: t("select_message"),
+				onClick: event => { event.stopPropagation(); props.onToggle(message.id); }
+			}, h("span", {
+					className: `${CSS_PREFIX}-checkbox${props.selected ? ` ${CSS_PREFIX}-checkbox-on` : ""}`,
+					dangerouslySetInnerHTML: { __html: props.selected ? CHECK_MARK_SVG : "" }
+			})),
 			h("div", { className: `${CSS_PREFIX}-row-body` },
 				h("div", { className: `${CSS_PREFIX}-row-meta` },
 					h("span", { className: `${CSS_PREFIX}-mtime` }, Utils.formatTime(message.timestamp)),
-					badges
+					badges,
+					messagePath ? h("button", {
+						type: "button",
+						className: `${CSS_PREFIX}-message-jump`,
+						title: t("message_jump"),
+						"aria-label": t("message_jump"),
+						onClick: event => {
+							event.stopPropagation();
+							if (props.onJump) props.onJump(message);
+						},
+						dangerouslySetInnerHTML: { __html: JUMP_ICON_SVG }
+					}) : null
 				),
 				hasText
 					? h("div", { className: `${CSS_PREFIX}-row-text` }, renderContentSegments(message.content))
-					: (thumbs.length
-						? null
-						: h("div", { className: `${CSS_PREFIX}-row-text ${CSS_PREFIX}-faint` },
-							t("attachment_only", { names: Utils.truncate(message.attachments.map(att => att.filename).join(", "), 60) }))),
-				thumbs.length ? h("div", { className: `${CSS_PREFIX}-row-thumbs` },
-					thumbs.map((att, index) => h("img", {
-						key: index,
-						className: `${CSS_PREFIX}-thumb`,
-						src: att.url,
-						alt: att.filename,
-						title: att.filename,
-						loading: "lazy",
-						draggable: false,
-						// Opens the lightbox; must not toggle the row selection.
-						onClick: event => {
-							event.stopPropagation();
-							if (props.onPreview) props.onPreview(att);
-						},
-						onError: event => { try { event.target.style.display = "none"; } catch (e) { /* ignore */ } }
-					}))
-				) : null,
+					: null,
+				attachmentNodes.length ? h("div", { className: `${CSS_PREFIX}-attachment-list` }, attachmentNodes) : null,
 				verdict && verdict.reason ? h("div", { className: `${CSS_PREFIX}-row-reason` }, verdict.reason) : null
 			)
 		);
@@ -184,6 +340,7 @@
 		const [flagFilter, setFlagFilter] = useState(false);
 		const [channelFilter, setChannelFilter] = useState(null); // guild scope: null = all channels
 		const [lightbox, setLightbox] = useState(null);           // {url, name} | null
+		const lightboxRef = useRef(null);
 		const [gateArmed, setGateArmed] = useState(false);
 		// delete state
 		const [deleteProgress, setDeleteProgress] = useState(null);
@@ -213,10 +370,19 @@
 		// The review pipeline writes ONLY into ReviewSession; this component is
 		// a subscribed view. That is what lets a minimized review keep running.
 		useEffect(() => {
+			const restoreView = (viewState, payload) => {
+				if (!viewState || !payload || !Array.isArray(payload.messages)) return false;
+				const known = new Set(payload.messages.map(message => message.id));
+				const selectedIds = Array.isArray(viewState.selectedIds) ? viewState.selectedIds.filter(id => known.has(id)) : [];
+				setSelected(new Set(selectedIds));
+				setFlagFilter(Boolean(viewState.flagFilter));
+				setChannelFilter(viewState.channelFilter || null);
+				return true;
+			};
 			const sync = () => {
 				if (!mountedRef.current) return;
 				const session = ReviewSession.state;
-				if (!session || session.channelId !== ctx.channelId) {
+				if (!session || !ReviewSession.matches(ctx)) {
 					setReviewing(false);
 					setReviewStage(null);
 					return;
@@ -239,32 +405,48 @@
 			};
 			const unsubscribe = ReviewSession.subscribe(sync);
 			// Hydrate from a background session (pill click or manual reopen in
-			// the same channel), or fall back to the last scan so an accidental
+			// the same scan scope), or fall back to the last scan so an accidental
 			// modal close does not lose the results.
 			const session = ReviewSession.state;
-			if (session && session.channelId === ctx.channelId && session.fetchResult) {
+			if (session && ReviewSession.matches(ctx) && session.fetchResult) {
+				const cached = ScanCache.get(ctx);
 				setFetchResult(session.fetchResult);
 				setScope(session.scope || "channel");
 				setStage("results");
 				MiniPill.hide();
+				if (restoreView(session.viewState || (cached && cached.viewState), session.fetchResult) && session.phase === "done") {
+					doneHandledRef.current = true;
+					setReviewDone(true);
+				}
 				sync();
 			} else {
-				const cached = ScanCache.get(ctx.channelId);
+				const cached = ScanCache.get(ctx);
 				if (cached) {
 					setFetchResult(cached.fetchResult);
 					setScope(cached.scope || "channel");
 					setStage("results");
+					restoreView(cached.viewState, cached.fetchResult);
 				}
 			}
 			return unsubscribe;
 		}, []);
 
-		// Escape closes the image lightbox.
+		// Escape closes the image lightbox; focus enters the portalled dialog
+		// while open, then returns to the preview control that launched it.
 		useEffect(() => {
 			if (!lightbox) return undefined;
+			let previous = null;
+			try { previous = document.activeElement; } catch (e) { /* ignore */ }
 			const onKey = event => { if (event.key === "Escape") { event.stopPropagation(); setLightbox(null); } };
 			document.addEventListener("keydown", onKey, true);
-			return () => document.removeEventListener("keydown", onKey, true);
+			const timer = setTimeout(() => {
+				try { if (lightboxRef.current) lightboxRef.current.focus(); } catch (e) { /* ignore */ }
+			}, 0);
+			return () => {
+				clearTimeout(timer);
+				document.removeEventListener("keydown", onKey, true);
+				try { if (previous && typeof previous.focus === "function") previous.focus(); } catch (e) { /* ignore */ }
+			};
 		}, [lightbox]);
 
 		const applyPreset = (key, days) => {
@@ -309,10 +491,11 @@
 				setError({ message: t("err_no_permission") });
 				return;
 			}
-			// A new scan invalidates any (possibly background) review session
-			// and the accidental-close cache.
+			// A new scan invalidates any (possibly background) review session and
+			// replaces only this scan scope. Other guild/channel caches remain
+			// available during the same plugin session.
 			ReviewSession.abortAndClear();
-			ScanCache.clear();
+			ScanCache.remove(ctx, scope);
 			MiniPill.hide();
 			doneHandledRef.current = false;
 			setError(null);
@@ -387,7 +570,7 @@
 				const payload = Object.assign({}, result, { range, options, scope: useSearch ? scope : "channel" });
 				// Cache BEFORE the mount check: a scan whose modal was closed
 				// mid-flight must still leave its partial results recoverable.
-				if (payload.messages.length) ScanCache.set(ctx.channelId, payload, payload.scope);
+				if (payload.messages.length) ScanCache.set(ctx, payload, payload.scope);
 				if (!mountedRef.current) return;
 				setFetchResult(payload);
 				setStage(payload.messages.length ? "results" : "empty");
@@ -454,7 +637,7 @@
 					cancelled: result.cancelled,
 					resumeCursor: result.resumeCursor
 				});
-				if (payload.messages.length) ScanCache.set(ctx.channelId, payload, payload.scope);
+				if (payload.messages.length) ScanCache.set(ctx, payload, payload.scope);
 				if (!mountedRef.current) return;
 				setFetchResult(payload);
 				setStage("results");
@@ -487,6 +670,7 @@
 			}
 			setGateArmed(false);
 			setError(null);
+			setDeleteReport(null);
 			doneHandledRef.current = false;
 			const controller = beginRun();
 			// Everything below writes into ReviewSession, never into React state:
@@ -498,6 +682,7 @@
 				channel: ctx.channel,
 				channelId: ctx.channelId,
 				scope: fetchResult.scope || "channel",
+				scopeKey: ScanCache.key(ctx, fetchResult.scope || "channel"),
 				fetchResult,
 				verdicts: new Map(previousVerdicts)
 			});
@@ -559,18 +744,19 @@
 				messages: fetchResult.messages.filter(message => !removed.has(message.id))
 			}) : null;
 			if (nextPayload) {
-				if (nextPayload.messages.length) ScanCache.set(ctx.channelId, nextPayload, nextPayload.scope);
-				else ScanCache.clear();
+				if (nextPayload.messages.length) ScanCache.set(ctx, nextPayload, nextPayload.scope);
+				else ScanCache.remove(ctx, nextPayload.scope);
 				// The background session is what hydrates the modal on reopen;
 				// leaving its list untouched would resurrect deleted rows.
 				const session = ReviewSession.state;
-				if (session && session.channelId === ctx.channelId && session.fetchResult) {
+				if (session && ReviewSession.matches(ctx) && session.fetchResult) {
 					ReviewSession.update({ fetchResult: nextPayload });
 				}
 			}
 			for (const id of removed) verdictsRef.current.delete(id);
 			if (!mountedRef.current) return;
 			if (nextPayload) setFetchResult(nextPayload);
+			if (!verdictsRef.current.size) setFlagFilter(false);
 			setSelected(prev => {
 				const next = new Set(prev);
 				for (const id of removed) next.delete(id);
@@ -639,7 +825,7 @@
 				// Guild-wide search results span channels; deletion is per channel.
 				channelId: message.channelId || ctx.channelId,
 				timestamp: message.timestamp,
-				excerpt: Utils.truncate(Utils.stripEmojiTags(message.content || (message.attachments.length ? `[${message.attachments.map(att => att.filename).join(", ")}]` : "")).replace(/\s+/g, " "), 50)
+				excerpt: Utils.truncate(Utils.stripEmojiTags(message.content || (message.attachments.length ? `[${message.attachments.map(att => att.filename || t("attachment_unnamed")).join(", ")}]` : "")).replace(/\s+/g, " "), 50)
 			}));
 		};
 
@@ -657,6 +843,23 @@
 			// "always" is a guarantee the user configured, so it is not togglable here.
 			const locked = mode === "always";
 			const choice = { backup: mode !== "never", format: "md" };
+			let confirmKey = null;
+			let committed = false;
+			const closeConfirm = () => {
+				if (confirmKey == null) return;
+				try {
+					const sys = DiscordAdapter.modalSystem();
+					if (sys) sys.closeModal(confirmKey);
+				} catch (e) { /* the action remains explicit */ }
+				confirmKey = null;
+			};
+			const commitDelete = () => {
+				if (committed) return;
+				committed = true;
+				closeConfirm();
+				if (choice.backup) backupThenDelete(items, choice.format);
+				else executeDelete(items);
+			};
 			const content = h("div", { className: `${CSS_PREFIX}-ui ${CSS_PREFIX}-confirm-body` },
 				overCap ? h("div", { className: `${CSS_PREFIX}-warn` },
 					t("delete_confirm_over_cap", { n: selected.size, max: maxPerRun })) : null,
@@ -668,17 +871,19 @@
 						label: locked ? t("backup_choice_locked") : t("backup_choice_label"),
 						onChange: value => { choice.backup = value; },
 						onFormatChange: value => { choice.format = value; }
-					})
+					}),
+					h("div", { className: `${CSS_PREFIX}-confirm-actions` },
+						h(Btn, { tone: "secondary", onClick: closeConfirm }, t("cancel")),
+						h(Btn, { tone: "danger", onClick: commitDelete }, t("delete_confirm_ok"))
+					)
 			);
 			try {
-				BdApi.UI.showConfirmationModal(t("delete_confirm_title"), content, {
-					danger: true,
-					confirmText: t("delete_confirm_ok"),
-					cancelText: t("cancel"),
-					onConfirm: () => {
-						if (choice.backup) backupThenDelete(items, choice.format);
-						else executeDelete(items);
-					}
+				confirmKey = BdApi.UI.showConfirmationModal(t("delete_confirm_title"), content, {
+					size: `${CSS_PREFIX}-confirm-delete`,
+					confirmText: null,
+					cancelText: null,
+					onCancel: () => { confirmKey = null; },
+					onClose: () => { confirmKey = null; }
 				});
 			} catch (e) {
 				// Never delete without an explicit confirmation: no modal, no run.
@@ -750,7 +955,7 @@
 				zoneRows.push(h("div", { key: "scope", className: `${CSS_PREFIX}-zone-row` },
 					zoneLabel(t("scan_scope_label"), t(scope === "guild" ? "scope_note_guild" : "scope_note_channel")),
 					h("div", { className: `${CSS_PREFIX}-zone-ctl` },
-						h("div", { className: `${CSS_PREFIX}-seg`, role: "radiogroup" },
+						h("div", { className: `${CSS_PREFIX}-seg`, role: "radiogroup", "aria-label": t("scan_scope_label") },
 							[["channel", "scope_channel", HASH_ICON_SVG], ["guild", "scope_guild", GLOBE_ICON_SVG]].map(entry => h("button", {
 								key: entry[0],
 								type: "button",
@@ -769,7 +974,7 @@
 			zoneRows.push(h("div", { key: "time", className: `${CSS_PREFIX}-zone-row` },
 				zoneLabel(t("range_title"), searchSupported ? null : t("range_note")),
 				h("div", { className: `${CSS_PREFIX}-zone-ctl` },
-					h("div", { className: `${CSS_PREFIX}-presets` },
+					h("div", { className: `${CSS_PREFIX}-presets`, role: "group", "aria-label": t("range_title") },
 						[["1d", 1], ["7d", 7], ["30d", 30], ["all", null]].map(entry => h("button", {
 							key: entry[0],
 							type: "button",
@@ -791,8 +996,9 @@
 				zoneRows.push(h("div", { key: "range", className: `${CSS_PREFIX}-zone-row` },
 					h("div", { className: `${CSS_PREFIX}-range-grid ${CSS_PREFIX}-zone-wide` },
 						h("div", null,
-							h("div", { className: `${CSS_PREFIX}-field-label` }, t("start_label")),
+							h("label", { className: `${CSS_PREFIX}-field-label`, htmlFor: `${PLUGIN_ID}-range-start` }, t("start_label")),
 							h("input", {
+								id: `${PLUGIN_ID}-range-start`,
 								type: "datetime-local",
 								className: `${CSS_PREFIX}-input`,
 								value: startVal,
@@ -800,8 +1006,9 @@
 							})
 						),
 						h("div", null,
-							h("div", { className: `${CSS_PREFIX}-field-label` }, t("end_label")),
+							h("label", { className: `${CSS_PREFIX}-field-label`, htmlFor: `${PLUGIN_ID}-range-end` }, t("end_label")),
 							h("input", {
+								id: `${PLUGIN_ID}-range-end`,
 								type: "datetime-local",
 								className: `${CSS_PREFIX}-input`,
 								value: endVal,
@@ -931,7 +1138,9 @@
 			if (reviewDone) {
 				children.push(h("div", { key: "rsummary", className: `${CSS_PREFIX}-okline` },
 					h("span", { className: `${CSS_PREFIX}-okline-dot` }),
-					t("review_summary", { flagged: flaggedCount, total })));
+					deleteReport && flaggedCount === 0
+						? t("review_summary_cleared", { total })
+						: t("review_summary", { flagged: flaggedCount, total })));
 			}
 			if (reviewFailed.length > 0 && !reviewing) {
 				children.push(h("div", { key: "rfail", className: `${CSS_PREFIX}-warn` },
@@ -967,7 +1176,23 @@
 					selected: selected.has(message.id),
 					verdict: verdicts ? verdicts.get(message.id) : null,
 					showChannel: guildView && effectiveChannelFilter === null,
+					guildId: ctx.guildId,
+					channelId: ctx.channelId,
 					onPreview: att => setLightbox({ url: att.url, name: att.filename }),
+					onJump: target => {
+						const opened = DiscordAdapter.openMessage(ctx.guildId, target.channelId || ctx.channelId, target.id);
+						if (opened) {
+							const viewState = { selectedIds: [...selected], flagFilter, channelFilter };
+							const scopeKey = ScanCache.key(ctx, fetchResult.scope || "channel");
+							ScanCache.setView(scopeKey, viewState);
+							const session = ReviewSession.state;
+							if (session && session.scopeKey === scopeKey) ReviewSession.update({ viewState });
+							CleanerModal.closePreserving(Boolean(session));
+						} else {
+							try { BdApi.UI.showToast(t("message_jump_unavailable"), { type: "error" }); } catch (e) { /* keep modal open */ }
+						}
+						return opened;
+					},
 					onToggle: toggleSelected
 				}));
 			}
@@ -985,7 +1210,7 @@
 				));
 			}
 			children.push(h("div", { key: "panel", className: `${CSS_PREFIX}-panel` },
-				h("div", { className: `${CSS_PREFIX}-panel-head` },
+				h("div", { className: `${CSS_PREFIX}-panel-head ${CSS_PREFIX}-results-toolbar` },
 					h("button", {
 						type: "button",
 						role: "checkbox",
@@ -1113,6 +1338,11 @@
 		if (lightbox) {
 			const overlay = h("div", {
 				className: `${CSS_PREFIX}-lightbox`,
+				ref: lightboxRef,
+				role: "dialog",
+				"aria-modal": true,
+				"aria-label": t("attachment_preview", { name: lightbox.name || t("attachment_unnamed") }),
+				tabIndex: -1,
 				onMouseDown: event => event.stopPropagation(),
 				onMouseUp: event => event.stopPropagation(),
 				onClick: event => { event.stopPropagation(); setLightbox(null); }
@@ -1121,7 +1351,8 @@
 					className: `${CSS_PREFIX}-lightbox-img`,
 					src: lightbox.url,
 					alt: lightbox.name,
-					title: lightbox.name
+					title: lightbox.name,
+					onError: () => setLightbox(null)
 				})
 			);
 			children.push(ReactDOM && typeof ReactDOM.createPortal === "function"
@@ -1129,7 +1360,7 @@
 				: h("div", { key: "lightbox" }, overlay));
 		}
 
-		return h("div", { className: `${CSS_PREFIX}-modal ${CSS_PREFIX}-ui` }, children);
+		return h("div", { className: `${CSS_PREFIX}-modal ${CSS_PREFIX}-modal-${stage} ${CSS_PREFIX}-ui` }, children);
 	};
 
 	const CleanerModal = {
@@ -1214,8 +1445,14 @@
 		// stays raised until the modal's async onClose consumes it in cleanup —
 		// resetting it here (synchronously) would re-enable the abort.
 		minimize() {
+			CleanerModal.closePreserving(true);
+		},
+		// Used by minimize and message navigation: close the shell without
+		// aborting a background review. Navigation may skip the pill when there
+		// is no review session; ScanCache still restores manual selection later.
+		closePreserving(showPill) {
 			CleanerModal._preserveRuns = true;
 			CleanerModal.closeIfOpen();
-			MiniPill.show();
+			if (showPill && ReviewSession.state) MiniPill.show();
 		}
 	};

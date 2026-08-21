@@ -1,4 +1,5 @@
 	// ==================== 11. NORMALIZER ====================
+	const IMAGE_ATTACHMENT_EXT_RE = /\.(?:avif|gif|jpe?g|png|webp)(?:\?|$)/i;
 
 	const Normalizer = {
 		normalize(raw) {
@@ -12,11 +13,22 @@
 				// returns messages from many channels, so deletion needs it.
 				channelId: raw.channel_id || null,
 				content: Normalizer.resolveContent(raw),
-				attachments: (raw.attachments || []).map(att => ({
-					filename: att.filename || "attachment",
-					url: att.url || "",
-					isImage: /^image\//.test(att.content_type || "")
-				})),
+				attachments: (raw.attachments || []).map(value => {
+					const att = value || {};
+					const filename = att.filename || att.title || "";
+					const url = att.url || att.proxy_url || "";
+					const contentType = att.content_type || "";
+					return {
+						filename,
+						url,
+						proxyUrl: att.proxy_url || "",
+						contentType,
+						size: Utils.num(att.size, 0),
+						width: Utils.num(att.width, 0),
+						height: Utils.num(att.height, 0),
+						isImage: /^image\//i.test(contentType) || IMAGE_ATTACHMENT_EXT_RE.test(url) || IMAGE_ATTACHMENT_EXT_RE.test(filename)
+					};
+				}),
 				edited: Boolean(raw.edited_timestamp)
 			};
 		},
@@ -35,4 +47,3 @@
 			return text;
 		}
 	};
-

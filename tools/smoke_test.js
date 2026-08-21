@@ -141,6 +141,84 @@ check("model popup uses a viewport-bounded adaptive portal", () => {
 	}
 });
 
+check("message results expose quiet channel metadata, attachment cards, links, and jump actions", () => {
+	for (const needle of [
+		"meta-badge", "channel-badge", "attachment-list", "image-direct", "attachment-file-icon", "emoji-token",
+		"row-link", "message-jump", "DiscordAdapter.openMessage", 'target: "_blank"', 'rel: "noopener noreferrer"',
+		"splitLinkTarget", "attachment-no-link", "closePreserving", "ScanCache.setView", '"aria-modal": true', "results-toolbar"
+	]) {
+		if (!pluginSource.includes(needle)) throw new Error(`missing result-list UI behavior: ${needle}`);
+	}
+	if (pluginSource.includes('key: "chan", className: `${CSS_PREFIX}-badge`')) {
+		throw new Error("message channel still reuses the settings-page badge class");
+	}
+	if (!pluginSource.includes('BdApi.Webpack.getByKeys("transitionTo")')) {
+		throw new Error("message navigation does not resolve the client HistoryUtils module");
+	}
+	if (!pluginSource.includes('"aria-label": t("select_message")')) {
+		throw new Error("row checkbox has no explicit accessible name");
+	}
+	if (pluginSource.includes('.${CSS_PREFIX}-attachment-preview {')) {
+		throw new Error("image attachments still use the legacy thumbnail-card preview");
+	}
+	for (const needle of ["width: 24px;", "height: 24px;", "font-size: 16px;", "height: 32px;"]) {
+		if (!pluginSource.includes(needle)) throw new Error(`results UI scale is not aligned with settings: ${needle}`);
+	}
+	if (!pluginSource.includes('messagePath ? h("button"') || pluginSource.includes("const messageUrl =")) {
+		throw new Error("message jump still carries a browser-link fallback");
+	}
+	if (!pluginSource.includes('t("message_jump_unavailable")')) {
+		throw new Error("missing in-client navigation failure feedback");
+	}
+	if (!pluginSource.includes('getByKeys("fetchMessages", "jumpToMessage")') ||
+		!pluginSource.includes('jumpToMessage({ channelId, messageId, flash: true, jumpType: "INSTANT" })')) {
+		throw new Error("message jump does not use Discord's native MessageActions");
+	}
+	if (pluginSource.includes("clientNavigate(path)") || pluginSource.includes("location.assign(path)")) {
+		throw new Error("message jump still reloads the Discord renderer");
+	}
+	for (const needle of [
+		'getByKeys("selectGuild", "transitionToGuildSync")',
+		'guildNavigation.transitionToGuildSync(guildId, {}, channelId)',
+		'getByKeys("selectChannel", "selectPrivateChannel")',
+		'channelNavigation.selectPrivateChannel(channelId)',
+		"jumpWhenChannelReady(channelId, messageId, 0)"
+	]) {
+		if (!pluginSource.includes(needle)) throw new Error(`missing native cross-channel jump stage: ${needle}`);
+	}
+	for (const needle of [
+		'if (scope === "guild" && context.guildId) return `guild:${context.guildId}`',
+		'return context.channelId ? `channel:${context.channelId}` : null',
+		"_entries: new Map()",
+		"ScanCache.remove(ctx, scope)",
+		"const current = ChannelContext.current()",
+		"ReviewSession.matches(ctx)",
+		"ScanCache.get(ctx)",
+		"scopeKey: ScanCache.key(ctx, fetchResult.scope || \"channel\")"
+	]) {
+		if (!pluginSource.includes(needle)) throw new Error(`missing scope-aware cache behavior: ${needle}`);
+	}
+});
+
+check("delete UX uses explicit buttons and exits an empty flagged filter", () => {
+	for (const needle of [
+		"confirm-delete", "confirm-actions",
+		'h(Btn, { tone: "secondary", onClick: closeConfirm }, t("cancel"))',
+		'h(Btn, { tone: "danger", onClick: commitDelete }, t("delete_confirm_ok"))',
+		"if (!verdictsRef.current.size) setFlagFilter(false)",
+		't("review_summary_cleared", { total })',
+		"setDeleteReport(null)"
+	]) {
+		if (!pluginSource.includes(needle)) throw new Error(`missing delete UX behavior: ${needle}`);
+	}
+	const confirmStart = pluginSource.indexOf("const confirmAndDelete =");
+	const confirmEnd = pluginSource.indexOf("// Run optional backup", confirmStart);
+	const confirmSource = pluginSource.slice(confirmStart, confirmEnd > confirmStart ? confirmEnd : undefined);
+	if (!confirmSource.includes("confirmText: null") || !confirmSource.includes("cancelText: null")) {
+		throw new Error("host link-style confirmation footer is still enabled");
+	}
+});
+
 check("settings sections use compact summary-plugin spacing", () => {
 	for (const needle of [
 		"--damc-settings-page-gap: 16px;", "--damc-settings-section-gap: 24px;",

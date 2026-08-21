@@ -56,7 +56,7 @@ function loadPlugin() {
 	const src = fs.readFileSync(PLUGIN_PATH, "utf8");
 	const marker = "\treturn class DiscordAIMessageCleaner {";
 	if (!src.includes(marker)) throw new Error("plugin shape changed: class marker not found");
-	const exposed = `\tglobalThis.__DAMC__ = { Utils, I18N, t, SettingsStore, DiscordAdapter, ChannelContext, MessageService, SearchService, Normalizer, ReviewBatcher, AIService, DeleteService, ExportService, UpdateService, PluginError };\n${marker}`;
+	const exposed = `\tglobalThis.__DAMC__ = { Utils, I18N, t, SettingsStore, DiscordAdapter, ChannelContext, MessageService, SearchService, Normalizer, ReviewBatcher, AIService, DeleteService, ExportService, UpdateService, PluginError, ScanCache, ReviewSession, renderContentSegments, formatAttachmentSize, MessageRow };\n${marker}`;
 	const patched = src.replace(marker, exposed);
 	const tmp = path.join(os.tmpdir(), `damc-under-test-${process.pid}.js`);
 	fs.writeFileSync(tmp, patched);
@@ -326,6 +326,183 @@ const ctx = { channelId: "200000000000000001", isPrivate: false };
 		assert.deepStrictEqual(noEdit.messages.map(m => m.id).sort(), ["1"], "edited excluded when opted out");
 	});
 
+	await test("normalizes attachment metadata for result-list previews and links", async () => {
+		const normalized = api.Normalizer.normalize({
+			id: "att-1", type: 0, timestamp: new Date().toISOString(), author: { id: "me" }, content: "",
+			attachments: [{ filename: "proof.PNG", proxy_url: "https://cdn.example/proof.PNG", size: 1536, width: 640, height: 480 }]
+		});
+		assert.strictEqual(normalized.attachments[0].url, "https://cdn.example/proof.PNG", "proxy URL is a usable fallback");
+		assert.strictEqual(normalized.attachments[0].size, 1536);
+		assert.strictEqual(normalized.attachments[0].isImage, true, "image extension fallback works without content_type");
+		const edge = api.Normalizer.normalize({
+			id: "att-2", type: 0, timestamp: new Date().toISOString(), author: { id: "me" }, content: "",
+			attachments: [{ filename: "photo.png", url: "https://cdn.example/opaque" }, null]
+		});
+		assert.strictEqual(edge.attachments[0].isImage, true, "filename extension still identifies an opaque image URL");
+		assert.strictEqual(edge.attachments[1].filename, "", "missing names stay empty for the UI locale fallback");
+	});
+
+	await test("builds guild and DM message jump paths", async () => {
+		assert.strictEqual(api.DiscordAdapter.messagePath("g1", "c1", "m1"), "/channels/g1/c1/m1");
+		assert.strictEqual(api.DiscordAdapter.messagePath(null, "dm1", "m2"), "/channels/@me/dm1/m2");
+		assert.strictEqual(api.DiscordAdapter.messagePath("g1", null, "m1"), null);
+	});
+
+	await test("message navigation uses native jumpToMessage with HistoryUtils fallback", async () => {
+		const originalGetByKeys = BdApiStub.Webpack.getByKeys;
+		const originalGetModule = BdApiStub.Webpack.getModule;
+		const originalGetStore = BdApiStub.Webpack.getStore;
+		try {
+			let selectedChannel = "c1";
+			let nativeOptions = null;
+			let navigated = null;
+			let guildTransition = null;
+			let privateSelection = null;
+			const actions = { fetchMessages() {}, jumpToMessage: options => { nativeOptions = options; return Promise.resolve(true); } };
+			BdApiStub.Webpack.getStore = name => name === "SelectedChannelStore" ? { getChannelId: () => selectedChannel } : undefined;
+			BdApiStub.Webpack.getByKeys = (...keys) => {
+				if (keys.includes("jumpToMessage")) return actions;
+				if (keys.includes("transitionToGuildSync")) return {
+					selectGuild() {},
+					transitionToGuildSync: (guildId, options, channelId) => {
+						guildTransition = { guildId, options, channelId };
+						setTimeout(() => { selectedChannel = channelId; }, 20);
+					}
+				};
+				if (keys.includes("selectPrivateChannel")) return {
+					selectChannel() {},
+					selectPrivateChannel: channelId => { privateSelection = channelId; selectedChannel = channelId; }
+				};
+				return undefined;
+			};
+			BdApiStub.Webpack.getModule = () => undefined;
+			api.DiscordAdapter.reset();
+			assert.strictEqual(api.DiscordAdapter.openMessage("g1", "c1", "m1"), true);
+			assert.deepStrictEqual(nativeOptions, { channelId: "c1", messageId: "m1", flash: true, jumpType: "INSTANT" });
+
+			selectedChannel = "source";
+			nativeOptions = null;
+			api.DiscordAdapter.reset();
+			assert.strictEqual(api.DiscordAdapter.openMessage("g1", "c2", "m2"), true, "guild channel selection starts");
+			assert.deepStrictEqual(guildTransition, { guildId: "g1", options: {}, channelId: "c2" });
+			await new Promise(resolve => setTimeout(resolve, 120));
+			assert.deepStrictEqual(nativeOptions, { channelId: "c2", messageId: "m2", flash: true, jumpType: "INSTANT" });
+
+			selectedChannel = "source";
+			nativeOptions = null;
+			api.DiscordAdapter.reset();
+			assert.strictEqual(api.DiscordAdapter.openMessage(null, "dm2", "m3"), true, "private channel selection starts");
+			assert.strictEqual(privateSelection, "dm2");
+			assert.deepStrictEqual(nativeOptions, { channelId: "dm2", messageId: "m3", flash: true, jumpType: "INSTANT" });
+
+			BdApiStub.Webpack.getByKeys = () => undefined;
+			BdApiStub.Webpack.getStore = originalGetStore;
+			api.DiscordAdapter.reset();
+			assert.strictEqual(api.DiscordAdapter.openMessage("g1", "c1", "m1"), false, "missing native actions keep the modal open");
+		} finally {
+			BdApiStub.Webpack.getByKeys = originalGetByKeys;
+			BdApiStub.Webpack.getModule = originalGetModule;
+			BdApiStub.Webpack.getStore = originalGetStore;
+			api.DiscordAdapter.reset();
+		}
+	});
+
+	await test("link rendering trims wrappers but keeps balanced URL brackets", async () => {
+		const hrefs = text => api.renderContentSegments(text)
+			.filter(node => node && typeof node === "object" && node.type === "a")
+			.map(node => node.props.href);
+		assert.deepStrictEqual(hrefs("<https://example.test/a>"), ["https://example.test/a"]);
+		assert.deepStrictEqual(hrefs("[x](https://example.test/a)"), ["https://example.test/a"]);
+		assert.deepStrictEqual(hrefs("https://example.test/a_(b)"), ["https://example.test/a_(b)"]);
+		assert.deepStrictEqual(hrefs("https://example.test/a_(b))."), ["https://example.test/a_(b)"]);
+		assert.deepStrictEqual(hrefs("https://a.test,https://b.test"), ["https://a.test", "https://b.test"]);
+		assert.strictEqual(api.formatAttachmentSize(2 * 1024 * 1024 * 1024), "2.0 GB");
+	});
+
+	await test("animated custom emoji retries GIF as animated WebP and then text", async () => {
+		const token = api.renderContentSegments("<a:party:12345>")[0];
+		assert.strictEqual(token.type, "span");
+		assert.match(token.props.className, /emoji-token/);
+		const imageNode = token.children[0];
+		assert.match(imageNode.props.src, /12345\.gif\?size=48$/);
+		let failedClass = "";
+		const image = { dataset: {}, src: imageNode.props.src, closest: () => ({ classList: { add: value => { failedClass = value; } } }) };
+		imageNode.props.onError({ currentTarget: image });
+		assert.match(image.src, /12345\.webp\?size=48&animated=true$/);
+		imageNode.props.onError({ currentTarget: image });
+		assert.match(image.src, /12345\.png\?size=48$/);
+		imageNode.props.onError({ currentTarget: image });
+		assert.match(failedClass, /emoji-failed$/);
+	});
+
+	await test("image attachments render as direct previews instead of attachment cards", async () => {
+		const tree = api.MessageRow({
+			message: { id: "m-image", channelId: "c1", timestamp: Date.now(), content: "", edited: false,
+				attachments: [{ filename: "image.png", url: "https://cdn.example/image.png", proxyUrl: "", isImage: true, size: 42 }] },
+			selected: false, showChannel: false, guildId: "g1", channelId: "c1", onToggle() {}, onPreview() {}, onJump() { return false; }
+		});
+		const nodes = [];
+		const walk = node => {
+			if (node == null || node === false) return;
+			if (Array.isArray(node)) { node.forEach(walk); return; }
+			if (typeof node !== "object") return;
+			nodes.push(node);
+			(node.children || []).forEach(walk);
+		};
+		walk(tree);
+		const classes = nodes.map(node => String(node.props && node.props.className || ""));
+		assert.ok(classes.some(value => value.includes("image-direct-img")), "direct image is present");
+		assert.ok(!classes.some(value => value.includes("attachment-preview")), "legacy thumbnail-in-card preview is absent");
+		const jump = nodes.find(node => String(node.props && node.props.className || "").includes("message-jump"));
+		assert.strictEqual(jump.type, "button", "message jump is an in-client action button");
+		assert.strictEqual(jump.props.href, undefined, "message jump has no browser URL fallback");
+	});
+
+	await test("scope cache shares guild scans but isolates channel, guild, and DM scans", async () => {
+		const guildA = { guildId: "g1", channelId: "c1", channel: { id: "c1", guild_id: "g1" } };
+		const guildB = { guildId: "g1", channelId: "c2", channel: { id: "c2", guild_id: "g1" } };
+		const otherGuild = { guildId: "g2", channelId: "c3", channel: { id: "c3", guild_id: "g2" } };
+		const dmA = { guildId: null, channelId: "dm1", channel: { id: "dm1" } };
+		const dmB = { guildId: null, channelId: "dm2", channel: { id: "dm2" } };
+		api.ScanCache.clear();
+		api.ScanCache.set(guildA, { messages: [{ id: "m1" }] }, "guild");
+		assert.strictEqual(api.ScanCache.state.scopeKey, "guild:g1");
+		assert.strictEqual(api.ScanCache.state.originChannelId, "c1");
+		assert.ok(api.ScanCache.get(guildB), "guild scan reopens from another channel in the same guild");
+		assert.strictEqual(api.ScanCache.get(otherGuild), null, "guild scan never leaks to another guild");
+		const view = { selectedIds: ["m1"], flagFilter: true, channelFilter: "c2" };
+		assert.strictEqual(api.ScanCache.setView("guild:g1", view), true);
+		view.selectedIds.push("later");
+		assert.deepStrictEqual(api.ScanCache.get(guildB).viewState, { selectedIds: ["m1"], flagFilter: true, channelFilter: "c2" });
+		assert.strictEqual(api.ScanCache.setView("other", view), false);
+
+		api.ReviewSession.start({ scope: "guild", scopeKey: "guild:g1", fetchResult: { messages: [] } });
+		assert.strictEqual(api.ReviewSession.matches(guildB), true, "guild review session follows the guild cache");
+		assert.strictEqual(api.ReviewSession.matches(otherGuild), false);
+		api.ReviewSession.clear();
+
+		api.ScanCache.set(guildA, { messages: [{ id: "m2" }] }, "channel");
+		assert.strictEqual(api.ScanCache.state.scopeKey, "channel:c1");
+		assert.strictEqual(api.ScanCache.get(guildB).scopeKey, "guild:g1", "another channel still sees the guild-wide scan");
+		assert.strictEqual(api.ScanCache.get(guildA).scopeKey, "channel:c1", "the newest exact-channel result wins in its channel");
+		assert.ok(api.ScanCache.getByKey("guild:g1"), "a channel scan does not overwrite the guild cache");
+		assert.strictEqual(api.ScanCache.remove(guildA, "channel"), true);
+		assert.strictEqual(api.ScanCache.get(guildA).scopeKey, "guild:g1", "removing the channel cache reveals the guild cache");
+
+		api.ScanCache.set(dmA, { messages: [{ id: "m3" }] }, "channel");
+		assert.ok(api.ScanCache.get(dmA));
+		assert.strictEqual(api.ScanCache.get(dmB), null, "DM cache stays in its original conversation");
+		const aliasContext = api.ChannelContext.from({ id: "c4", guildId: "g3", type: 0, name: "alias" });
+		assert.strictEqual(aliasContext.guildId, "g3", "camelCase guildId is normalized at the context boundary");
+		api.ScanCache.clear();
+		for (let i = 0; i < 21; i++) {
+			api.ScanCache.set({ guildId: null, channelId: `bounded-${i}`, channel: { id: `bounded-${i}` } }, { messages: [] }, "channel");
+		}
+		assert.strictEqual(api.ScanCache._entries.size, 20, "cache registry is bounded");
+		assert.strictEqual(api.ScanCache.getByKey("channel:bounded-0"), null, "oldest cache entry is evicted first");
+		api.ScanCache.clear();
+	});
+
 	section("ReviewBatcher");
 	await test("batches respect the message-count bound", async () => {
 		const msgs = Array.from({ length: 95 }, (_, i) => ({ id: String(i), timestamp: Date.now(), content: "x", attachments: [] }));
@@ -450,6 +627,10 @@ const ctx = { channelId: "200000000000000001", isPrivate: false };
 		assert.strictEqual(json.plugin, `DiscordAIMessageCleaner v${PLUGIN_VERSION_UNDER_TEST}`);
 		assert.strictEqual(json.count, 1);
 		assert.strictEqual(json.messages[0].content, "你好 backup");
+		const unnamed = [{ id: "m2", channelId: "c1", timestamp: Date.now(), content: "", edited: false, attachments: [{ filename: "", url: "https://example.test/file" }] }];
+		assert.match(api.ExportService.buildBackup(exportContext, unnamed, "md", "zh-CN"), /\[未命名附件\]\(https:\/\/example\.test\/file\)/);
+		const unnamedJson = JSON.parse(api.ExportService.buildBackup(exportContext, unnamed, "json", "en-US"));
+		assert.strictEqual(unnamedJson.messages[0].attachments[0].filename, "Unnamed attachment");
 	});
 
 	await test("BetterDiscord save dialog writes and verifies the selected file", async () => {

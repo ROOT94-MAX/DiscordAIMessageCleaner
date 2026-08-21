@@ -17,3 +17,6 @@ Desktop.ini
 
 # local browser-automation artifacts
 .playwright-mcp/
+
+# local Codex verification / rollback artifacts
+.codex-artifacts/

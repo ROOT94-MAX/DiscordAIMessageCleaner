@@ -255,10 +255,16 @@ module.exports = (() => {
 			act_resume_scan: "继续扫描更早的消息",
 			select_all: "全选",
 			select_none: "全不选",
+			select_message: "选择这条消息",
 			selected_count: "已选 {n} / {m}",
 			delete_selected: "删除选中",
 			attachment_only: "[仅附件消息：{names}]",
 			attachment_badge: "附件×{n}",
+			attachment_unnamed: "未命名附件",
+			attachment_open: "打开附件：{name}",
+			attachment_preview: "附件预览：{name}",
+			message_jump: "跳转到原消息",
+			message_jump_unavailable: "客户端跳转组件暂不可用，请稍后重试。",
 			edited_badge: "已编辑",
 			// review
 			act_review: "AI 审查",
@@ -269,6 +275,7 @@ module.exports = (() => {
 			review_gate_warn: "本次审查约 {tokens} tokens（粗略估算），超过确认阈值 {threshold}。继续？",
 			continue_anyway: "仍然继续",
 			review_summary: "审查完成：{flagged} 条命中（共 {total} 条），已自动勾选",
+			review_summary_cleared: "命中消息已处理，剩余 {total} 条扫描消息",
 			review_partial: "有 {n} 条消息所在批次审查失败，可重试。",
 			filter_flagged: "只看命中",
 			filter_all: "全部",
@@ -515,10 +522,16 @@ module.exports = (() => {
 			act_resume_scan: "Continue scanning older messages",
 			select_all: "Select all",
 			select_none: "Select none",
+			select_message: "Select this message",
 			selected_count: "{n} / {m} selected",
 			delete_selected: "Delete selected",
 			attachment_only: "[attachment-only message: {names}]",
 			attachment_badge: "attachments×{n}",
+			attachment_unnamed: "Unnamed attachment",
+			attachment_open: "Open attachment: {name}",
+			attachment_preview: "Attachment preview: {name}",
+			message_jump: "Jump to original message",
+			message_jump_unavailable: "The in-client navigation component is temporarily unavailable. Try again shortly.",
 			edited_badge: "edited",
 			act_review: "AI Review",
 			act_rereview: "Re-review",
@@ -528,6 +541,7 @@ module.exports = (() => {
 			review_gate_warn: "This review is roughly {tokens} tokens, above the confirmation threshold of {threshold}. Continue?",
 			continue_anyway: "Continue anyway",
 			review_summary: "Review done: {flagged} flagged of {total}, auto-selected",
+			review_summary_cleared: "Flagged messages processed; {total} scanned messages remain",
 			review_partial: "Batches covering {n} messages failed to review. You can retry.",
 			filter_flagged: "Flagged only",
 			filter_all: "All",
@@ -929,6 +943,154 @@ module.exports = (() => {
 				return null;
 			}
 		},
+		messagePath(guildId, channelId, messageId) {
+			if (!channelId || !messageId) return null;
+			return `/channels/${guildId || "@me"}/${channelId}/${messageId}`;
+		},
+		messageActions() {
+			if (DiscordAdapter._cache.has("messageActions")) return DiscordAdapter._cache.get("messageActions");
+			let result = null;
+			try {
+				if (typeof BdApi.Webpack.getByKeys === "function") {
+					result = BdApi.Webpack.getByKeys("fetchMessages", "jumpToMessage")
+						|| BdApi.Webpack.getByKeys("jumpToMessage");
+				}
+				if (!result) {
+					result = BdApi.Webpack.getModule(
+						module => module && typeof module.jumpToMessage === "function",
+						{ searchExports: true }
+					);
+				}
+			} catch (e) {
+				Logger.warn("Adapter lookup threw: messageActions", e);
+			}
+			result = result && typeof result.jumpToMessage === "function" ? result : null;
+			if (result) DiscordAdapter._cache.set("messageActions", result);
+			DiscordAdapter._health.messageActions = result ? "ok" : "missing";
+			if (!result) Logger.warn("Adapter lookup missing: messageActions");
+			return result;
+		},
+		guildNavigation() {
+			return DiscordAdapter._resolve("guildNavigation", () => {
+				if (typeof BdApi.Webpack.getByKeys === "function") {
+					return BdApi.Webpack.getByKeys("selectGuild", "transitionToGuildSync")
+						|| BdApi.Webpack.getByKeys("transitionToGuildSync");
+				}
+				return BdApi.Webpack.getModule(
+					module => module && typeof module.transitionToGuildSync === "function",
+					{ searchExports: true }
+				);
+			});
+		},
+		channelNavigation() {
+			return DiscordAdapter._resolve("channelNavigation", () => {
+				if (typeof BdApi.Webpack.getByKeys === "function") {
+					return BdApi.Webpack.getByKeys("selectChannel", "selectPrivateChannel")
+						|| BdApi.Webpack.getByKeys("selectPrivateChannel");
+				}
+				return BdApi.Webpack.getModule(
+					module => module && typeof module.selectPrivateChannel === "function",
+					{ searchExports: true }
+				);
+			});
+		},
+		navigation() {
+			// Navigation is especially sensitive to Discord module churn. Cache a
+			// verified hit, but retry a previous miss instead of pinning the browser
+			// fallback for the rest of the client session.
+			if (DiscordAdapter._cache.has("navigation")) return DiscordAdapter._cache.get("navigation");
+			let result = null;
+			try {
+				// Discord's current HistoryUtils export is identified by transitionTo.
+				// Do not require replaceWith: it is not present in every client build.
+				if (typeof BdApi.Webpack.getByKeys === "function") result = BdApi.Webpack.getByKeys("transitionTo");
+				if (result && typeof result.transitionTo !== "function") result = null;
+				if (!result) {
+					result = BdApi.Webpack.getModule(
+						module => module && typeof module.transitionTo === "function",
+						{ searchExports: true }
+					);
+				}
+			} catch (e) {
+				Logger.warn("Adapter lookup threw: navigation", e);
+			}
+			result = result || null;
+			if (result) DiscordAdapter._cache.set("navigation", result);
+			DiscordAdapter._health.navigation = result ? "ok" : "missing";
+			if (!result) Logger.warn("Adapter lookup missing: navigation");
+			return result;
+		},
+		selectedChannelId() {
+			try {
+				const selected = DiscordAdapter.getStore("SelectedChannelStore");
+				return selected && typeof selected.getChannelId === "function" ? selected.getChannelId() : null;
+			} catch (e) {
+				return null;
+			}
+		},
+		jumpToMessageNow(channelId, messageId) {
+			try {
+				const actions = DiscordAdapter.messageActions();
+				if (!actions) return false;
+				const outcome = actions.jumpToMessage({ channelId, messageId, flash: true, jumpType: "INSTANT" });
+				if (outcome && typeof outcome.catch === "function") {
+					outcome.catch(error => Logger.warn("Native jumpToMessage failed", error));
+				}
+				return true;
+			} catch (e) {
+				Logger.warn("Native jumpToMessage threw", e);
+				return false;
+			}
+		},
+		jumpWhenChannelReady(channelId, messageId, attempt) {
+			const tries = Utils.num(attempt, 0);
+			if (DiscordAdapter.selectedChannelId() === channelId) {
+				if (!DiscordAdapter.jumpToMessageNow(channelId, messageId)) {
+					try { BdApi.UI.showToast(t("message_jump_unavailable"), { type: "error" }); } catch (e) { /* ignore */ }
+				}
+				return;
+			}
+			if (tries >= 30) {
+				Logger.warn(`Timed out selecting channel ${channelId} before message jump`);
+				try { BdApi.UI.showToast(t("message_jump_unavailable"), { type: "error" }); } catch (e) { /* ignore */ }
+				return;
+			}
+			setTimeout(() => DiscordAdapter.jumpWhenChannelReady(channelId, messageId, tries + 1), 80);
+		},
+		openMessage(guildId, channelId, messageId) {
+			const path = DiscordAdapter.messagePath(guildId, channelId, messageId);
+			if (!path) return false;
+			if (DiscordAdapter.selectedChannelId() === channelId && DiscordAdapter.jumpToMessageNow(channelId, messageId)) return true;
+			try {
+				if (guildId) {
+					const guildNavigation = DiscordAdapter.guildNavigation();
+					if (guildNavigation && typeof guildNavigation.transitionToGuildSync === "function") {
+						guildNavigation.transitionToGuildSync(guildId, {}, channelId);
+						DiscordAdapter.jumpWhenChannelReady(channelId, messageId, 0);
+						return true;
+					}
+				} else {
+					const channelNavigation = DiscordAdapter.channelNavigation();
+					if (channelNavigation && typeof channelNavigation.selectPrivateChannel === "function") {
+						channelNavigation.selectPrivateChannel(channelId);
+						DiscordAdapter.jumpWhenChannelReady(channelId, messageId, 0);
+						return true;
+					}
+				}
+			} catch (e) {
+				Logger.warn("Native channel selection failed; trying HistoryUtils", e);
+			}
+			try {
+				const navigation = DiscordAdapter.navigation();
+				if (navigation && typeof navigation.transitionTo === "function") {
+					navigation.transitionTo(path);
+					return true;
+				}
+			} catch (e) {
+				Logger.warn("HistoryUtils navigation failed", e);
+			}
+			return false;
+		},
 		currentUserId() {
 			try {
 				const users = DiscordAdapter.getStore("UserStore");
@@ -956,6 +1118,10 @@ module.exports = (() => {
 			DiscordAdapter.chatButtonsModule();
 			DiscordAdapter.chatButtonChrome();
 			DiscordAdapter.modalSystem();
+			DiscordAdapter.messageActions();
+			DiscordAdapter.guildNavigation();
+			DiscordAdapter.channelNavigation();
+			DiscordAdapter.navigation();
 			DiscordAdapter.getStore("ChannelStore");
 			DiscordAdapter.getStore("SelectedChannelStore");
 			DiscordAdapter.getStore("GuildStore");
@@ -965,21 +1131,24 @@ module.exports = (() => {
 			return Object.assign({}, DiscordAdapter._health);
 		}
 	};
-
 	// ==================== 08. CHANNEL CONTEXT ====================
 
 	const ChannelContext = {
 		from(channel) {
-			const isGuild = Boolean(channel && channel.guild_id && SUPPORTED_GUILD_TYPES.includes(channel.type));
-			const isPrivate = Boolean(channel && !channel.guild_id && PRIVATE_CHANNEL_TYPES.includes(channel.type));
+			// Discord channel models have historically exposed guild_id, while
+			// some wrappers/fixtures expose guildId. Normalize both at this edge so
+			// guild-scoped cache identity survives channel navigation reliably.
+			const guildId = channel && (channel.guild_id || channel.guildId) || null;
+			const isGuild = Boolean(guildId && SUPPORTED_GUILD_TYPES.includes(channel.type));
+			const isPrivate = Boolean(channel && !guildId && PRIVATE_CHANNEL_TYPES.includes(channel.type));
 			return {
 				supported: isGuild || isPrivate,
 				isPrivate,
 				channelId: channel && channel.id || null,
 				channelName: ChannelContext.label(channel),
 				channelType: channel ? channel.type : null,
-				guildId: channel && channel.guild_id || null,
-				guildName: channel && channel.guild_id ? (DiscordAdapter.getGuildName(channel.guild_id) || channel.guild_id) : null,
+				guildId,
+				guildName: guildId ? (DiscordAdapter.getGuildName(guildId) || guildId) : null,
 				channel: channel || null
 			};
 		},
@@ -996,7 +1165,6 @@ module.exports = (() => {
 			return ChannelContext.from(DiscordAdapter.getCurrentChannel());
 		}
 	};
-
 	// ==================== 09. ERRORS ====================
 
 	const PluginError = class PluginError extends Error {
@@ -1268,6 +1436,7 @@ module.exports = (() => {
 	};
 
 	// ==================== 11. NORMALIZER ====================
+	const IMAGE_ATTACHMENT_EXT_RE = /\.(?:avif|gif|jpe?g|png|webp)(?:\?|$)/i;
 
 	const Normalizer = {
 		normalize(raw) {
@@ -1281,11 +1450,22 @@ module.exports = (() => {
 				// returns messages from many channels, so deletion needs it.
 				channelId: raw.channel_id || null,
 				content: Normalizer.resolveContent(raw),
-				attachments: (raw.attachments || []).map(att => ({
-					filename: att.filename || "attachment",
-					url: att.url || "",
-					isImage: /^image\//.test(att.content_type || "")
-				})),
+				attachments: (raw.attachments || []).map(value => {
+					const att = value || {};
+					const filename = att.filename || att.title || "";
+					const url = att.url || att.proxy_url || "";
+					const contentType = att.content_type || "";
+					return {
+						filename,
+						url,
+						proxyUrl: att.proxy_url || "",
+						contentType,
+						size: Utils.num(att.size, 0),
+						width: Utils.num(att.width, 0),
+						height: Utils.num(att.height, 0),
+						isImage: /^image\//i.test(contentType) || IMAGE_ATTACHMENT_EXT_RE.test(url) || IMAGE_ATTACHMENT_EXT_RE.test(filename)
+					};
+				}),
 				edited: Boolean(raw.edited_timestamp)
 			};
 		},
@@ -1304,7 +1484,6 @@ module.exports = (() => {
 			return text;
 		}
 	};
-
 	// ==================== 12. REVIEW BATCHER ====================
 	// Splits the user's messages into AI review batches bounded by both a
 	// message count and a character budget. Item indexes are positions in the
@@ -1868,13 +2047,15 @@ module.exports = (() => {
 		buildBackup(context, messages, format, lang) {
 			const targetFormat = ExportService.normalizeFormat(format);
 			const exportedAt = new Date();
+			const zh = String(lang || I18N.resolveUiLanguage()).toLowerCase().startsWith("zh");
+			const unnamedAttachment = zh ? "未命名附件" : "Unnamed attachment";
 			const normalized = messages.map(message => ({
 				id: message.id,
 				channelId: message.channelId || context.channelId || null,
 				timestamp: new Date(message.timestamp).toISOString(),
 				content: String(message.content || ""),
 				attachments: (Array.isArray(message.attachments) ? message.attachments : [])
-					.map(att => ({ filename: att.filename || "attachment", url: att.url || "" })),
+					.map(att => ({ filename: att && att.filename || unnamedAttachment, url: att && att.url || "" })),
 				edited: Boolean(message.edited)
 			}));
 			if (targetFormat === "json") {
@@ -1888,7 +2069,6 @@ module.exports = (() => {
 					messages: normalized
 				}, null, 2);
 			}
-			const zh = String(lang || I18N.resolveUiLanguage()).toLowerCase().startsWith("zh");
 			const labels = zh ? {
 				title: "AI 消息删除前备份", exported: "导出时间", guild: "服务器", channel: "频道",
 				count: "消息数", id: "消息 ID", channelId: "频道 ID", edited: "已编辑", attachments: "附件",
@@ -2290,10 +2470,17 @@ module.exports = (() => {
 
 	const PLUGIN_CSS = `
 		.${CSS_PREFIX}-confirm-wide {
-			width: 640px !important;
+			width: 680px !important;
 			max-width: calc(100vw - 80px) !important;
 		}
 		.${CSS_PREFIX}-confirm-wide > :last-child {
+			display: none !important;
+		}
+		.${CSS_PREFIX}-confirm-delete {
+			width: 440px !important;
+			max-width: calc(100vw - 48px) !important;
+		}
+		.${CSS_PREFIX}-confirm-delete > :last-child {
 			display: none !important;
 		}
 		/* The shell's content padding is zeroed so the plugin owns every inset.
@@ -2366,7 +2553,7 @@ module.exports = (() => {
 			--damc-danger: var(--status-danger, #f23f43);
 			--damc-scroll-thumb: var(--scrollbar-auto-thumb, var(--background-modifier-accent, rgba(78, 80, 88, 0.48)));
 		}
-		.${CSS_PREFIX}-ui :is(button, [role="tab"]):focus-visible {
+		.${CSS_PREFIX}-ui :is(button, a, [role="tab"]):focus-visible {
 			outline: none;
 			box-shadow: 0 0 0 2px color-mix(in srgb, var(--damc-brand) 45%, transparent);
 		}
@@ -2392,23 +2579,24 @@ module.exports = (() => {
 		.${CSS_PREFIX}-modal {
 			display: flex;
 			flex-direction: column;
-			gap: 14px;
+			gap: 12px;
 			padding: 4px 16px 16px;
 			color: var(--damc-text, #dbdee1);
 			font-size: 15px;
 			user-select: text;
 		}
 		.${CSS_PREFIX}-context {
-			font-size: 13px;
+			font-size: 16px;
 			font-weight: 500;
-			color: var(--damc-text-sub, #b5bac1);
+			line-height: 20px;
+			color: var(--damc-text, #dbdee1);
 			overflow: hidden;
 			text-overflow: ellipsis;
 			white-space: nowrap;
 		}
 		/* Header stack: the stats line rides tight under the channel line. */
 		.${CSS_PREFIX}-context + .${CSS_PREFIX}-stats {
-			margin-top: -10px;
+			margin-top: -8px;
 		}
 		.${CSS_PREFIX}-note {
 			font-size: 13px;
@@ -2683,6 +2871,7 @@ module.exports = (() => {
 		}
 		.${CSS_PREFIX}-stats {
 			font-size: 13px;
+			line-height: 18px;
 			color: var(--damc-text-faint, #949ba4);
 		}
 		.${CSS_PREFIX}-stats-warn {
@@ -2724,23 +2913,29 @@ module.exports = (() => {
 		.${CSS_PREFIX}-panel-head {
 			display: flex;
 			align-items: center;
-			gap: 10px;
-			margin-bottom: 10px;
+			gap: 12px;
+			min-height: 36px;
+			margin-bottom: 8px;
 			flex: 0 0 auto;
+			flex-wrap: wrap;
 		}
 		.${CSS_PREFIX}-panel-spacer {
 			flex: 1 1 auto;
 		}
-		/* The channel filter rides the head band: one size smaller than the
-		   settings-page triggers so the band stays a band. */
-		.${CSS_PREFIX}-panel-head .${CSS_PREFIX}-select-trigger {
-			height: 26px;
+		/* Results reuse the settings-page 32px control and 15px label scale. */
+		.${CSS_PREFIX}-results-toolbar .${CSS_PREFIX}-select-trigger {
+			height: 32px;
 			min-width: 0;
 			max-width: 220px;
-			font-size: 12.5px;
+			font-size: 15px;
+		}
+		.${CSS_PREFIX}-results-toolbar .${CSS_PREFIX}-check {
+			min-height: 32px;
+			font-size: 15px;
+			font-weight: 500;
 		}
 		.${CSS_PREFIX}-panel-count {
-			font-size: 12.5px;
+			font-size: 13px;
 			color: var(--damc-text-faint, #949ba4);
 			font-variant-numeric: tabular-nums;
 			flex: 0 0 auto;
@@ -2751,6 +2946,7 @@ module.exports = (() => {
 			display: flex;
 			flex-direction: column;
 			background: var(--damc-surface, #2b2d31);
+			border: 1px solid color-mix(in srgb, var(--damc-text, #dbdee1) 5%, transparent);
 			border-radius: 8px;
 			/* Shrinks on short windows so the footer stays reachable. */
 			max-height: min(340px, 38vh);
@@ -2781,7 +2977,9 @@ module.exports = (() => {
 			display: flex;
 			align-items: flex-start;
 			gap: 10px;
-			padding: 8px 12px;
+			width: 100%;
+			box-sizing: border-box;
+			padding: 9px 12px;
 			border: 0;
 			background: transparent;
 			font: inherit;
@@ -2796,8 +2994,12 @@ module.exports = (() => {
 		.${CSS_PREFIX}-mcard:hover {
 			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
 		}
-		/* Selection is the checkbox's job alone: no card tint (select-all is
-		   the normal case; tinting every row turns the list into patchwork). */
+		.${CSS_PREFIX}-mcard-selected,
+		.${CSS_PREFIX}-mcard-selected:hover {
+			background: color-mix(in srgb, var(--damc-brand, #5865f2) 7%, transparent);
+		}
+		/* Selection stays quiet: the checkbox is primary, with only a very low
+		   brand wash on the row to keep the state legible while scanning. */
 		.${CSS_PREFIX}-mcard-flagged::before {
 			content: "";
 			position: absolute;
@@ -2813,6 +3015,19 @@ module.exports = (() => {
 		}
 		.${CSS_PREFIX}-mcard-static:hover {
 			background: transparent;
+		}
+		.${CSS_PREFIX}-row-select {
+			width: 20px;
+			height: 20px;
+			padding: 0;
+			border: 0;
+			background: transparent;
+			color: inherit;
+			cursor: pointer;
+			flex: 0 0 auto;
+			display: flex;
+			align-items: flex-start;
+			justify-content: flex-start;
 		}
 		.${CSS_PREFIX}-checkbox {
 			width: 18px;
@@ -2841,7 +3056,7 @@ module.exports = (() => {
 			min-width: 0;
 			display: flex;
 			flex-direction: column;
-			gap: 2px;
+			gap: 4px;
 		}
 		.${CSS_PREFIX}-row-meta {
 			display: flex;
@@ -2849,20 +3064,27 @@ module.exports = (() => {
 			gap: 8px;
 			font-size: 12px;
 			color: var(--damc-text-faint, #949ba4);
+			min-height: 17px;
 		}
 		/* Meta badges stay per-row but must never compete with the content:
 		   one size down, faint text, barely-there fill. */
-		.${CSS_PREFIX}-badge {
+		.${CSS_PREFIX}-meta-badge {
 			display: inline-flex;
 			align-items: center;
-			padding: 0 5px;
-			height: 15px;
-			border-radius: 4px;
+			padding: 0 4px;
+			height: 14px;
+			border-radius: 3px;
 			font-size: 10px;
 			font-weight: 500;
-			background: color-mix(in srgb, var(--damc-text, #dbdee1) 4%, transparent);
+			line-height: 14px;
+			background: color-mix(in srgb, var(--damc-text, #dbdee1) 3%, transparent);
 			color: var(--damc-text-faint, #949ba4);
 			flex: 0 0 auto;
+		}
+		.${CSS_PREFIX}-channel-badge {
+			opacity: 0.72;
+			font-weight: 400;
+			letter-spacing: 0;
 		}
 		/* Category label: role-color language — dot + colored text, no pill. */
 		.${CSS_PREFIX}-cat {
@@ -2887,10 +3109,39 @@ module.exports = (() => {
 			font-variant-numeric: tabular-nums;
 			flex: 0 0 auto;
 		}
+		.${CSS_PREFIX}-message-jump {
+			width: 24px;
+			height: 24px;
+			padding: 0;
+			border: 0;
+			margin-left: auto;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: 4px;
+			background: transparent;
+			font: inherit;
+			color: var(--damc-text-faint, #949ba4);
+			opacity: 0.58;
+			text-decoration: none;
+			cursor: pointer;
+			flex: 0 0 auto;
+			transition: opacity 120ms ease, color 120ms ease, background 120ms ease;
+		}
+		.${CSS_PREFIX}-cat + .${CSS_PREFIX}-message-jump { margin-left: 2px; }
+		.${CSS_PREFIX}-message-jump svg { width: 16px; height: 16px; display: block; }
+		.${CSS_PREFIX}-mcard:hover .${CSS_PREFIX}-message-jump,
+		.${CSS_PREFIX}-message-jump:focus-visible {
+			opacity: 1;
+		}
+		.${CSS_PREFIX}-message-jump:hover {
+			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
+			color: var(--damc-link, #00a8fc);
+		}
 		/* Two-line clamp: the user is judging whether to delete this message,
 		   so a one-line ellipsis hides exactly what they need to read. */
 		.${CSS_PREFIX}-row-text {
-			font-size: 15px;
+			font-size: 14px;
 			line-height: 1.4;
 			display: -webkit-box;
 			-webkit-line-clamp: 2;
@@ -2898,6 +3149,11 @@ module.exports = (() => {
 			overflow: hidden;
 			overflow-wrap: anywhere;
 		}
+		.${CSS_PREFIX}-row-link {
+			color: var(--damc-link, #00a8fc);
+			text-decoration: none;
+		}
+		.${CSS_PREFIX}-row-link:hover { text-decoration: underline; }
 		.${CSS_PREFIX}-row-text.${CSS_PREFIX}-faint {
 			color: var(--damc-text-faint, #949ba4);
 			font-style: italic;
@@ -3083,26 +3339,133 @@ module.exports = (() => {
 			background: var(--damc-brand, #5865f2);
 			color: var(--damc-on-brand, #fff);
 		}
+		.${CSS_PREFIX}-emoji-token {
+			display: inline-flex;
+			align-items: center;
+			vertical-align: -5px;
+			margin: 0 1px;
+			max-width: 100%;
+		}
 		.${CSS_PREFIX}-emoji {
 			width: 20px;
 			height: 20px;
 			object-fit: contain;
-			vertical-align: -5px;
-			margin: 0 1px;
+			display: block;
 		}
-		.${CSS_PREFIX}-row-thumbs {
+		.${CSS_PREFIX}-emoji-fallback {
+			display: none;
+			max-width: 150px;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			font-size: 12px;
+			line-height: 18px;
+			color: var(--damc-text-faint, #949ba4);
+		}
+		.${CSS_PREFIX}-emoji-token.${CSS_PREFIX}-emoji-failed .${CSS_PREFIX}-emoji { display: none; }
+		.${CSS_PREFIX}-emoji-token.${CSS_PREFIX}-emoji-failed .${CSS_PREFIX}-emoji-fallback { display: inline; }
+		.${CSS_PREFIX}-attachment-list {
 			display: flex;
-			gap: 6px;
-			margin-top: 6px;
+			align-items: flex-start;
+			flex-wrap: wrap;
+			gap: 8px;
+			margin-top: 3px;
+			max-width: 520px;
 		}
-		.${CSS_PREFIX}-thumb {
-			width: 44px;
-			height: 44px;
-			object-fit: cover;
-			border-radius: 4px;
-			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
-			background: var(--damc-surface, #2b2d31);
+		.${CSS_PREFIX}-image-direct-wrap {
+			min-width: 0;
+			max-width: 100%;
+			flex: 0 1 auto;
 		}
+		.${CSS_PREFIX}-image-direct {
+			display: block;
+			max-width: 100%;
+			padding: 0;
+			border: 0;
+			border-radius: 8px;
+			overflow: hidden;
+			background: transparent;
+			cursor: zoom-in;
+			line-height: 0;
+		}
+		.${CSS_PREFIX}-image-direct-img {
+			display: block;
+			width: auto;
+			height: auto;
+			max-width: min(320px, 100%);
+			max-height: 220px;
+			object-fit: contain;
+			border-radius: 8px;
+			background: var(--damc-sunken, #1e1f22);
+		}
+		.${CSS_PREFIX}-attachment-file {
+			width: min(260px, 100%);
+			max-width: 320px;
+			flex: 1 1 220px;
+		}
+		.${CSS_PREFIX}-attachment {
+			min-width: 0;
+			min-height: 40px;
+			box-sizing: border-box;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			padding: 5px 7px;
+			border: 1px solid color-mix(in srgb, var(--damc-text, #dbdee1) 8%, transparent);
+			border-radius: 6px;
+			background: color-mix(in srgb, var(--damc-sunken, #1e1f22) 68%, transparent);
+			color: var(--damc-text, #dbdee1);
+			text-decoration: none;
+		}
+		.${CSS_PREFIX}-image-direct-fallback { display: none; }
+		.${CSS_PREFIX}-image-direct-wrap.${CSS_PREFIX}-image-direct-failed .${CSS_PREFIX}-image-direct { display: none; }
+		.${CSS_PREFIX}-image-direct-wrap.${CSS_PREFIX}-image-direct-failed .${CSS_PREFIX}-image-direct-fallback { display: flex; }
+		.${CSS_PREFIX}-attachment-file:hover,
+		.${CSS_PREFIX}-attachment:focus-within {
+			border-color: color-mix(in srgb, var(--damc-link, #00a8fc) 45%, transparent);
+			background: color-mix(in srgb, var(--damc-link, #00a8fc) 6%, var(--damc-sunken, #1e1f22));
+		}
+		.${CSS_PREFIX}-attachment-file-icon {
+			width: 28px;
+			height: 28px;
+			border-radius: 5px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background: color-mix(in srgb, var(--damc-link, #00a8fc) 11%, transparent);
+			color: var(--damc-link, #00a8fc);
+			flex: 0 0 auto;
+		}
+		.${CSS_PREFIX}-attachment-file-icon svg { width: 17px; height: 17px; display: block; }
+		.${CSS_PREFIX}-attachment-copy {
+			min-width: 0;
+			flex: 1 1 auto;
+			display: flex;
+			flex-direction: column;
+			gap: 1px;
+		}
+		.${CSS_PREFIX}-attachment-name {
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			font-size: 12.5px;
+			font-weight: 500;
+			color: var(--damc-link, #00a8fc);
+		}
+		.${CSS_PREFIX}-attachment-no-link .${CSS_PREFIX}-attachment-name {
+			color: var(--damc-text, #dbdee1);
+		}
+		.${CSS_PREFIX}-attachment-size {
+			font-size: 10.5px;
+			color: var(--damc-text-faint, #949ba4);
+		}
+		.${CSS_PREFIX}-attachment-open {
+			width: 14px;
+			height: 14px;
+			color: var(--damc-text-faint, #949ba4);
+			flex: 0 0 auto;
+		}
+		.${CSS_PREFIX}-attachment-open svg { width: 14px; height: 14px; display: block; }
 		.${CSS_PREFIX}-check {
 			display: flex;
 			align-items: center;
@@ -3128,6 +3491,18 @@ module.exports = (() => {
 			line-height: 1.4;
 			color: var(--damc-text, #dbdee1);
 			text-align: left;
+		}
+		.${CSS_PREFIX}-confirm-actions {
+			display: flex;
+			align-items: center;
+			justify-content: flex-end;
+			gap: 10px;
+			margin-top: 8px;
+		}
+		.${CSS_PREFIX}-confirm-actions .${CSS_PREFIX}-btn {
+			height: 38px;
+			min-width: 88px;
+			padding-inline: 16px;
 		}
 		.${CSS_PREFIX}-backup-choice {
 			align-items: flex-start;
@@ -3212,6 +3587,7 @@ module.exports = (() => {
 			justify-content: center;
 			background: rgba(0, 0, 0, 0.85);
 			cursor: zoom-out;
+			outline: none;
 		}
 		.${CSS_PREFIX}-lightbox-img {
 			max-width: 92vw;
@@ -3220,7 +3596,6 @@ module.exports = (() => {
 			box-shadow: var(--damc-shadow, 0 8px 16px rgba(0, 0, 0, 0.24));
 			cursor: zoom-out;
 		}
-		.${CSS_PREFIX}-thumb { cursor: zoom-in; }
 		/* Load-more: the list's own tail row (resume-scan). */
 		.${CSS_PREFIX}-lmore {
 			display: flex;
@@ -4120,6 +4495,29 @@ module.exports = (() => {
 			outline: none;
 			box-shadow: 0 0 0 2px color-mix(in srgb, var(--damc-brand, #5865f2) 42%, transparent);
 		}
+		@media (max-width: 560px) {
+			.${CSS_PREFIX}-confirm-wide {
+				max-width: calc(100vw - 24px) !important;
+			}
+			.${CSS_PREFIX}-modal { padding-inline: 12px; }
+			.${CSS_PREFIX}-zone-row {
+				align-items: stretch;
+				flex-direction: column;
+				gap: 8px;
+			}
+			.${CSS_PREFIX}-zone-ctl {
+				width: 100%;
+				justify-content: flex-start;
+			}
+			.${CSS_PREFIX}-range-grid {
+				grid-template-columns: minmax(0, 1fr);
+			}
+			.${CSS_PREFIX}-attachment-list { flex-direction: column; }
+			.${CSS_PREFIX}-attachment-file { width: 100%; max-width: 100%; }
+			.${CSS_PREFIX}-panel-head .${CSS_PREFIX}-select-trigger {
+				max-width: min(220px, calc(100vw - 72px));
+			}
+		}
 	`;
 	// ==================== 16. LIFECYCLE REGISTRIES ====================
 
@@ -4167,6 +4565,11 @@ module.exports = (() => {
 			}, data);
 			ReviewSession._emit();
 		},
+		matches(context) {
+			if (!ReviewSession.state) return false;
+			const expected = ScanCache.key(context, ReviewSession.state.scope);
+			return Boolean(expected && ReviewSession.state.scopeKey === expected);
+		},
 		update(patch) {
 			if (!ReviewSession.state) return;
 			Object.assign(ReviewSession.state, patch);
@@ -4198,15 +4601,95 @@ module.exports = (() => {
 		}
 	};
 
-	// Last successful scan, kept so an accidental modal close (backdrop click,
-	// Esc) does not throw away a long scan. Overwritten by each new scan.
+	// Recent successful scans, kept in memory so navigation or an accidental
+	// modal close does not throw away a long scan. Guild scans use a guild-wide
+	// identity and can be reopened from every channel in that guild; channel/DM
+	// scans stay isolated. A small LRU-style cap avoids unbounded session memory.
 	const ScanCache = {
-		state: null, // {channelId, fetchResult, scope}
-		set(channelId, fetchResult, scope) { ScanCache.state = { channelId, fetchResult, scope }; },
-		get(channelId) {
-			return ScanCache.state && ScanCache.state.channelId === channelId ? ScanCache.state : null;
+		state: null, // latest entry; retained as a diagnostic/compatibility view
+		_entries: new Map(),
+		MAX_ENTRIES: 20,
+		_revision: 0,
+		key(context, scope) {
+			if (!context) return null;
+			if (scope === "guild" && context.guildId) return `guild:${context.guildId}`;
+			return context.channelId ? `channel:${context.channelId}` : null;
 		},
-		clear() { ScanCache.state = null; }
+		matches(entry, context) {
+			if (!entry || !context) return false;
+			return entry.scopeKey === ScanCache.key(context, entry.scope);
+		},
+		set(context, fetchResult, scope) {
+			const scopeKey = ScanCache.key(context, scope);
+			if (!scopeKey) return null;
+			const previous = ScanCache._entries.get(scopeKey);
+			const entry = {
+				scopeKey,
+				scope,
+				guildId: context.guildId || null,
+				originChannelId: context.channelId || null,
+				originChannel: context.channel || null,
+				fetchResult,
+				viewState: previous ? previous.viewState : null,
+				updatedAt: Date.now(),
+				revision: ++ScanCache._revision
+			};
+			// Reinsert to move the entry to the newest end of Map iteration order.
+			ScanCache._entries.delete(scopeKey);
+			ScanCache._entries.set(scopeKey, entry);
+			while (ScanCache._entries.size > ScanCache.MAX_ENTRIES) {
+				const oldest = ScanCache._entries.keys().next().value;
+				ScanCache._entries.delete(oldest);
+			}
+			ScanCache.state = entry;
+			return entry;
+		},
+		setView(scopeKey, viewState) {
+			const entry = ScanCache._entries.get(scopeKey);
+			if (!entry) return false;
+			const source = viewState || {};
+			entry.viewState = {
+				selectedIds: Array.isArray(source.selectedIds) ? source.selectedIds.slice() : [],
+				flagFilter: Boolean(source.flagFilter),
+				channelFilter: source.channelFilter || null
+			};
+			entry.updatedAt = Date.now();
+			entry.revision = ++ScanCache._revision;
+			ScanCache._entries.delete(scopeKey);
+			ScanCache._entries.set(scopeKey, entry);
+			ScanCache.state = entry;
+			return true;
+		},
+		get(context) {
+			if (!context) return null;
+			const candidates = [];
+			const channelKey = ScanCache.key(context, "channel");
+			const guildKey = ScanCache.key(context, "guild");
+			if (channelKey && ScanCache._entries.has(channelKey)) candidates.push(ScanCache._entries.get(channelKey));
+			if (guildKey && guildKey !== channelKey && ScanCache._entries.has(guildKey)) candidates.push(ScanCache._entries.get(guildKey));
+			if (!candidates.length) return null;
+			return candidates.reduce((latest, entry) => entry.revision > latest.revision ? entry : latest);
+		},
+		getByKey(scopeKey) {
+			return ScanCache._entries.get(scopeKey) || null;
+		},
+		remove(context, scope) {
+			const scopeKey = ScanCache.key(context, scope);
+			if (!scopeKey) return false;
+			const removed = ScanCache._entries.delete(scopeKey);
+			if (ScanCache.state && ScanCache.state.scopeKey === scopeKey) {
+				const remaining = [...ScanCache._entries.values()];
+				ScanCache.state = remaining.length
+					? remaining.reduce((latest, entry) => entry.revision > latest.revision ? entry : latest)
+					: null;
+			}
+			return removed;
+		},
+		clear() {
+			ScanCache._entries.clear();
+			ScanCache.state = null;
+			ScanCache._revision = 0;
+		}
 	};
 
 	// Floating progress pill shown while a minimized review runs. Plain DOM:
@@ -4344,7 +4827,6 @@ module.exports = (() => {
 			if (MiniPill._el) { try { MiniPill._el.remove(); } catch (e) { /* ignore */ } MiniPill._el = null; }
 		}
 	};
-
 	// ==================== 17. UI: REACT HELPERS ====================
 
 	const h = React.createElement;
@@ -4419,7 +4901,13 @@ module.exports = (() => {
 	// ==================== 18. UI: CHAT BUTTON ====================
 
 	const CleanerChatButton = props => {
-		const onClick = () => { if (PluginInstance) PluginInstance.openCleaner(props.channel); };
+		const onClick = () => {
+			// Resolve at click time: Discord may reuse the composer toolbar while a
+			// native cross-channel jump is settling, leaving the rendered prop stale.
+			const current = ChannelContext.current();
+			const channel = current.supported ? current.channel : props.channel;
+			if (PluginInstance) PluginInstance.openCleaner(channel);
+		};
 		const chrome = DiscordAdapter.chatButtonChrome();
 		const inner = chrome
 			? h(chrome, null, h(Icon))
@@ -4435,7 +4923,6 @@ module.exports = (() => {
 		}
 		return h("div", { onClick, style: { display: "flex", alignSelf: "center" }, title: t("tooltip_supported") }, inner);
 	};
-
 	// ==================== 19. UI: CLEANER MODAL ====================
 
 	const UnsupportedContent = () => h("div", { className: `${CSS_PREFIX}-note` }, t("unsupported_hint"));
@@ -4453,9 +4940,77 @@ module.exports = (() => {
 
 	// Material Symbols Rounded "history" (load-more / resume-scan row).
 	const HISTORY_ICON_SVG = `<svg width="14" height="14" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M477-120q-142 0-243.5-95.5T121-451q-1-12 7.5-21t21.5-9q12 0 20.5 8.5T181-451q11 115 95 193t201 78q127 0 215-89t88-216q0-124-89-209.5T477-780q-68 0-127.5 31T246-667h75q13 0 21.5 8.5T351-637q0 13-8.5 21.5T321-607H172q-13 0-21.5-8.5T142-637v-148q0-13 8.5-21.5T172-815q13 0 21.5 8.5T202-785v76q52-61 123.5-96T477-840q75 0 141 28t115.5 76.5Q783-687 811.5-622T840-482q0 75-28.5 141t-78 115Q684-177 618-148.5T477-120Zm34-374 115 113q9 9 9 21.5t-9 21.5q-9 9-21 9t-21-9L460-460q-5-5-7-10.5t-2-11.5v-171q0-13 8.5-21.5T481-683q13 0 21.5 8.5T511-653v159Z"/></svg>`;
+	const FILE_ICON_SVG = `<svg viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M320-120q-33 0-56.5-23.5T240-200v-560q0-33 23.5-56.5T320-840h280l120 120v520q0 33-23.5 56.5T640-120H320Zm240-560v-100H320q-8 0-14 6t-6 14v560q0 8 6 14t14 6h320q8 0 14-6t6-14v-480H560Z"/></svg>`;
+	const OPEN_ICON_SVG = `<svg viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h240v60H200q-8 0-14 6t-6 14v560q0 8 6 14t14 6h560q8 0 14-6t6-14v-240h60v240q0 33-23.5 56.5T760-120H200Zm194-232-42-42 386-386H540v-60h300v300h-60v-198L394-352Z"/></svg>`;
+	const JUMP_ICON_SVG = `<svg viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M480-160v-60h280q8 0 14-6t6-14v-480q0-8-6-14t-14-6H480v-60h280q33 0 56.5 23.5T840-720v480q0 33-23.5 56.5T760-160H480Zm-80-160-42-43 87-87H120v-60h325l-87-87 42-43 160 160-160 160Z"/></svg>`;
 
 	// Custom emoji tags render as the real emoji image from Discord's CDN.
 	const EMOJI_TAG_RE = /<(a?):(\w+):(\d{5,})>/g;
+	const emojiSources = (id, animated) => animated
+		? [
+			`https://cdn.discordapp.com/emojis/${id}.gif?size=48`,
+			`https://cdn.discordapp.com/emojis/${id}.webp?size=48&animated=true`,
+			`https://cdn.discordapp.com/emojis/${id}.png?size=48`
+		]
+		: [
+			`https://cdn.discordapp.com/emojis/${id}.webp?size=48`,
+			`https://cdn.discordapp.com/emojis/${id}.png?size=48`
+		];
+	const URL_RE = /https?:\/\/(?:(?![,，]https?:\/\/)[^\s<>])+/gi;
+	const TRAILING_URL_PUNCTUATION_RE = /[.,!?;:'"。，！？；：、]+$/;
+	const splitLinkTarget = value => {
+		let url = String(value || "");
+		let suffix = "";
+		const punctuation = url.match(TRAILING_URL_PUNCTUATION_RE);
+		if (punctuation) {
+			suffix = punctuation[0];
+			url = url.slice(0, -suffix.length);
+		}
+		// Keep balanced brackets that genuinely belong to a URL, but detach an
+		// unmatched closer contributed by surrounding prose/Markdown.
+		let changed = true;
+		while (changed) {
+			changed = false;
+			for (const pair of [["(", ")"], ["[", "]"], ["{", "}"]]) {
+				while (url.endsWith(pair[1])) {
+					const opens = url.split(pair[0]).length - 1;
+					const closes = url.split(pair[1]).length - 1;
+					if (closes <= opens) break;
+					url = url.slice(0, -1);
+					suffix = pair[1] + suffix;
+					changed = true;
+				}
+			}
+		}
+		return { url, suffix };
+	};
+	const renderLinkedText = (text, prefix) => {
+		const out = [];
+		const source = String(text || "");
+		let last = 0;
+		let index = 0;
+		let match;
+		URL_RE.lastIndex = 0;
+		while ((match = URL_RE.exec(source))) {
+			const split = splitLinkTarget(match[0]);
+			const url = split.url;
+			if (match.index > last) out.push(source.slice(last, match.index));
+			out.push(h("a", {
+				key: `${prefix}-link-${index++}`,
+				className: `${CSS_PREFIX}-row-link`,
+				href: url,
+				target: "_blank",
+				rel: "noopener noreferrer",
+				title: url,
+				onClick: event => event.stopPropagation()
+			}, url));
+			if (split.suffix) out.push(split.suffix);
+			last = match.index + match[0].length;
+		}
+		if (last < source.length) out.push(source.slice(last));
+		return out;
+	};
+
 	const renderContentSegments = text => {
 		const out = [];
 		let last = 0;
@@ -4464,36 +5019,66 @@ module.exports = (() => {
 		EMOJI_TAG_RE.lastIndex = 0;
 		const source = String(text || "");
 		while ((match = EMOJI_TAG_RE.exec(source))) {
-			if (match.index > last) out.push(source.slice(last, match.index).replace(/\s+/g, " "));
-			out.push(h("img", {
+			if (match.index > last) out.push(...renderLinkedText(source.slice(last, match.index).replace(/\s+/g, " "), `t${key}`));
+			const label = `:${match[2]}:`;
+			const sources = emojiSources(match[3], Boolean(match[1]));
+			out.push(h("span", {
 				key: `e${key++}`,
-				className: `${CSS_PREFIX}-emoji`,
-				src: `https://cdn.discordapp.com/emojis/${match[3]}.${match[1] ? "gif" : "png"}?size=32&quality=lossless`,
-				alt: `:${match[2]}:`,
-				title: `:${match[2]}:`,
-				loading: "lazy",
-				draggable: false
-			}));
+				className: `${CSS_PREFIX}-emoji-token`,
+				role: "img",
+				"aria-label": label,
+				title: label
+			},
+				h("img", {
+					className: `${CSS_PREFIX}-emoji`,
+					src: sources[0],
+					alt: "",
+					"aria-hidden": true,
+					loading: "lazy",
+					draggable: false,
+					onError: event => {
+						const image = event.currentTarget || event.target;
+						const next = Utils.num(image && image.dataset && image.dataset.sourceIndex, 0) + 1;
+						if (image && next < sources.length) {
+							image.dataset.sourceIndex = String(next);
+							image.src = sources[next];
+							return;
+						}
+						try {
+							const token = image && image.closest(`.${CSS_PREFIX}-emoji-token`);
+							if (token) token.classList.add(`${CSS_PREFIX}-emoji-failed`);
+						} catch (e) { /* text fallback remains */ }
+					}
+				}),
+				h("span", { className: `${CSS_PREFIX}-emoji-fallback`, "aria-hidden": true }, label)
+			));
 			last = match.index + match[0].length;
 		}
-		if (last < source.length) out.push(source.slice(last).replace(/\s+/g, " "));
+		if (last < source.length) out.push(...renderLinkedText(source.slice(last).replace(/\s+/g, " "), `t${key}`));
 		return out;
+	};
+
+	const formatAttachmentSize = bytes => {
+		const value = Utils.num(bytes, 0);
+		if (value <= 0) return "";
+		if (value < 1024) return `${value} B`;
+		if (value < 1024 * 1024) return `${Math.round(value / 1024)} KB`;
+		if (value >= 1024 * 1024 * 1024) return `${(value / (1024 * 1024 * 1024)).toFixed(value >= 10 * 1024 * 1024 * 1024 ? 0 : 1)} GB`;
+		return `${(value / (1024 * 1024)).toFixed(value >= 10 * 1024 * 1024 ? 0 : 1)} MB`;
 	};
 
 	const MessageRow = props => {
 		const message = props.message;
 		const verdict = props.verdict || null;
 		const hasText = Boolean(message.content);
+		const attachments = Array.isArray(message.attachments) ? message.attachments : [];
 		const badges = [];
 		if (props.showChannel && message.channelId) {
-			badges.push(h("span", { key: "chan", className: `${CSS_PREFIX}-badge` },
+			badges.push(h("span", { key: "chan", className: `${CSS_PREFIX}-meta-badge ${CSS_PREFIX}-channel-badge` },
 				`#${DiscordAdapter.getChannelName(message.channelId) || message.channelId}`));
 		}
-		if (message.attachments.length && hasText) {
-			badges.push(h("span", { key: "att", className: `${CSS_PREFIX}-badge` }, t("attachment_badge", { n: message.attachments.length })));
-		}
 		if (message.edited) {
-			badges.push(h("span", { key: "edit", className: `${CSS_PREFIX}-badge` }, t("edited_badge")));
+			badges.push(h("span", { key: "edit", className: `${CSS_PREFIX}-meta-badge` }, t("edited_badge")));
 		}
 		// Role-color category label, right-aligned on the meta line; the same
 		// hue paints the card's left bar via --damc-flag.
@@ -4501,49 +5086,107 @@ module.exports = (() => {
 			badges.push(h("span", { key: "cat", className: `${CSS_PREFIX}-cat` },
 				`${t(`cat_${verdict.category}`)}${verdict.severity >= 3 ? " !!!" : verdict.severity === 2 ? " !!" : ""}`));
 		}
-		// Up to 3 tiny thumbnails for image attachments; lazy so a long list
-		// only loads what scrolls into view.
-		const thumbs = message.attachments.filter(att => att.isImage && att.url).slice(0, 3);
-		return h("button", {
-			type: "button",
-			role: "checkbox",
-			"aria-checked": props.selected,
-			className: `${CSS_PREFIX}-mcard${verdict ? ` ${CSS_PREFIX}-mcard-flagged` : ""}`,
+		const channelId = message.channelId || props.channelId;
+		const messagePath = DiscordAdapter.messagePath(props.guildId, channelId, message.id);
+		const attachmentNodes = attachments.map((att, index) => {
+			const name = String(att.filename || t("attachment_unnamed"));
+			const url = /^https?:\/\//i.test(att.url || "") ? att.url : "";
+			const noLinkClass = url ? "" : ` ${CSS_PREFIX}-attachment-no-link`;
+			const previewUrl = att.proxyUrl || url;
+			const size = formatAttachmentSize(att.size);
+			const copy = h("span", { className: `${CSS_PREFIX}-attachment-copy` },
+				h("span", { className: `${CSS_PREFIX}-attachment-name`, title: name }, name),
+				size ? h("span", { className: `${CSS_PREFIX}-attachment-size` }, size) : null
+			);
+			const linkProps = url ? {
+				href: url,
+				target: "_blank",
+				rel: "noopener noreferrer",
+				title: t("attachment_open", { name }),
+				onClick: event => event.stopPropagation()
+			} : {};
+			if (att.isImage && previewUrl) {
+				const fallbackTag = url ? "a" : "span";
+				return h("div", { key: `${message.id}-att-${index}`, className: `${CSS_PREFIX}-image-direct-wrap${noLinkClass}` },
+					h("button", {
+						type: "button",
+						className: `${CSS_PREFIX}-image-direct`,
+						title: name,
+						"aria-label": t("attachment_preview", { name }),
+						onClick: event => {
+							event.stopPropagation();
+							if (props.onPreview) props.onPreview({ url: previewUrl, filename: name });
+						}
+					}, h("img", {
+						className: `${CSS_PREFIX}-image-direct-img`,
+						src: previewUrl,
+						alt: name,
+						loading: "lazy",
+						draggable: false,
+						onError: event => {
+							const image = event.currentTarget || event.target;
+							if (url && previewUrl !== url && image && image.dataset.originalTried !== "true") {
+								image.dataset.originalTried = "true";
+								image.src = url;
+								return;
+							}
+							try {
+								const wrap = image && image.closest(`.${CSS_PREFIX}-image-direct-wrap`);
+								if (wrap) wrap.classList.add(`${CSS_PREFIX}-image-direct-failed`);
+							} catch (e) { /* file fallback remains */ }
+						}
+					})),
+					h(fallbackTag, Object.assign({ className: `${CSS_PREFIX}-attachment ${CSS_PREFIX}-attachment-file ${CSS_PREFIX}-image-direct-fallback${noLinkClass}` }, linkProps),
+						h("span", { className: `${CSS_PREFIX}-attachment-file-icon`, dangerouslySetInnerHTML: { __html: FILE_ICON_SVG } }),
+						copy,
+						url ? h("span", { className: `${CSS_PREFIX}-attachment-open`, dangerouslySetInnerHTML: { __html: OPEN_ICON_SVG } }) : null
+					)
+				);
+			}
+			const tag = url ? "a" : "div";
+			return h(tag, Object.assign({ key: `${message.id}-att-${index}`, className: `${CSS_PREFIX}-attachment ${CSS_PREFIX}-attachment-file${noLinkClass}` }, linkProps),
+				h("span", { className: `${CSS_PREFIX}-attachment-file-icon`, dangerouslySetInnerHTML: { __html: FILE_ICON_SVG } }),
+				copy,
+				url ? h("span", { className: `${CSS_PREFIX}-attachment-open`, dangerouslySetInnerHTML: { __html: OPEN_ICON_SVG } }) : null
+			);
+		});
+		return h("div", {
+			className: `${CSS_PREFIX}-mcard${props.selected ? ` ${CSS_PREFIX}-mcard-selected` : ""}${verdict ? ` ${CSS_PREFIX}-mcard-flagged` : ""}`,
 			style: verdict ? { "--damc-flag": CATEGORY_COLORS[verdict.category] || CATEGORY_COLORS.other } : undefined,
 			onClick: () => props.onToggle(message.id)
 		},
-			h("span", {
-				className: `${CSS_PREFIX}-checkbox${props.selected ? ` ${CSS_PREFIX}-checkbox-on` : ""}`,
-				dangerouslySetInnerHTML: { __html: props.selected ? CHECK_MARK_SVG : "" }
-			}),
+			h("button", {
+				type: "button",
+				role: "checkbox",
+				"aria-checked": props.selected,
+				"aria-label": t("select_message"),
+				className: `${CSS_PREFIX}-row-select`,
+				title: t("select_message"),
+				onClick: event => { event.stopPropagation(); props.onToggle(message.id); }
+			}, h("span", {
+					className: `${CSS_PREFIX}-checkbox${props.selected ? ` ${CSS_PREFIX}-checkbox-on` : ""}`,
+					dangerouslySetInnerHTML: { __html: props.selected ? CHECK_MARK_SVG : "" }
+			})),
 			h("div", { className: `${CSS_PREFIX}-row-body` },
 				h("div", { className: `${CSS_PREFIX}-row-meta` },
 					h("span", { className: `${CSS_PREFIX}-mtime` }, Utils.formatTime(message.timestamp)),
-					badges
+					badges,
+					messagePath ? h("button", {
+						type: "button",
+						className: `${CSS_PREFIX}-message-jump`,
+						title: t("message_jump"),
+						"aria-label": t("message_jump"),
+						onClick: event => {
+							event.stopPropagation();
+							if (props.onJump) props.onJump(message);
+						},
+						dangerouslySetInnerHTML: { __html: JUMP_ICON_SVG }
+					}) : null
 				),
 				hasText
 					? h("div", { className: `${CSS_PREFIX}-row-text` }, renderContentSegments(message.content))
-					: (thumbs.length
-						? null
-						: h("div", { className: `${CSS_PREFIX}-row-text ${CSS_PREFIX}-faint` },
-							t("attachment_only", { names: Utils.truncate(message.attachments.map(att => att.filename).join(", "), 60) }))),
-				thumbs.length ? h("div", { className: `${CSS_PREFIX}-row-thumbs` },
-					thumbs.map((att, index) => h("img", {
-						key: index,
-						className: `${CSS_PREFIX}-thumb`,
-						src: att.url,
-						alt: att.filename,
-						title: att.filename,
-						loading: "lazy",
-						draggable: false,
-						// Opens the lightbox; must not toggle the row selection.
-						onClick: event => {
-							event.stopPropagation();
-							if (props.onPreview) props.onPreview(att);
-						},
-						onError: event => { try { event.target.style.display = "none"; } catch (e) { /* ignore */ } }
-					}))
-				) : null,
+					: null,
+				attachmentNodes.length ? h("div", { className: `${CSS_PREFIX}-attachment-list` }, attachmentNodes) : null,
 				verdict && verdict.reason ? h("div", { className: `${CSS_PREFIX}-row-reason` }, verdict.reason) : null
 			)
 		);
@@ -4622,6 +5265,7 @@ module.exports = (() => {
 		const [flagFilter, setFlagFilter] = useState(false);
 		const [channelFilter, setChannelFilter] = useState(null); // guild scope: null = all channels
 		const [lightbox, setLightbox] = useState(null);           // {url, name} | null
+		const lightboxRef = useRef(null);
 		const [gateArmed, setGateArmed] = useState(false);
 		// delete state
 		const [deleteProgress, setDeleteProgress] = useState(null);
@@ -4651,10 +5295,19 @@ module.exports = (() => {
 		// The review pipeline writes ONLY into ReviewSession; this component is
 		// a subscribed view. That is what lets a minimized review keep running.
 		useEffect(() => {
+			const restoreView = (viewState, payload) => {
+				if (!viewState || !payload || !Array.isArray(payload.messages)) return false;
+				const known = new Set(payload.messages.map(message => message.id));
+				const selectedIds = Array.isArray(viewState.selectedIds) ? viewState.selectedIds.filter(id => known.has(id)) : [];
+				setSelected(new Set(selectedIds));
+				setFlagFilter(Boolean(viewState.flagFilter));
+				setChannelFilter(viewState.channelFilter || null);
+				return true;
+			};
 			const sync = () => {
 				if (!mountedRef.current) return;
 				const session = ReviewSession.state;
-				if (!session || session.channelId !== ctx.channelId) {
+				if (!session || !ReviewSession.matches(ctx)) {
 					setReviewing(false);
 					setReviewStage(null);
 					return;
@@ -4677,32 +5330,48 @@ module.exports = (() => {
 			};
 			const unsubscribe = ReviewSession.subscribe(sync);
 			// Hydrate from a background session (pill click or manual reopen in
-			// the same channel), or fall back to the last scan so an accidental
+			// the same scan scope), or fall back to the last scan so an accidental
 			// modal close does not lose the results.
 			const session = ReviewSession.state;
-			if (session && session.channelId === ctx.channelId && session.fetchResult) {
+			if (session && ReviewSession.matches(ctx) && session.fetchResult) {
+				const cached = ScanCache.get(ctx);
 				setFetchResult(session.fetchResult);
 				setScope(session.scope || "channel");
 				setStage("results");
 				MiniPill.hide();
+				if (restoreView(session.viewState || (cached && cached.viewState), session.fetchResult) && session.phase === "done") {
+					doneHandledRef.current = true;
+					setReviewDone(true);
+				}
 				sync();
 			} else {
-				const cached = ScanCache.get(ctx.channelId);
+				const cached = ScanCache.get(ctx);
 				if (cached) {
 					setFetchResult(cached.fetchResult);
 					setScope(cached.scope || "channel");
 					setStage("results");
+					restoreView(cached.viewState, cached.fetchResult);
 				}
 			}
 			return unsubscribe;
 		}, []);
 
-		// Escape closes the image lightbox.
+		// Escape closes the image lightbox; focus enters the portalled dialog
+		// while open, then returns to the preview control that launched it.
 		useEffect(() => {
 			if (!lightbox) return undefined;
+			let previous = null;
+			try { previous = document.activeElement; } catch (e) { /* ignore */ }
 			const onKey = event => { if (event.key === "Escape") { event.stopPropagation(); setLightbox(null); } };
 			document.addEventListener("keydown", onKey, true);
-			return () => document.removeEventListener("keydown", onKey, true);
+			const timer = setTimeout(() => {
+				try { if (lightboxRef.current) lightboxRef.current.focus(); } catch (e) { /* ignore */ }
+			}, 0);
+			return () => {
+				clearTimeout(timer);
+				document.removeEventListener("keydown", onKey, true);
+				try { if (previous && typeof previous.focus === "function") previous.focus(); } catch (e) { /* ignore */ }
+			};
 		}, [lightbox]);
 
 		const applyPreset = (key, days) => {
@@ -4747,10 +5416,11 @@ module.exports = (() => {
 				setError({ message: t("err_no_permission") });
 				return;
 			}
-			// A new scan invalidates any (possibly background) review session
-			// and the accidental-close cache.
+			// A new scan invalidates any (possibly background) review session and
+			// replaces only this scan scope. Other guild/channel caches remain
+			// available during the same plugin session.
 			ReviewSession.abortAndClear();
-			ScanCache.clear();
+			ScanCache.remove(ctx, scope);
 			MiniPill.hide();
 			doneHandledRef.current = false;
 			setError(null);
@@ -4825,7 +5495,7 @@ module.exports = (() => {
 				const payload = Object.assign({}, result, { range, options, scope: useSearch ? scope : "channel" });
 				// Cache BEFORE the mount check: a scan whose modal was closed
 				// mid-flight must still leave its partial results recoverable.
-				if (payload.messages.length) ScanCache.set(ctx.channelId, payload, payload.scope);
+				if (payload.messages.length) ScanCache.set(ctx, payload, payload.scope);
 				if (!mountedRef.current) return;
 				setFetchResult(payload);
 				setStage(payload.messages.length ? "results" : "empty");
@@ -4892,7 +5562,7 @@ module.exports = (() => {
 					cancelled: result.cancelled,
 					resumeCursor: result.resumeCursor
 				});
-				if (payload.messages.length) ScanCache.set(ctx.channelId, payload, payload.scope);
+				if (payload.messages.length) ScanCache.set(ctx, payload, payload.scope);
 				if (!mountedRef.current) return;
 				setFetchResult(payload);
 				setStage("results");
@@ -4925,6 +5595,7 @@ module.exports = (() => {
 			}
 			setGateArmed(false);
 			setError(null);
+			setDeleteReport(null);
 			doneHandledRef.current = false;
 			const controller = beginRun();
 			// Everything below writes into ReviewSession, never into React state:
@@ -4936,6 +5607,7 @@ module.exports = (() => {
 				channel: ctx.channel,
 				channelId: ctx.channelId,
 				scope: fetchResult.scope || "channel",
+				scopeKey: ScanCache.key(ctx, fetchResult.scope || "channel"),
 				fetchResult,
 				verdicts: new Map(previousVerdicts)
 			});
@@ -4997,18 +5669,19 @@ module.exports = (() => {
 				messages: fetchResult.messages.filter(message => !removed.has(message.id))
 			}) : null;
 			if (nextPayload) {
-				if (nextPayload.messages.length) ScanCache.set(ctx.channelId, nextPayload, nextPayload.scope);
-				else ScanCache.clear();
+				if (nextPayload.messages.length) ScanCache.set(ctx, nextPayload, nextPayload.scope);
+				else ScanCache.remove(ctx, nextPayload.scope);
 				// The background session is what hydrates the modal on reopen;
 				// leaving its list untouched would resurrect deleted rows.
 				const session = ReviewSession.state;
-				if (session && session.channelId === ctx.channelId && session.fetchResult) {
+				if (session && ReviewSession.matches(ctx) && session.fetchResult) {
 					ReviewSession.update({ fetchResult: nextPayload });
 				}
 			}
 			for (const id of removed) verdictsRef.current.delete(id);
 			if (!mountedRef.current) return;
 			if (nextPayload) setFetchResult(nextPayload);
+			if (!verdictsRef.current.size) setFlagFilter(false);
 			setSelected(prev => {
 				const next = new Set(prev);
 				for (const id of removed) next.delete(id);
@@ -5077,7 +5750,7 @@ module.exports = (() => {
 				// Guild-wide search results span channels; deletion is per channel.
 				channelId: message.channelId || ctx.channelId,
 				timestamp: message.timestamp,
-				excerpt: Utils.truncate(Utils.stripEmojiTags(message.content || (message.attachments.length ? `[${message.attachments.map(att => att.filename).join(", ")}]` : "")).replace(/\s+/g, " "), 50)
+				excerpt: Utils.truncate(Utils.stripEmojiTags(message.content || (message.attachments.length ? `[${message.attachments.map(att => att.filename || t("attachment_unnamed")).join(", ")}]` : "")).replace(/\s+/g, " "), 50)
 			}));
 		};
 
@@ -5095,6 +5768,23 @@ module.exports = (() => {
 			// "always" is a guarantee the user configured, so it is not togglable here.
 			const locked = mode === "always";
 			const choice = { backup: mode !== "never", format: "md" };
+			let confirmKey = null;
+			let committed = false;
+			const closeConfirm = () => {
+				if (confirmKey == null) return;
+				try {
+					const sys = DiscordAdapter.modalSystem();
+					if (sys) sys.closeModal(confirmKey);
+				} catch (e) { /* the action remains explicit */ }
+				confirmKey = null;
+			};
+			const commitDelete = () => {
+				if (committed) return;
+				committed = true;
+				closeConfirm();
+				if (choice.backup) backupThenDelete(items, choice.format);
+				else executeDelete(items);
+			};
 			const content = h("div", { className: `${CSS_PREFIX}-ui ${CSS_PREFIX}-confirm-body` },
 				overCap ? h("div", { className: `${CSS_PREFIX}-warn` },
 					t("delete_confirm_over_cap", { n: selected.size, max: maxPerRun })) : null,
@@ -5106,17 +5796,19 @@ module.exports = (() => {
 						label: locked ? t("backup_choice_locked") : t("backup_choice_label"),
 						onChange: value => { choice.backup = value; },
 						onFormatChange: value => { choice.format = value; }
-					})
+					}),
+					h("div", { className: `${CSS_PREFIX}-confirm-actions` },
+						h(Btn, { tone: "secondary", onClick: closeConfirm }, t("cancel")),
+						h(Btn, { tone: "danger", onClick: commitDelete }, t("delete_confirm_ok"))
+					)
 			);
 			try {
-				BdApi.UI.showConfirmationModal(t("delete_confirm_title"), content, {
-					danger: true,
-					confirmText: t("delete_confirm_ok"),
-					cancelText: t("cancel"),
-					onConfirm: () => {
-						if (choice.backup) backupThenDelete(items, choice.format);
-						else executeDelete(items);
-					}
+				confirmKey = BdApi.UI.showConfirmationModal(t("delete_confirm_title"), content, {
+					size: `${CSS_PREFIX}-confirm-delete`,
+					confirmText: null,
+					cancelText: null,
+					onCancel: () => { confirmKey = null; },
+					onClose: () => { confirmKey = null; }
 				});
 			} catch (e) {
 				// Never delete without an explicit confirmation: no modal, no run.
@@ -5188,7 +5880,7 @@ module.exports = (() => {
 				zoneRows.push(h("div", { key: "scope", className: `${CSS_PREFIX}-zone-row` },
 					zoneLabel(t("scan_scope_label"), t(scope === "guild" ? "scope_note_guild" : "scope_note_channel")),
 					h("div", { className: `${CSS_PREFIX}-zone-ctl` },
-						h("div", { className: `${CSS_PREFIX}-seg`, role: "radiogroup" },
+						h("div", { className: `${CSS_PREFIX}-seg`, role: "radiogroup", "aria-label": t("scan_scope_label") },
 							[["channel", "scope_channel", HASH_ICON_SVG], ["guild", "scope_guild", GLOBE_ICON_SVG]].map(entry => h("button", {
 								key: entry[0],
 								type: "button",
@@ -5207,7 +5899,7 @@ module.exports = (() => {
 			zoneRows.push(h("div", { key: "time", className: `${CSS_PREFIX}-zone-row` },
 				zoneLabel(t("range_title"), searchSupported ? null : t("range_note")),
 				h("div", { className: `${CSS_PREFIX}-zone-ctl` },
-					h("div", { className: `${CSS_PREFIX}-presets` },
+					h("div", { className: `${CSS_PREFIX}-presets`, role: "group", "aria-label": t("range_title") },
 						[["1d", 1], ["7d", 7], ["30d", 30], ["all", null]].map(entry => h("button", {
 							key: entry[0],
 							type: "button",
@@ -5229,8 +5921,9 @@ module.exports = (() => {
 				zoneRows.push(h("div", { key: "range", className: `${CSS_PREFIX}-zone-row` },
 					h("div", { className: `${CSS_PREFIX}-range-grid ${CSS_PREFIX}-zone-wide` },
 						h("div", null,
-							h("div", { className: `${CSS_PREFIX}-field-label` }, t("start_label")),
+							h("label", { className: `${CSS_PREFIX}-field-label`, htmlFor: `${PLUGIN_ID}-range-start` }, t("start_label")),
 							h("input", {
+								id: `${PLUGIN_ID}-range-start`,
 								type: "datetime-local",
 								className: `${CSS_PREFIX}-input`,
 								value: startVal,
@@ -5238,8 +5931,9 @@ module.exports = (() => {
 							})
 						),
 						h("div", null,
-							h("div", { className: `${CSS_PREFIX}-field-label` }, t("end_label")),
+							h("label", { className: `${CSS_PREFIX}-field-label`, htmlFor: `${PLUGIN_ID}-range-end` }, t("end_label")),
 							h("input", {
+								id: `${PLUGIN_ID}-range-end`,
 								type: "datetime-local",
 								className: `${CSS_PREFIX}-input`,
 								value: endVal,
@@ -5369,7 +6063,9 @@ module.exports = (() => {
 			if (reviewDone) {
 				children.push(h("div", { key: "rsummary", className: `${CSS_PREFIX}-okline` },
 					h("span", { className: `${CSS_PREFIX}-okline-dot` }),
-					t("review_summary", { flagged: flaggedCount, total })));
+					deleteReport && flaggedCount === 0
+						? t("review_summary_cleared", { total })
+						: t("review_summary", { flagged: flaggedCount, total })));
 			}
 			if (reviewFailed.length > 0 && !reviewing) {
 				children.push(h("div", { key: "rfail", className: `${CSS_PREFIX}-warn` },
@@ -5405,7 +6101,23 @@ module.exports = (() => {
 					selected: selected.has(message.id),
 					verdict: verdicts ? verdicts.get(message.id) : null,
 					showChannel: guildView && effectiveChannelFilter === null,
+					guildId: ctx.guildId,
+					channelId: ctx.channelId,
 					onPreview: att => setLightbox({ url: att.url, name: att.filename }),
+					onJump: target => {
+						const opened = DiscordAdapter.openMessage(ctx.guildId, target.channelId || ctx.channelId, target.id);
+						if (opened) {
+							const viewState = { selectedIds: [...selected], flagFilter, channelFilter };
+							const scopeKey = ScanCache.key(ctx, fetchResult.scope || "channel");
+							ScanCache.setView(scopeKey, viewState);
+							const session = ReviewSession.state;
+							if (session && session.scopeKey === scopeKey) ReviewSession.update({ viewState });
+							CleanerModal.closePreserving(Boolean(session));
+						} else {
+							try { BdApi.UI.showToast(t("message_jump_unavailable"), { type: "error" }); } catch (e) { /* keep modal open */ }
+						}
+						return opened;
+					},
 					onToggle: toggleSelected
 				}));
 			}
@@ -5423,7 +6135,7 @@ module.exports = (() => {
 				));
 			}
 			children.push(h("div", { key: "panel", className: `${CSS_PREFIX}-panel` },
-				h("div", { className: `${CSS_PREFIX}-panel-head` },
+				h("div", { className: `${CSS_PREFIX}-panel-head ${CSS_PREFIX}-results-toolbar` },
 					h("button", {
 						type: "button",
 						role: "checkbox",
@@ -5551,6 +6263,11 @@ module.exports = (() => {
 		if (lightbox) {
 			const overlay = h("div", {
 				className: `${CSS_PREFIX}-lightbox`,
+				ref: lightboxRef,
+				role: "dialog",
+				"aria-modal": true,
+				"aria-label": t("attachment_preview", { name: lightbox.name || t("attachment_unnamed") }),
+				tabIndex: -1,
 				onMouseDown: event => event.stopPropagation(),
 				onMouseUp: event => event.stopPropagation(),
 				onClick: event => { event.stopPropagation(); setLightbox(null); }
@@ -5559,7 +6276,8 @@ module.exports = (() => {
 					className: `${CSS_PREFIX}-lightbox-img`,
 					src: lightbox.url,
 					alt: lightbox.name,
-					title: lightbox.name
+					title: lightbox.name,
+					onError: () => setLightbox(null)
 				})
 			);
 			children.push(ReactDOM && typeof ReactDOM.createPortal === "function"
@@ -5567,7 +6285,7 @@ module.exports = (() => {
 				: h("div", { key: "lightbox" }, overlay));
 		}
 
-		return h("div", { className: `${CSS_PREFIX}-modal ${CSS_PREFIX}-ui` }, children);
+		return h("div", { className: `${CSS_PREFIX}-modal ${CSS_PREFIX}-modal-${stage} ${CSS_PREFIX}-ui` }, children);
 	};
 
 	const CleanerModal = {
@@ -5652,9 +6370,15 @@ module.exports = (() => {
 		// stays raised until the modal's async onClose consumes it in cleanup —
 		// resetting it here (synchronously) would re-enable the abort.
 		minimize() {
+			CleanerModal.closePreserving(true);
+		},
+		// Used by minimize and message navigation: close the shell without
+		// aborting a background review. Navigation may skip the pill when there
+		// is no review session; ScanCache still restores manual selection later.
+		closePreserving(showPill) {
 			CleanerModal._preserveRuns = true;
 			CleanerModal.closeIfOpen();
-			MiniPill.show();
+			if (showPill && ReviewSession.state) MiniPill.show();
 		}
 	};
 	// ==================== 20. CHAT ENTRY (3 ENTRY POINTS) ====================

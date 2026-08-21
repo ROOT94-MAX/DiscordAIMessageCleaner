@@ -34,7 +34,8 @@ The messages you regret — violations, private info, throwaway lines — are sc
 - **Account-filtered search:** server scope borrows the Discord client's own search endpoint filtered by `author_id`, fetching your messages across channels directly instead of paging through everyone's history.
 - **AI review:** batches go to any OpenAI-compatible model; hits are labeled with category, severity and reason and auto-selected; a batch that fails to parse goes to a retry queue and is never mis-flagged.
 - **Run in background:** if review is slow, minimize it to a floating pill, keep chatting, and click the pill to return when done.
-- **Result triage:** "flagged only" filter, per-channel dropdown in server scope, inline custom emoji and image thumbnails (click to enlarge), and manual selection.
+- **Result triage:** "flagged only" filter, per-channel dropdown in server scope, inline custom emoji and direct image previews (click to enlarge), clickable body links and attachments, and manual selection.
+- **Cross-channel result retention:** whole-server scans are cached in memory by server; after jumping to any result channel, click the chat-bar plugin icon to reopen the same results and manual selection without rescanning.
 - **Resumable scans:** if a scan is cancelled or hits the cap, continue scanning older messages from where it stopped, keeping your selection and verdicts.
 - **Safe deletion:** second confirmation → optional MD / TXT / JSON export → throttled deletion after a successful save, with pausable/cancelable progress and a deleted/skipped/failed report.
 
@@ -132,7 +133,7 @@ The settings panel has four tabs:
 
 ```
 DiscordAIMessageCleaner.plugin.js   build artifact: the single plugin file you install
-src/                                modular sources (header / 24 section modules / footer)
+src/                                modular sources (header / 25 section modules / footer)
 src/sections/                       01-constants … 22-plugin-class, numbered in dependency order
 tools/build.js                      deterministic build: assembles src/ into the plugin file (zero deps, zero transforms)
 tools/verify.js                     checks byte-exact source/artifact consistency, syntax, version match
@@ -140,6 +141,7 @@ tools/smoke_test.js                 offline smoke test (lifecycle + settings ren
 tools/test_harness.js               offline functional tests (delete queue / search / batching / verdict parsing, etc.)
 ARCHITECTURE.md                     architecture doc (module map, data flows, touch points; kept in sync with the code) — in Chinese
 REGRESSION.md                       pre-release manual regression checklist (incl. the safe deletion walkthrough) — in Chinese
+TODO.md                             deferred, non-blocking architecture debt backlog
 SECURITY.md                         supported versions, private vulnerability reporting, and redaction rules
 PLAN.md                             the original implementation plan (historical) — in Chinese
 ```
@@ -156,6 +158,8 @@ node tools/test_harness.js # functional tests
 ```
 
 Edit the section modules under `src/sections/`, then rebuild; **never edit the generated plugin file directly** (`verify` catches it). Dependencies between sections are strictly one-way — later sections may use earlier ones, never the reverse — and only `07-discord-adapter` may touch Discord internals. CI (GitHub Actions) runs all of the above on every push.
+
+Scan caches live only for the current plugin session: whole-server scans are shared across that server under `guild:<guildId>`, while channel and DM scans remain isolated under `channel:<channelId>`. The registry keeps at most 20 recent scopes and is cleared when the plugin stops or reloads.
 
 `main` is protected by a GitHub Ruleset. Open a Pull Request from a non-`main` branch and merge only after `verify` passes; direct updates, force pushes, and deletion of `main` are blocked.
 

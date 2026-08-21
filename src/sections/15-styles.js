@@ -2,10 +2,17 @@
 
 	const PLUGIN_CSS = `
 		.${CSS_PREFIX}-confirm-wide {
-			width: 640px !important;
+			width: 680px !important;
 			max-width: calc(100vw - 80px) !important;
 		}
 		.${CSS_PREFIX}-confirm-wide > :last-child {
+			display: none !important;
+		}
+		.${CSS_PREFIX}-confirm-delete {
+			width: 440px !important;
+			max-width: calc(100vw - 48px) !important;
+		}
+		.${CSS_PREFIX}-confirm-delete > :last-child {
 			display: none !important;
 		}
 		/* The shell's content padding is zeroed so the plugin owns every inset.
@@ -78,7 +85,7 @@
 			--damc-danger: var(--status-danger, #f23f43);
 			--damc-scroll-thumb: var(--scrollbar-auto-thumb, var(--background-modifier-accent, rgba(78, 80, 88, 0.48)));
 		}
-		.${CSS_PREFIX}-ui :is(button, [role="tab"]):focus-visible {
+		.${CSS_PREFIX}-ui :is(button, a, [role="tab"]):focus-visible {
 			outline: none;
 			box-shadow: 0 0 0 2px color-mix(in srgb, var(--damc-brand) 45%, transparent);
 		}
@@ -104,23 +111,24 @@
 		.${CSS_PREFIX}-modal {
 			display: flex;
 			flex-direction: column;
-			gap: 14px;
+			gap: 12px;
 			padding: 4px 16px 16px;
 			color: var(--damc-text, #dbdee1);
 			font-size: 15px;
 			user-select: text;
 		}
 		.${CSS_PREFIX}-context {
-			font-size: 13px;
+			font-size: 16px;
 			font-weight: 500;
-			color: var(--damc-text-sub, #b5bac1);
+			line-height: 20px;
+			color: var(--damc-text, #dbdee1);
 			overflow: hidden;
 			text-overflow: ellipsis;
 			white-space: nowrap;
 		}
 		/* Header stack: the stats line rides tight under the channel line. */
 		.${CSS_PREFIX}-context + .${CSS_PREFIX}-stats {
-			margin-top: -10px;
+			margin-top: -8px;
 		}
 		.${CSS_PREFIX}-note {
 			font-size: 13px;
@@ -395,6 +403,7 @@
 		}
 		.${CSS_PREFIX}-stats {
 			font-size: 13px;
+			line-height: 18px;
 			color: var(--damc-text-faint, #949ba4);
 		}
 		.${CSS_PREFIX}-stats-warn {
@@ -436,23 +445,29 @@
 		.${CSS_PREFIX}-panel-head {
 			display: flex;
 			align-items: center;
-			gap: 10px;
-			margin-bottom: 10px;
+			gap: 12px;
+			min-height: 36px;
+			margin-bottom: 8px;
 			flex: 0 0 auto;
+			flex-wrap: wrap;
 		}
 		.${CSS_PREFIX}-panel-spacer {
 			flex: 1 1 auto;
 		}
-		/* The channel filter rides the head band: one size smaller than the
-		   settings-page triggers so the band stays a band. */
-		.${CSS_PREFIX}-panel-head .${CSS_PREFIX}-select-trigger {
-			height: 26px;
+		/* Results reuse the settings-page 32px control and 15px label scale. */
+		.${CSS_PREFIX}-results-toolbar .${CSS_PREFIX}-select-trigger {
+			height: 32px;
 			min-width: 0;
 			max-width: 220px;
-			font-size: 12.5px;
+			font-size: 15px;
+		}
+		.${CSS_PREFIX}-results-toolbar .${CSS_PREFIX}-check {
+			min-height: 32px;
+			font-size: 15px;
+			font-weight: 500;
 		}
 		.${CSS_PREFIX}-panel-count {
-			font-size: 12.5px;
+			font-size: 13px;
 			color: var(--damc-text-faint, #949ba4);
 			font-variant-numeric: tabular-nums;
 			flex: 0 0 auto;
@@ -463,6 +478,7 @@
 			display: flex;
 			flex-direction: column;
 			background: var(--damc-surface, #2b2d31);
+			border: 1px solid color-mix(in srgb, var(--damc-text, #dbdee1) 5%, transparent);
 			border-radius: 8px;
 			/* Shrinks on short windows so the footer stays reachable. */
 			max-height: min(340px, 38vh);
@@ -493,7 +509,9 @@
 			display: flex;
 			align-items: flex-start;
 			gap: 10px;
-			padding: 8px 12px;
+			width: 100%;
+			box-sizing: border-box;
+			padding: 9px 12px;
 			border: 0;
 			background: transparent;
 			font: inherit;
@@ -508,8 +526,12 @@
 		.${CSS_PREFIX}-mcard:hover {
 			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
 		}
-		/* Selection is the checkbox's job alone: no card tint (select-all is
-		   the normal case; tinting every row turns the list into patchwork). */
+		.${CSS_PREFIX}-mcard-selected,
+		.${CSS_PREFIX}-mcard-selected:hover {
+			background: color-mix(in srgb, var(--damc-brand, #5865f2) 7%, transparent);
+		}
+		/* Selection stays quiet: the checkbox is primary, with only a very low
+		   brand wash on the row to keep the state legible while scanning. */
 		.${CSS_PREFIX}-mcard-flagged::before {
 			content: "";
 			position: absolute;
@@ -525,6 +547,19 @@
 		}
 		.${CSS_PREFIX}-mcard-static:hover {
 			background: transparent;
+		}
+		.${CSS_PREFIX}-row-select {
+			width: 20px;
+			height: 20px;
+			padding: 0;
+			border: 0;
+			background: transparent;
+			color: inherit;
+			cursor: pointer;
+			flex: 0 0 auto;
+			display: flex;
+			align-items: flex-start;
+			justify-content: flex-start;
 		}
 		.${CSS_PREFIX}-checkbox {
 			width: 18px;
@@ -553,7 +588,7 @@
 			min-width: 0;
 			display: flex;
 			flex-direction: column;
-			gap: 2px;
+			gap: 4px;
 		}
 		.${CSS_PREFIX}-row-meta {
 			display: flex;
@@ -561,20 +596,27 @@
 			gap: 8px;
 			font-size: 12px;
 			color: var(--damc-text-faint, #949ba4);
+			min-height: 17px;
 		}
 		/* Meta badges stay per-row but must never compete with the content:
 		   one size down, faint text, barely-there fill. */
-		.${CSS_PREFIX}-badge {
+		.${CSS_PREFIX}-meta-badge {
 			display: inline-flex;
 			align-items: center;
-			padding: 0 5px;
-			height: 15px;
-			border-radius: 4px;
+			padding: 0 4px;
+			height: 14px;
+			border-radius: 3px;
 			font-size: 10px;
 			font-weight: 500;
-			background: color-mix(in srgb, var(--damc-text, #dbdee1) 4%, transparent);
+			line-height: 14px;
+			background: color-mix(in srgb, var(--damc-text, #dbdee1) 3%, transparent);
 			color: var(--damc-text-faint, #949ba4);
 			flex: 0 0 auto;
+		}
+		.${CSS_PREFIX}-channel-badge {
+			opacity: 0.72;
+			font-weight: 400;
+			letter-spacing: 0;
 		}
 		/* Category label: role-color language — dot + colored text, no pill. */
 		.${CSS_PREFIX}-cat {
@@ -599,10 +641,39 @@
 			font-variant-numeric: tabular-nums;
 			flex: 0 0 auto;
 		}
+		.${CSS_PREFIX}-message-jump {
+			width: 24px;
+			height: 24px;
+			padding: 0;
+			border: 0;
+			margin-left: auto;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: 4px;
+			background: transparent;
+			font: inherit;
+			color: var(--damc-text-faint, #949ba4);
+			opacity: 0.58;
+			text-decoration: none;
+			cursor: pointer;
+			flex: 0 0 auto;
+			transition: opacity 120ms ease, color 120ms ease, background 120ms ease;
+		}
+		.${CSS_PREFIX}-cat + .${CSS_PREFIX}-message-jump { margin-left: 2px; }
+		.${CSS_PREFIX}-message-jump svg { width: 16px; height: 16px; display: block; }
+		.${CSS_PREFIX}-mcard:hover .${CSS_PREFIX}-message-jump,
+		.${CSS_PREFIX}-message-jump:focus-visible {
+			opacity: 1;
+		}
+		.${CSS_PREFIX}-message-jump:hover {
+			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
+			color: var(--damc-link, #00a8fc);
+		}
 		/* Two-line clamp: the user is judging whether to delete this message,
 		   so a one-line ellipsis hides exactly what they need to read. */
 		.${CSS_PREFIX}-row-text {
-			font-size: 15px;
+			font-size: 14px;
 			line-height: 1.4;
 			display: -webkit-box;
 			-webkit-line-clamp: 2;
@@ -610,6 +681,11 @@
 			overflow: hidden;
 			overflow-wrap: anywhere;
 		}
+		.${CSS_PREFIX}-row-link {
+			color: var(--damc-link, #00a8fc);
+			text-decoration: none;
+		}
+		.${CSS_PREFIX}-row-link:hover { text-decoration: underline; }
 		.${CSS_PREFIX}-row-text.${CSS_PREFIX}-faint {
 			color: var(--damc-text-faint, #949ba4);
 			font-style: italic;
@@ -795,26 +871,133 @@
 			background: var(--damc-brand, #5865f2);
 			color: var(--damc-on-brand, #fff);
 		}
+		.${CSS_PREFIX}-emoji-token {
+			display: inline-flex;
+			align-items: center;
+			vertical-align: -5px;
+			margin: 0 1px;
+			max-width: 100%;
+		}
 		.${CSS_PREFIX}-emoji {
 			width: 20px;
 			height: 20px;
 			object-fit: contain;
-			vertical-align: -5px;
-			margin: 0 1px;
+			display: block;
 		}
-		.${CSS_PREFIX}-row-thumbs {
+		.${CSS_PREFIX}-emoji-fallback {
+			display: none;
+			max-width: 150px;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			font-size: 12px;
+			line-height: 18px;
+			color: var(--damc-text-faint, #949ba4);
+		}
+		.${CSS_PREFIX}-emoji-token.${CSS_PREFIX}-emoji-failed .${CSS_PREFIX}-emoji { display: none; }
+		.${CSS_PREFIX}-emoji-token.${CSS_PREFIX}-emoji-failed .${CSS_PREFIX}-emoji-fallback { display: inline; }
+		.${CSS_PREFIX}-attachment-list {
 			display: flex;
-			gap: 6px;
-			margin-top: 6px;
+			align-items: flex-start;
+			flex-wrap: wrap;
+			gap: 8px;
+			margin-top: 3px;
+			max-width: 520px;
 		}
-		.${CSS_PREFIX}-thumb {
-			width: 44px;
-			height: 44px;
-			object-fit: cover;
-			border-radius: 4px;
-			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
-			background: var(--damc-surface, #2b2d31);
+		.${CSS_PREFIX}-image-direct-wrap {
+			min-width: 0;
+			max-width: 100%;
+			flex: 0 1 auto;
 		}
+		.${CSS_PREFIX}-image-direct {
+			display: block;
+			max-width: 100%;
+			padding: 0;
+			border: 0;
+			border-radius: 8px;
+			overflow: hidden;
+			background: transparent;
+			cursor: zoom-in;
+			line-height: 0;
+		}
+		.${CSS_PREFIX}-image-direct-img {
+			display: block;
+			width: auto;
+			height: auto;
+			max-width: min(320px, 100%);
+			max-height: 220px;
+			object-fit: contain;
+			border-radius: 8px;
+			background: var(--damc-sunken, #1e1f22);
+		}
+		.${CSS_PREFIX}-attachment-file {
+			width: min(260px, 100%);
+			max-width: 320px;
+			flex: 1 1 220px;
+		}
+		.${CSS_PREFIX}-attachment {
+			min-width: 0;
+			min-height: 40px;
+			box-sizing: border-box;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			padding: 5px 7px;
+			border: 1px solid color-mix(in srgb, var(--damc-text, #dbdee1) 8%, transparent);
+			border-radius: 6px;
+			background: color-mix(in srgb, var(--damc-sunken, #1e1f22) 68%, transparent);
+			color: var(--damc-text, #dbdee1);
+			text-decoration: none;
+		}
+		.${CSS_PREFIX}-image-direct-fallback { display: none; }
+		.${CSS_PREFIX}-image-direct-wrap.${CSS_PREFIX}-image-direct-failed .${CSS_PREFIX}-image-direct { display: none; }
+		.${CSS_PREFIX}-image-direct-wrap.${CSS_PREFIX}-image-direct-failed .${CSS_PREFIX}-image-direct-fallback { display: flex; }
+		.${CSS_PREFIX}-attachment-file:hover,
+		.${CSS_PREFIX}-attachment:focus-within {
+			border-color: color-mix(in srgb, var(--damc-link, #00a8fc) 45%, transparent);
+			background: color-mix(in srgb, var(--damc-link, #00a8fc) 6%, var(--damc-sunken, #1e1f22));
+		}
+		.${CSS_PREFIX}-attachment-file-icon {
+			width: 28px;
+			height: 28px;
+			border-radius: 5px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background: color-mix(in srgb, var(--damc-link, #00a8fc) 11%, transparent);
+			color: var(--damc-link, #00a8fc);
+			flex: 0 0 auto;
+		}
+		.${CSS_PREFIX}-attachment-file-icon svg { width: 17px; height: 17px; display: block; }
+		.${CSS_PREFIX}-attachment-copy {
+			min-width: 0;
+			flex: 1 1 auto;
+			display: flex;
+			flex-direction: column;
+			gap: 1px;
+		}
+		.${CSS_PREFIX}-attachment-name {
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			font-size: 12.5px;
+			font-weight: 500;
+			color: var(--damc-link, #00a8fc);
+		}
+		.${CSS_PREFIX}-attachment-no-link .${CSS_PREFIX}-attachment-name {
+			color: var(--damc-text, #dbdee1);
+		}
+		.${CSS_PREFIX}-attachment-size {
+			font-size: 10.5px;
+			color: var(--damc-text-faint, #949ba4);
+		}
+		.${CSS_PREFIX}-attachment-open {
+			width: 14px;
+			height: 14px;
+			color: var(--damc-text-faint, #949ba4);
+			flex: 0 0 auto;
+		}
+		.${CSS_PREFIX}-attachment-open svg { width: 14px; height: 14px; display: block; }
 		.${CSS_PREFIX}-check {
 			display: flex;
 			align-items: center;
@@ -840,6 +1023,18 @@
 			line-height: 1.4;
 			color: var(--damc-text, #dbdee1);
 			text-align: left;
+		}
+		.${CSS_PREFIX}-confirm-actions {
+			display: flex;
+			align-items: center;
+			justify-content: flex-end;
+			gap: 10px;
+			margin-top: 8px;
+		}
+		.${CSS_PREFIX}-confirm-actions .${CSS_PREFIX}-btn {
+			height: 38px;
+			min-width: 88px;
+			padding-inline: 16px;
 		}
 		.${CSS_PREFIX}-backup-choice {
 			align-items: flex-start;
@@ -924,6 +1119,7 @@
 			justify-content: center;
 			background: rgba(0, 0, 0, 0.85);
 			cursor: zoom-out;
+			outline: none;
 		}
 		.${CSS_PREFIX}-lightbox-img {
 			max-width: 92vw;
@@ -932,7 +1128,6 @@
 			box-shadow: var(--damc-shadow, 0 8px 16px rgba(0, 0, 0, 0.24));
 			cursor: zoom-out;
 		}
-		.${CSS_PREFIX}-thumb { cursor: zoom-in; }
 		/* Load-more: the list's own tail row (resume-scan). */
 		.${CSS_PREFIX}-lmore {
 			display: flex;
@@ -1831,5 +2026,28 @@
 		.${CSS_PREFIX}-about-badges .${CSS_PREFIX}-badge:focus-visible {
 			outline: none;
 			box-shadow: 0 0 0 2px color-mix(in srgb, var(--damc-brand, #5865f2) 42%, transparent);
+		}
+		@media (max-width: 560px) {
+			.${CSS_PREFIX}-confirm-wide {
+				max-width: calc(100vw - 24px) !important;
+			}
+			.${CSS_PREFIX}-modal { padding-inline: 12px; }
+			.${CSS_PREFIX}-zone-row {
+				align-items: stretch;
+				flex-direction: column;
+				gap: 8px;
+			}
+			.${CSS_PREFIX}-zone-ctl {
+				width: 100%;
+				justify-content: flex-start;
+			}
+			.${CSS_PREFIX}-range-grid {
+				grid-template-columns: minmax(0, 1fr);
+			}
+			.${CSS_PREFIX}-attachment-list { flex-direction: column; }
+			.${CSS_PREFIX}-attachment-file { width: 100%; max-width: 100%; }
+			.${CSS_PREFIX}-panel-head .${CSS_PREFIX}-select-trigger {
+				max-width: min(220px, calc(100vw - 72px));
+			}
 		}
 	`;
