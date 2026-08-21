@@ -82,11 +82,11 @@ module.exports = (() => {
 
 	// Broom-over-message icon.
 	const CLEANER_ICON_SVG = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M5 3a3 3 0 0 0-3 3v7a3 3 0 0 0 3 3h1.59l2.7 2.7a1 1 0 0 0 1.7-.7V16H19a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3H5Zm3.1 4.1a1 1 0 0 1 1.4 0L12 9.6l2.5-2.5a1 1 0 1 1 1.4 1.4L13.4 11l2.5 2.5a1 1 0 0 1-1.4 1.4L12 12.4l-2.5 2.5a1 1 0 0 1-1.4-1.4L10.6 11 8.1 8.5a1 1 0 0 1 0-1.4Z"/></svg>`;
-	const CLOSE_ICON_SVG = `<svg width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M19.3 20.7 12 13.4l-7.3 7.3-1.4-1.4 7.3-7.3-7.3-7.3 1.4-1.4 7.3 7.3 7.3-7.3 1.4 1.4-7.3 7.3 7.3 7.3z"/></svg>`;
-	const CHECK_MARK_SVG = `<svg width="12" height="12" viewBox="0 0 24 24"><path fill="currentColor" d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>`;
-	const DASH_MARK_SVG = `<svg width="12" height="12" viewBox="0 0 24 24"><path fill="currentColor" d="M5 11h14v2H5z"/></svg>`;
-	const HASH_ICON_SVG = `<svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M9.9 3.3 9.2 7H5v2h3.8l-.6 3.5H4v2h3.8L7.1 19h2l.7-4.5h4.3L13.4 19h2l.7-4.5H20v-2h-3.5l.6-3.5H21V7h-3.5l.7-3.7h-2L15.5 7h-4.3l.7-3.7h-2ZM10.8 9h4.3l-.6 3.5h-4.3L10.8 9Z"/></svg>`;
-	const GLOBE_ICON_SVG = `<svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm7.7 9h-3.3a15.9 15.9 0 0 0-1.2-5.4A8 8 0 0 1 19.7 11ZM12 4.1c.9 1.2 1.9 3.3 2.3 6.9H9.7c.4-3.6 1.4-5.7 2.3-6.9ZM4.3 13h3.3c.2 2 .6 3.9 1.2 5.4A8 8 0 0 1 4.3 13Zm3.3-2H4.3a8 8 0 0 1 4.5-5.4A15.9 15.9 0 0 0 7.6 11Zm4.4 8.9c-.9-1.2-1.9-3.3-2.3-6.9h4.6c-.4 3.6-1.4 5.7-2.3 6.9Zm2.7-1.5c.6-1.5 1-3.4 1.2-5.4h3.3a8 8 0 0 1-4.5 5.4Z"/></svg>`;
+	const CLOSE_ICON_SVG = `<svg width="20" height="20" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M480-438 270-228q-9 9-21 9t-21-9q-9-9-9-21t9-21l210-210-210-210q-9-9-9-21t9-21q9-9 21-9t21 9l210 210 210-210q9-9 21-9t21 9q9 9 9 21t-9 21L522-480l210 210q9 9 9 21t-9 21q-9 9-21 9t-21-9L480-438Z"/></svg>`;
+	const CHECK_MARK_SVG = `<svg width="12" height="12" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="m378-332 363-363q9-9 21.5-9t21.5 9q9 9 9 21.5t-9 21.5L399-267q-9 9-21 9t-21-9L175-449q-9-9-8.5-21.5T176-492q9-9 21.5-9t21.5 9l159 160Z"/></svg>`;
+	const DASH_MARK_SVG = `<svg width="12" height="12" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M230-450q-12.75 0-21.37-8.68-8.63-8.67-8.63-21.5 0-12.82 8.63-21.32 8.62-8.5 21.37-8.5h500q12.75 0 21.38 8.68 8.62 8.67 8.62 21.5 0 12.82-8.62 21.32-8.63 8.5-21.38 8.5H230Z"/></svg>`;
+	const HASH_ICON_SVG = `<svg width="16" height="16" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="m338-319-35 137q-2 10-9.5 16t-17.5 6q-14 0-23-11t-5-25l31-123H158q-14 0-23.5-11.5T129-356q2-10 10-16.5t19-6.5h136l51-202H224q-14 0-23.5-11.5T195-618q2-10 10-16.5t19-6.5h136l34-137q2-10 9.5-16t17.5-6q14 0 22.5 10.5T449-765l-30 124h203l34-137q2-10 9.5-16t17.5-6q14 0 22.5 10.5T711-765l-30 124h121q14 0 23.5 11.5T831-604q-2 10-10 16.5t-19 6.5H666l-51 202h121q14 0 23.5 11.5T765-342q-2 10-10 16.5t-19 6.5H600l-35 137q-2 10-9.5 16t-17.5 6q-14 0-23-11t-5-25l31-123H338Zm15-60h203l51-202H404l-51 202Z"/></svg>`;
+	const GLOBE_ICON_SVG = `<svg width="16" height="16" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M323-111.5Q250-143 196-197t-85-127.5Q80-398 80-482t31-156.5Q142-711 196-765t127-84.5Q396-880 480-880t157 30.5Q710-819 764-765t85 126.5Q880-566 880-482t-31 157.5Q818-251 764-197t-127 85.5Q564-80 480-80t-157-31.5ZM480-138q35-36 58.5-82.5T577-331H384q14 60 37.5 108t58.5 85Zm-85-12q-25-38-43-82t-30-99H172q38 71 88 111.5T395-150Zm171-1q72-23 129.5-69T788-331H639q-13 54-30.5 98T566-151ZM152-391h159q-3-27-3.5-48.5T307-482q0-25 1-44.5t4-43.5H152q-7 24-9.5 43t-2.5 45q0 26 2.5 46.5T152-391Zm221 0h215q4-31 5-50.5t1-40.5q0-20-1-38.5t-5-49.5H373q-4 31-5 49.5t-1 38.5q0 21 1 40.5t5 50.5Zm275 0h160q7-24 9.5-44.5T820-482q0-26-2.5-45t-9.5-43H649q3 35 4 53.5t1 34.5q0 22-1.5 41.5T648-391Zm-10-239h150q-33-69-90.5-115T565-810q25 37 42.5 80T638-630Zm-254 0h194q-11-53-37-102.5T480-820q-32 27-54 71t-42 119Zm-212 0h151q11-54 28-96.5t43-82.5q-75 19-131 64t-91 115Z"/></svg>`;
 	// ==================== 02. BOUND API + LOGGER ====================
 
 	const Api = new BdApi(PLUGIN_ID);
@@ -369,7 +369,6 @@ module.exports = (() => {
 			// settings: policy library
 			prompt_active: "当前策略",
 			prompt_builtin: "内置模板",
-			prompt_name: "名称",
 			prompt_content: "内容",
 			prompt_new: "新建策略",
 			prompt_duplicate: "复制为新策略",
@@ -377,6 +376,7 @@ module.exports = (() => {
 			prompt_default_name: "策略 {n}",
 			prompt_delete_confirm: "确定删除策略「{name}」？",
 			prompt_placeholder: "留空使用内置模板",
+			policy_readonly: "只读",
 			// settings: diagnostics
 			group_about: "关于插件",
 			about_description: "用 AI 审查并安全清理你自己发送的历史消息。",
@@ -439,7 +439,6 @@ module.exports = (() => {
 			// settings: review policy
 			set_policy: "审查策略提示词",
 			set_policy_note: "留空使用内置模板。描述哪些内容算违规，AI 只按此判定。可用占位符：{{LANGUAGE}}。",
-			set_policy_reset: "恢复默认",
 			set_concurrency: "并发审查请求数",
 			set_concurrency_note: "同时向 AI 端点发出的批次数。调大明显加速，但本地模型或严格限流的端点建议 1-2。",
 			set_batch_size: "每批消息数",
@@ -617,7 +616,6 @@ module.exports = (() => {
 			review_lang_auto: "Follow interface language",
 			prompt_active: "Active policy",
 			prompt_builtin: "Built-in template",
-			prompt_name: "Name",
 			prompt_content: "Content",
 			prompt_new: "New policy",
 			prompt_duplicate: "Duplicate as new policy",
@@ -625,6 +623,7 @@ module.exports = (() => {
 			prompt_default_name: "Policy {n}",
 			prompt_delete_confirm: "Delete policy \"{name}\"?",
 			prompt_placeholder: "Empty = use the built-in template",
+			policy_readonly: "Read-only",
 			group_about: "About",
 			about_description: "AI-review and safely clean the message history you sent.",
 			about_github: "View source on GitHub",
@@ -684,7 +683,6 @@ module.exports = (() => {
 			models_fail: "Failed to fetch models: {detail}",
 			set_policy: "Review policy prompt",
 			set_policy_note: "Empty = built-in template. Describe what counts as a violation; the AI judges only by this. Placeholder: {{LANGUAGE}}.",
-			set_policy_reset: "Reset to default",
 			set_concurrency: "Concurrent review requests",
 			set_concurrency_note: "Batches sent to the AI endpoint in parallel. Higher is much faster; keep 1-2 for local models or strictly rate-limited endpoints.",
 			set_batch_size: "Messages per batch",
@@ -3615,8 +3613,79 @@ module.exports = (() => {
 			background: var(--damc-on-brand, #fff);
 			transform: translateX(16px);
 		}
-		/* settings: prompt editor + diagnostics */
-		.${CSS_PREFIX}-prompt-editor { margin: 0; }
+		/* settings: policy card + diagnostics */
+		/* The policy editor is an object card: head = identity + icon actions,
+		   body = the prompt text. Builtin reads as a document (surface bg),
+		   custom reads as editable (input bg + focus ring on the card). */
+		.${CSS_PREFIX}-policy-card {
+			margin-top: 8px;
+			background: var(--damc-surface, #2b2d31);
+			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
+			border-radius: 8px;
+			overflow: hidden;
+		}
+		.${CSS_PREFIX}-policy-head {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			padding: 7px 11px;
+			border-bottom: 1px solid color-mix(in srgb, var(--damc-text, #dbdee1) 7%, transparent);
+		}
+		.${CSS_PREFIX}-policy-title {
+			flex: 1 1 auto;
+			min-width: 0;
+			display: flex;
+			align-items: center;
+			gap: 6px;
+		}
+		.${CSS_PREFIX}-policy-lock {
+			flex: 0 0 auto;
+			display: inline-flex;
+			align-items: center;
+			gap: 4px;
+			height: 18px;
+			padding: 0 8px;
+			border-radius: 9px;
+			font-size: 11px;
+			font-weight: 600;
+			color: var(--damc-text-faint, #949ba4);
+			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
+		}
+		.${CSS_PREFIX}-policy-lock-ic { display: inline-flex; }
+		.${CSS_PREFIX}-policy-lock-ic svg { width: 10px; height: 10px; display: block; }
+		.${CSS_PREFIX}-policy-actions {
+			flex: 0 0 auto;
+			display: flex;
+			align-items: center;
+			gap: 2px;
+		}
+		.${CSS_PREFIX}-policy-body {
+			display: block;
+			width: 100%;
+			box-sizing: border-box;
+			min-height: 150px;
+			padding: 10px 12px;
+			border: 0;
+			background: transparent;
+			color: var(--damc-text-sub, #b5bac1);
+			font-size: 14px;
+			line-height: 1.55;
+			font-family: inherit;
+			resize: vertical;
+			outline: none;
+			scrollbar-width: thin;
+			scrollbar-color: var(--damc-scroll-thumb) transparent;
+		}
+		.${CSS_PREFIX}-policy-body::-webkit-scrollbar { width: 8px; }
+		.${CSS_PREFIX}-policy-body::-webkit-scrollbar-thumb { background: var(--damc-scroll-thumb); border-radius: 4px; }
+		.${CSS_PREFIX}-policy-editable .${CSS_PREFIX}-policy-body {
+			background: var(--damc-input-bg, #1e1f22);
+			color: var(--damc-text, #dbdee1);
+		}
+		.${CSS_PREFIX}-policy-editable:focus-within {
+			border-color: var(--damc-brand, #5865f2);
+			box-shadow: 0 0 0 3px color-mix(in srgb, var(--damc-brand, #5865f2) 18%, transparent);
+		}
 		/* about card (brand mist): identity row / hairline / action badges */
 		.${CSS_PREFIX}-about-card {
 			padding: 14px 16px;
@@ -5400,7 +5469,7 @@ module.exports = (() => {
 		});
 	};
 
-	const INFO_SVG = `<svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path fill="currentColor" d="M11 10h2v7h-2zm0-3h2v2h-2z"/></svg>`;
+	const INFO_SVG = `<svg width="13" height="13" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M504.5-288.63q8.5-8.62 8.5-21.37v-180q0-12.75-8.68-21.38-8.67-8.62-21.5-8.62-12.82 0-21.32 8.62-8.5 8.63-8.5 21.38v180q0 12.75 8.68 21.37 8.67 8.63 21.5 8.63 12.82 0 21.32-8.63Zm-1-314.57q9.5-9.2 9.5-22.8 0-14.45-9.48-24.22-9.48-9.78-23.5-9.78t-23.52 9.78Q447-640.45 447-626q0 13.6 9.48 22.8 9.48 9.2 23.5 9.2t23.52-9.2ZM480.27-80q-82.74 0-155.5-31.5Q252-143 197.5-197.5t-86-127.34Q80-397.68 80-480.5t31.5-155.66Q143-709 197.5-763t127.34-85.5Q397.68-880 480.5-880t155.66 31.5Q709-817 763-763t85.5 127Q880-563 880-480.27q0 82.74-31.5 155.5Q817-252 763-197.68q-54 54.31-127 86Q563-80 480.27-80Z"/></svg>`;
 
 	const InfoHint = props => {
 		const renderIcon = tipProps => {
@@ -5442,18 +5511,20 @@ module.exports = (() => {
 		h(SettingTitle, { label: props.label, hint: props.hint })
 	);
 
-	const EYE_SVG = `<svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M12 5c-4.9 0-8.9 3.9-10 7 1.1 3.1 5.1 7 10 7s8.9-3.9 10-7c-1.1-3.1-5.1-7-10-7Zm0 11.5A4.5 4.5 0 1 1 16.5 12 4.5 4.5 0 0 1 12 16.5Zm0-7A2.5 2.5 0 1 0 14.5 12 2.5 2.5 0 0 0 12 9.5Z"/></svg>`;
-	const EYE_OFF_SVG = `<svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M12 5c-4.9 0-8.9 3.9-10 7a13.3 13.3 0 0 0 4.3 5.1l-2 2 1.4 1.4 16-16L20.3 3l-2.6 2.6A11.3 11.3 0 0 0 12 5Zm-4.5 7A4.5 4.5 0 0 1 12 7.5c.9 0 1.7.3 2.4.7l-1.5 1.5A2.5 2.5 0 0 0 9.7 13l-1.5 1.5a4.4 4.4 0 0 1-.7-2.5Zm4.5 7c1.5 0 3-.4 4.3-1l-2-2a4.5 4.5 0 0 0 2.1-5.4l3.3-3.3A13.4 13.4 0 0 1 22 12c-1.1 3.1-5.1 7-10 7Z"/></svg>`;
-	const CHECK_CIRCLE_SVG = `<svg width="14" height="14" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm-1.2 14.4-4-4 1.4-1.4 2.6 2.6 5.6-5.6 1.4 1.4Z"/></svg>`;
-	const TRASH_SVG = `<svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4Zm-3 6h12l-.9 11.1a2 2 0 0 1-2 1.9H8.9a2 2 0 0 1-2-1.9Zm5 2v8h2v-8Zm-3.5 0 .5 8h2l-.5-8Zm7 0-.5 8h2l.5-8Z"/></svg>`;
-	const CHEVRON_SVG = `<svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>`;
-	const GITHUB_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.87c-2.78.6-3.37-1.18-3.37-1.18-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.9 1.53 2.35 1.09 2.92.83.09-.65.35-1.09.64-1.34-2.22-.25-4.56-1.11-4.56-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02A9.55 9.55 0 0 1 12 6.82a9.5 9.5 0 0 1 2.5.34c1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.86v2.76c0 .27.18.58.69.48A10 10 0 0 0 12 2Z"/></svg>`;
+	const EYE_SVG = `<svg width="18" height="18" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M600.5-379.62q49.5-49.62 49.5-120.5T600.38-620.5Q550.76-670 479.88-670T359.5-620.38Q310-570.76 310-499.88t49.62 120.38q49.62 49.5 120.5 49.5t120.38-49.62Zm-200-41.12q-32.5-32.73-32.5-79.5 0-46.76 32.74-79.26 32.73-32.5 79.5-32.5 46.76 0 79.26 32.74 32.5 32.73 32.5 79.5 0 46.76-32.74 79.26-32.73 32.5-79.5 32.5-46.76 0-79.26-32.74ZM234.5-276Q124-352 57-470q-4-7.13-6-14.65-2-7.52-2-15.43 0-7.92 2-15.38 2-7.47 6-14.54 67-118 177.5-194T480-800q135 0 245.5 76T903-530q4 7.12 6 14.65 2 7.52 2 15.43 0 7.92-2 15.38-2 7.47-6 14.54-67 118-177.5 194T480-200q-135 0-245.5-76Z"/></svg>`;
+	const EYE_OFF_SVG = `<svg width="18" height="18" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M794-86 648-229q-41 15-83 22t-85 7q-136 0-247-75.5T56-471q-4-7-5.5-14T49-500q0-8 1.5-15t5.5-14q26-46 56-89t70-78L77-801q-9-9-9-21t9-21q9-9 21.5-9t21.5 9l716 716q8 8 8 19.5T836-87q-8 10-20.5 10T794-86ZM480-330q14 0 28.5-2t28.5-8L320-557q-5 14-7.5 28.5T310-500q0 71 49.5 120.5T480-330Zm5-470q135 0 245.5 76T905-528q4 7 5.5 13.5T912-500q0 8-1.5 14.5T905-472q-24 45-53.5 86.5T784-311q-11 10-25 9t-25-12l-93-93q-5-5-6-12.5t2-14.5q7-16 10-32.5t3-33.5q0-71-49.5-120.5T480-670q-17 0-33.5 3T414-657q-7 3-14.5 2t-12.5-6l-59-60q-14-14-10-33.5t23-25.5q35-11 71.5-15.5T485-800Zm72 219q20 20 28.5 46.5T589-480q-1 5-6 7.5t-10-2.5L455-593q-4-4-2.5-9.5t6.5-7.5q26-5 52 2.5t46 26.5Z"/></svg>`;
+	const CHECK_CIRCLE_SVG = `<svg width="14" height="14" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="m421-389-98-98q-9-9-22-9t-23 10q-9 9-9 22t9 22l122 123q9 9 21 9t21-9l239-239q10-10 10-23t-10-23q-10-9-23.5-8.5T635-603L421-389Zm59 309q-82 0-155-31.5t-127.5-86Q143-252 111.5-325T80-480q0-83 31.5-156t86-127Q252-817 325-848.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 82-31.5 155T763-197.5q-54 54.5-127 86T480-80Z"/></svg>`;
+	const TRASH_SVG = `<svg width="16" height="16" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M261-120q-24.75 0-42.37-17.63Q201-155.25 201-180v-570h-11q-12.75 0-21.37-8.68-8.63-8.67-8.63-21.5 0-12.82 8.63-21.32 8.62-8.5 21.37-8.5h158q0-13 8.63-21.5 8.62-8.5 21.37-8.5h204q12.75 0 21.38 8.62Q612-822.75 612-810h158q12.75 0 21.38 8.68 8.62 8.67 8.62 21.5 0 12.82-8.62 21.32-8.63 8.5-21.38 8.5h-11v570q0 24.75-17.62 42.37Q723.75-120 699-120H261Zm157.5-154.63q8.5-8.62 8.5-21.37v-339q0-12.75-8.68-21.38-8.67-8.62-21.5-8.62-12.82 0-21.32 8.62-8.5 8.63-8.5 21.38v339q0 12.75 8.68 21.37 8.67 8.63 21.5 8.63 12.82 0 21.32-8.63Zm166 0q8.5-8.62 8.5-21.37v-339q0-12.75-8.68-21.38-8.67-8.62-21.5-8.62-12.82 0-21.32 8.62-8.5 8.63-8.5 21.38v339q0 12.75 8.68 21.37 8.67 8.63 21.5 8.63 12.82 0 21.32-8.63Z"/></svg>`;
+	const CHEVRON_SVG = `<svg width="16" height="16" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M480-357q-6 0-11-2t-10-7L261-564q-9-9-9-21t9-21q9-9 21.5-9t21.5 9l176 176 176-176q9-9 21-9t21 9q9 9 9 21.5t-9 21.5L501-366q-5 5-10 7t-11 2Z"/></svg>`;
+	const GITHUB_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>`;
+	const LOCK_SVG = `<svg width="10" height="10" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M220-80q-24.75 0-42.37-17.63Q160-115.25 160-140v-434q0-24.75 17.63-42.38Q195.25-634 220-634h70v-96q0-78.85 55.61-134.42Q401.21-920 480.11-920q78.89 0 134.39 55.58Q670-808.85 670-730v96h70q24.75 0 42.38 17.62Q800-598.75 800-574v434q0 24.75-17.62 42.37Q764.75-80 740-80H220Zm314.5-222.03Q557-324.06 557-355q0-30-22.67-54.5t-54.5-24.5q-31.83 0-54.33 24.5t-22.5 55q0 30.5 22.67 52.5t54.5 22q31.83 0 54.33-22.03ZM350-634h260v-96q0-54.17-37.88-92.08-37.88-37.92-92-37.92T388-822.08q-38 37.91-38 92.08v96Z"/></svg>`;
+	const ADD_SVG = `<svg width="16" height="16" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M450-450H230q-12.75 0-21.37-8.68-8.63-8.67-8.63-21.5 0-12.82 8.63-21.32 8.62-8.5 21.37-8.5h220v-220q0-12.75 8.68-21.38 8.67-8.62 21.5-8.62 12.82 0 21.32 8.62 8.5 8.63 8.5 21.38v220h220q12.75 0 21.38 8.68 8.62 8.67 8.62 21.5 0 12.82-8.62 21.32-8.63 8.5-21.38 8.5H510v220q0 12.75-8.68 21.37-8.67 8.63-21.5 8.63-12.82 0-21.32-8.63-8.5-8.62-8.5-21.37v-220Z"/></svg>`;
 	const PROJECT_URL = "https://github.com/ROOT94-MAX/DiscordAIMessageCleaner";
-	const REFRESH_SVG = `<svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.65 6.35A8 8 0 1 0 19.73 14h-2.08a6 6 0 1 1-1.41-6.24L13 11h7V4Z"/></svg>`;
-	const FEEDBACK_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3C6.48 3 2 6.86 2 11.6c0 2.72 1.48 5.14 3.79 6.72L5 22l4.34-2.03c.85.17 1.74.26 2.66.26 5.52 0 10-3.86 10-8.6S17.52 3 12 3Z"/></svg>`;
-	const DOWNLOAD_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M11 3h2v10.17l3.59-3.58L18 11l-6 6-6-6 1.41-1.41L11 13.17V3ZM5 19h14v2H5Z"/></svg>`;
-	const PENCIL_SVG = `<svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 17.2V21h3.8L17.9 9.9l-3.8-3.8L3 17.2ZM20.7 7.1a1 1 0 0 0 0-1.4l-2.4-2.4a1 1 0 0 0-1.4 0l-1.8 1.8 3.8 3.8 1.8-1.8Z"/></svg>`;
-	const COPY_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1Zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Zm0 16H8V7h11v14Z"/></svg>`;
+	const REFRESH_SVG = `<svg width="15" height="15" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M480-160q-133 0-226.5-93.5T160-480q0-133 93.5-226.5T480-800q85 0 149 34.5T740-671v-99q0-13 8.5-21.5T770-800q13 0 21.5 8.5T800-770v194q0 13-8.5 21.5T770-546H576q-13 0-21.5-8.5T546-576q0-13 8.5-21.5T576-606h138q-38-60-97-97t-137-37q-109 0-184.5 75.5T220-480q0 109 75.5 184.5T480-220q75 0 140-39.5T717-366q5-11 16.5-16.5t22.5-.5q12 5 16 16.5t-1 23.5q-39 84-117.5 133.5T480-160Z"/></svg>`;
+	const FEEDBACK_SVG = `<svg width="14" height="14" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M240-240 131-131q-14 14-32.5 6.5T80-152v-668q0-24 18-42t42-18h680q24 0 42 18t18 42v520q0 24-18 42t-42 18H240Z"/></svg>`;
+	const DOWNLOAD_SVG = `<svg width="14" height="14" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M469-327q-5-2-10-7L308-485q-9-9.27-8.5-21.64.5-12.36 9.11-21.36 9.39-9 21.89-9t21.5 9l98 99v-341q0-12.75 8.68-21.38 8.67-8.62 21.5-8.62 12.82 0 21.32 8.62 8.5 8.63 8.5 21.38v341l99-99q8.8-9 20.9-8.5 12.1.5 21.49 9.5 8.61 9 8.61 21.5t-9 21.5L501-334q-5 5-10.13 7-5.14 2-11 2-5.87 0-10.87-2ZM220-160q-24 0-42-18t-18-42v-113q0-12.75 8.68-21.38 8.67-8.62 21.5-8.62 12.82 0 21.32 8.62 8.5 8.63 8.5 21.38v113h520v-113q0-12.75 8.68-21.38 8.67-8.62 21.5-8.62 12.82 0 21.32 8.62 8.5 8.63 8.5 21.38v113q0 24-18 42t-42 18H220Z"/></svg>`;
+	const PENCIL_SVG = `<svg width="12" height="12" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M150-120q-13 0-21.5-8.5T120-150v-73q0-12 5-23.5t13-19.5l557-556q8-8 19-12.5t23-4.5q11 0 22 4.5t20 12.5l44 44q9 9 13 20t4 22q0 11-4.5 22.5T823-694L266-138q-8 8-19.5 13t-23.5 5h-73Zm589-577 40-40-41-41-40 40 41 41Z"/></svg>`;
+	const COPY_SVG = `<svg width="14" height="14" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M300-200q-24 0-42-18t-18-42v-560q0-24 18-42t42-18h440q24 0 42 18t18 42v560q0 24-18 42t-42 18H300ZM180-80q-24 0-42-18t-18-42v-590q0-13 8.5-21.5T150-760q13 0 21.5 8.5T180-730v590h470q13 0 21.5 8.5T680-110q0 13-8.5 21.5T650-80H180Z"/></svg>`;
 	// Preset provider brand marks (Simple Icons, monochrome via currentColor).
 	// Custom providers fall back to the plugin's own CLEANER_ICON_SVG.
 	const PROVIDER_ICON_SVGS = {
@@ -5954,7 +6025,10 @@ module.exports = (() => {
 							}) : null
 						))
 					),
-					h("button", { type: "button", className: `${CSS_PREFIX}-prov-add`, onClick: addCustom }, `＋ ${t("provider_add")}`)
+					h("button", { type: "button", className: `${CSS_PREFIX}-prov-add`, onClick: addCustom },
+						h("span", { className: `${CSS_PREFIX}-btn-ic`, dangerouslySetInnerHTML: { __html: ADD_SVG } }),
+						t("provider_add")
+					)
 				),
 				h(ProviderForm, {
 					key: selectedId,
@@ -6013,39 +6087,44 @@ module.exports = (() => {
 		};
 		const actions = isBuiltin
 			? [
-				h(SmallBtn, { key: "dup", secondary: true, onClick: duplicateBuiltin }, t("prompt_duplicate")),
-				h(SmallBtn, { key: "new", secondary: true, onClick: newPolicy }, t("prompt_new"))
+				h(IconBtn, { key: "dup", label: t("prompt_duplicate"), svg: COPY_SVG, onClick: duplicateBuiltin }),
+				h(IconBtn, { key: "new", label: t("prompt_new"), svg: ADD_SVG, onClick: newPolicy })
 			]
 			: [
-				h(SmallBtn, { key: "new", secondary: true, onClick: newPolicy }, t("prompt_new")),
+				h(IconBtn, { key: "new", label: t("prompt_new"), svg: ADD_SVG, onClick: newPolicy }),
 				h(IconBtn, { key: "del", danger: true, label: t("provider_delete"), svg: TRASH_SVG, onClick: confirmDelete })
 			];
-		return h("div", { className: `${CSS_PREFIX}-prompt-editor` },
-			!isBuiltin ? h(Field, { label: t("prompt_name") },
-				h(TextField, {
-					value: entry && entry.name || "",
-					placeholder: t("prompt_unnamed"),
-					onCommit: value => { AIService.updatePolicy(activeId, { name: value }); props.onChanged(); }
+		// The editor is an object card: the head carries identity (inline-renamable
+		// name, or the builtin title with a read-only badge) plus icon actions;
+		// the body is the prompt text itself. No separate name/content rows.
+		return h("div", { className: `${CSS_PREFIX}-policy-card${isBuiltin ? "" : ` ${CSS_PREFIX}-policy-editable`}` },
+			h("div", { className: `${CSS_PREFIX}-policy-head` },
+				h("div", { className: `${CSS_PREFIX}-policy-title` },
+					isBuiltin
+						? h("span", { className: `${CSS_PREFIX}-prov-card-name` }, t("prompt_builtin"))
+						: h(InlineName, {
+							value: entry && entry.name || "",
+							onCommit: value => { AIService.updatePolicy(activeId, { name: value }); props.onChanged(); }
+						}),
+					h(InfoHint, { text: t("set_policy_note") }),
+					isBuiltin ? h("span", { className: `${CSS_PREFIX}-policy-lock` },
+						h("span", { className: `${CSS_PREFIX}-policy-lock-ic`, dangerouslySetInnerHTML: { __html: LOCK_SVG } }),
+						t("policy_readonly")
+					) : null
+				),
+				h("div", { className: `${CSS_PREFIX}-policy-actions` }, actions)
+			),
+			h("textarea", {
+				className: `${CSS_PREFIX}-policy-body`,
+				readOnly: isBuiltin,
+				"aria-label": t("prompt_content"),
+				placeholder: isBuiltin ? undefined : t("prompt_placeholder"),
+				value: isBuiltin ? builtinText : text,
+				onChange: isBuiltin ? undefined : (event => {
+					setText(event.target.value);
+					AIService.updatePolicy(activeId, { text: event.target.value });
 				})
-			) : null,
-			h(Field, {
-				className: `${CSS_PREFIX}-prompt-content-field`,
-				label: t("prompt_content"),
-				hint: t("set_policy_note"),
-				actions
-			},
-				h("textarea", {
-					className: `${CSS_PREFIX}-textarea`,
-					style: { minHeight: "150px" },
-					readOnly: isBuiltin,
-					placeholder: isBuiltin ? undefined : t("prompt_placeholder"),
-					value: isBuiltin ? builtinText : text,
-					onChange: isBuiltin ? undefined : (event => {
-						setText(event.target.value);
-						AIService.updatePolicy(activeId, { text: event.target.value });
-					})
-				})
-			)
+			})
 		);
 	};
 

@@ -167,7 +167,6 @@
 			// settings: policy library
 			prompt_active: "当前策略",
 			prompt_builtin: "内置模板",
-			prompt_name: "名称",
 			prompt_content: "内容",
 			prompt_new: "新建策略",
 			prompt_duplicate: "复制为新策略",
@@ -175,6 +174,7 @@
 			prompt_default_name: "策略 {n}",
 			prompt_delete_confirm: "确定删除策略「{name}」？",
 			prompt_placeholder: "留空使用内置模板",
+			policy_readonly: "只读",
 			// settings: diagnostics
 			group_about: "关于插件",
 			about_description: "用 AI 审查并安全清理你自己发送的历史消息。",
@@ -237,7 +237,6 @@
 			// settings: review policy
 			set_policy: "审查策略提示词",
 			set_policy_note: "留空使用内置模板。描述哪些内容算违规，AI 只按此判定。可用占位符：{{LANGUAGE}}。",
-			set_policy_reset: "恢复默认",
 			set_concurrency: "并发审查请求数",
 			set_concurrency_note: "同时向 AI 端点发出的批次数。调大明显加速，但本地模型或严格限流的端点建议 1-2。",
 			set_batch_size: "每批消息数",
@@ -415,7 +414,6 @@
 			review_lang_auto: "Follow interface language",
 			prompt_active: "Active policy",
 			prompt_builtin: "Built-in template",
-			prompt_name: "Name",
 			prompt_content: "Content",
 			prompt_new: "New policy",
 			prompt_duplicate: "Duplicate as new policy",
@@ -423,6 +421,7 @@
 			prompt_default_name: "Policy {n}",
 			prompt_delete_confirm: "Delete policy \"{name}\"?",
 			prompt_placeholder: "Empty = use the built-in template",
+			policy_readonly: "Read-only",
 			group_about: "About",
 			about_description: "AI-review and safely clean the message history you sent.",
 			about_github: "View source on GitHub",
@@ -482,7 +481,6 @@
 			models_fail: "Failed to fetch models: {detail}",
 			set_policy: "Review policy prompt",
 			set_policy_note: "Empty = built-in template. Describe what counts as a violation; the AI judges only by this. Placeholder: {{LANGUAGE}}.",
-			set_policy_reset: "Reset to default",
 			set_concurrency: "Concurrent review requests",
 			set_concurrency_note: "Batches sent to the AI endpoint in parallel. Higher is much faster; keep 1-2 for local models or strictly rate-limited endpoints.",
 			set_batch_size: "Messages per batch",

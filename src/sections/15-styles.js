@@ -1333,8 +1333,79 @@
 			background: var(--damc-on-brand, #fff);
 			transform: translateX(16px);
 		}
-		/* settings: prompt editor + diagnostics */
-		.${CSS_PREFIX}-prompt-editor { margin: 0; }
+		/* settings: policy card + diagnostics */
+		/* The policy editor is an object card: head = identity + icon actions,
+		   body = the prompt text. Builtin reads as a document (surface bg),
+		   custom reads as editable (input bg + focus ring on the card). */
+		.${CSS_PREFIX}-policy-card {
+			margin-top: 8px;
+			background: var(--damc-surface, #2b2d31);
+			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
+			border-radius: 8px;
+			overflow: hidden;
+		}
+		.${CSS_PREFIX}-policy-head {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			padding: 7px 11px;
+			border-bottom: 1px solid color-mix(in srgb, var(--damc-text, #dbdee1) 7%, transparent);
+		}
+		.${CSS_PREFIX}-policy-title {
+			flex: 1 1 auto;
+			min-width: 0;
+			display: flex;
+			align-items: center;
+			gap: 6px;
+		}
+		.${CSS_PREFIX}-policy-lock {
+			flex: 0 0 auto;
+			display: inline-flex;
+			align-items: center;
+			gap: 4px;
+			height: 18px;
+			padding: 0 8px;
+			border-radius: 9px;
+			font-size: 11px;
+			font-weight: 600;
+			color: var(--damc-text-faint, #949ba4);
+			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
+		}
+		.${CSS_PREFIX}-policy-lock-ic { display: inline-flex; }
+		.${CSS_PREFIX}-policy-lock-ic svg { width: 10px; height: 10px; display: block; }
+		.${CSS_PREFIX}-policy-actions {
+			flex: 0 0 auto;
+			display: flex;
+			align-items: center;
+			gap: 2px;
+		}
+		.${CSS_PREFIX}-policy-body {
+			display: block;
+			width: 100%;
+			box-sizing: border-box;
+			min-height: 150px;
+			padding: 10px 12px;
+			border: 0;
+			background: transparent;
+			color: var(--damc-text-sub, #b5bac1);
+			font-size: 14px;
+			line-height: 1.55;
+			font-family: inherit;
+			resize: vertical;
+			outline: none;
+			scrollbar-width: thin;
+			scrollbar-color: var(--damc-scroll-thumb) transparent;
+		}
+		.${CSS_PREFIX}-policy-body::-webkit-scrollbar { width: 8px; }
+		.${CSS_PREFIX}-policy-body::-webkit-scrollbar-thumb { background: var(--damc-scroll-thumb); border-radius: 4px; }
+		.${CSS_PREFIX}-policy-editable .${CSS_PREFIX}-policy-body {
+			background: var(--damc-input-bg, #1e1f22);
+			color: var(--damc-text, #dbdee1);
+		}
+		.${CSS_PREFIX}-policy-editable:focus-within {
+			border-color: var(--damc-brand, #5865f2);
+			box-shadow: 0 0 0 3px color-mix(in srgb, var(--damc-brand, #5865f2) 18%, transparent);
+		}
 		/* about card (brand mist): identity row / hairline / action badges */
 		.${CSS_PREFIX}-about-card {
 			padding: 14px 16px;

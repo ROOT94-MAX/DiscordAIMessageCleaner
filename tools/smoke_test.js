@@ -96,11 +96,15 @@ check("settings panel renders on every tab", () => {
 
 check("field help uses inline trailing info hints instead of notes", () => {
 	const hintKeys = [
-		"set_policy_note", "set_concurrency_note", "set_confirm_tokens_note",
+		"set_concurrency_note", "set_confirm_tokens_note",
 		"set_include_edited_note", "set_delete_pacing_note", "set_delete_max_note"
 	];
 	for (const key of hintKeys) {
 		if (!pluginSource.includes(`hint: t("${key}")`)) throw new Error(`missing hint binding: ${key}`);
+	}
+	// The policy help moved into the policy-card head as a direct info hint.
+	if (!pluginSource.includes('h(InfoHint, { text: t("set_policy_note") })')) {
+		throw new Error("missing hint binding: set_policy_note");
 	}
 	if (!pluginSource.includes("display: inline-flex;") || !pluginSource.includes("gap: 5px;") ||
 		!pluginSource.includes("position: static;") || !pluginSource.includes("transform: translateY(-1px);")) {
@@ -148,7 +152,7 @@ check("settings sections use compact summary-plugin spacing", () => {
 		if (!pluginSource.includes(needle)) throw new Error(`compact settings spacing missing: ${needle}`);
 	}
 	if (pluginSource.includes("group-header:not(:first-child)")) throw new Error("obsolete group divider remains");
-	if (!pluginSource.includes("prompt-editor { margin: 0; }")) throw new Error("prompt editor retains a local spacing exception");
+	if (!pluginSource.includes(".${CSS_PREFIX}-policy-card {")) throw new Error("policy card styles missing");
 });
 
 check("language lives in General, not Review Policy", () => {
@@ -176,14 +180,16 @@ check("About card carries version pill and repo/update/feedback badges", () => {
 	}
 });
 
-check("policy content title matches the current-policy hierarchy", () => {
+check("policy card head matches the provider-card hierarchy", () => {
 	for (const needle of [
-		"prompt-content-field", "--damc-settings-label-size: 16px;",
+		"policy-title", "--damc-settings-label-size: 16px;",
 		"--damc-settings-label-weight: 500;", "--damc-settings-label-line-height: 20px;",
 		"--damc-settings-label-color: var(--damc-text, #dbdee1);",
-		"font-size: var(--damc-settings-label-size);", "var(--damc-settings-label-control-gap)"
+		"font-size: var(--damc-settings-label-size);", "var(--damc-settings-label-control-gap)",
+		// The card title reuses the provider head-card name scale (16/700).
+		'h("span", { className: `${CSS_PREFIX}-prov-card-name` }, t("prompt_builtin"))'
 	]) {
-		if (!pluginSource.includes(needle)) throw new Error(`policy content hierarchy missing: ${needle}`);
+		if (!pluginSource.includes(needle)) throw new Error(`policy card hierarchy missing: ${needle}`);
 	}
 });
 
@@ -261,6 +267,23 @@ check("provider visuals: native brand marks, rail icons, inline rename", () => {
 	}
 	if (pluginSource.includes('t("provider_name")')) throw new Error("separate provider name field row remains");
 	if (pluginSource.includes("prov-dot-ok")) throw new Error("legacy rail status dot remains");
+});
+
+check("policy card and library-sourced icons", () => {
+	for (const needle of [
+		// Policy editor is an object card with icon actions and a read-only badge.
+		"policy-card", "policy-head", "policy-lock", "policy-editable",
+		't("policy_readonly")', "LOCK_SVG", "ADD_SVG",
+		// Functional icons come from Material Symbols Rounded (960 grid)...
+		'viewBox="0 -960 960 960"',
+		// ...and the GitHub mark is the official Simple Icons path.
+		'd="M12 .297c-6.63',
+	]) {
+		if (!pluginSource.includes(needle)) throw new Error(`policy card / icon source missing: ${needle}`);
+	}
+	if (pluginSource.includes('t("prompt_name")')) throw new Error("separate policy name field row remains");
+	if (pluginSource.includes("prompt-editor")) throw new Error("legacy prompt editor wrapper remains");
+	if (pluginSource.includes('"M7 10l5 5 5-5z"')) throw new Error("hand-drawn solid-triangle chevron remains");
 });
 
 check("observer()/onSwitch() are safe", () => { instance.observer(); instance.onSwitch(); });
