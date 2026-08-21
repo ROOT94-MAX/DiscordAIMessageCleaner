@@ -94,7 +94,7 @@ check("settings panel renders on every tab", () => {
 	forceTab = null;
 });
 
-check("field help uses title-corner info hints instead of inline notes", () => {
+check("field help uses inline trailing info hints instead of notes", () => {
 	const hintKeys = [
 		"set_policy_note", "set_concurrency_note", "set_confirm_tokens_note",
 		"set_include_edited_note", "set_delete_pacing_note", "set_delete_max_note"
@@ -102,8 +102,12 @@ check("field help uses title-corner info hints instead of inline notes", () => {
 	for (const key of hintKeys) {
 		if (!pluginSource.includes(`hint: t("${key}")`)) throw new Error(`missing hint binding: ${key}`);
 	}
-	if (!pluginSource.includes("top: -7px;") || !pluginSource.includes("right: -15px;")) {
-		throw new Error("info icon is not anchored to the title upper-right corner");
+	if (!pluginSource.includes("display: inline-flex;") || !pluginSource.includes("gap: 5px;") ||
+		!pluginSource.includes("position: static;") || !pluginSource.includes("transform: translateY(-1px);")) {
+		throw new Error("info icon is not aligned inline after the title");
+	}
+	if (pluginSource.includes("top: -7px;") || pluginSource.includes("right: -15px;")) {
+		throw new Error("obsolete title-corner offsets remain");
 	}
 	if (!pluginSource.includes('"aria-label": props.text') || !pluginSource.includes("title: props.text")) {
 		throw new Error("info hint accessibility/fallback missing");

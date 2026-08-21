@@ -108,7 +108,7 @@ The settings panel has four tabs:
 
 ## Settings help icons (v0.6.8)
 
-- Field-level help moves into one consistent circular info icon, positioned as a superscript at the title text's upper-right corner rather than beside the row control.
+- Field-level help moves into one consistent circular info icon, placed inline immediately after the title with a 5px gap, visual centering, and a 1px upward adjustment; it never enters the row's right-side control area.
 - Mouse hover and keyboard focus show a Discord-style Tooltip, with native `title` fallback when the component is unavailable.
 - Policy content, concurrency, confirmation threshold, edited-message handling, deletion pacing, and deletion cap use this pattern; group-level diagnostics guidance remains visible.
 

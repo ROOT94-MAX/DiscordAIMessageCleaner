@@ -2519,19 +2519,20 @@ module.exports = (() => {
 			font-weight: 500;
 			color: var(--damc-text, #dbdee1);
 		}
-		/* Info icon is a superscript anchored to the title text's upper-right
-		   corner. It is deliberately not part of the row's right-side controls. */
+		/* Info icon trails the title text inline. It belongs to the label, not
+		   the row's right-side control area. */
 		.${CSS_PREFIX}-set-title {
-			position: relative;
-			display: inline-block;
+			display: inline-flex;
+			align-items: center;
+			gap: 5px;
 			max-width: 100%;
 			line-height: 1.25;
+			vertical-align: middle;
 		}
+		.${CSS_PREFIX}-set-title-text { min-width: 0; }
 		.${CSS_PREFIX}-info-hint {
-			position: absolute;
-			top: -7px;
-			right: -15px;
-			z-index: 2;
+			position: static;
+			flex: 0 0 auto;
 			width: 13px;
 			height: 13px;
 			padding: 0;
@@ -2544,6 +2545,7 @@ module.exports = (() => {
 			align-items: center;
 			justify-content: center;
 			line-height: 1;
+			transform: translateY(-1px);
 		}
 		.${CSS_PREFIX}-info-hint svg { width: 13px; height: 13px; display: block; }
 		.${CSS_PREFIX}-info-hint:hover,
@@ -4842,7 +4844,7 @@ module.exports = (() => {
 	};
 
 	const SettingTitle = props => h("span", { className: `${CSS_PREFIX}-set-title` },
-		props.label,
+		h("span", { className: `${CSS_PREFIX}-set-title-text` }, props.label),
 		props.hint ? h(InfoHint, { text: props.hint }) : null
 	);
 

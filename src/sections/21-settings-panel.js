@@ -53,7 +53,7 @@
 	};
 
 	const SettingTitle = props => h("span", { className: `${CSS_PREFIX}-set-title` },
-		props.label,
+		h("span", { className: `${CSS_PREFIX}-set-title-text` }, props.label),
 		props.hint ? h(InfoHint, { text: props.hint }) : null
 	);
 
