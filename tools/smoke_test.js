@@ -167,6 +167,31 @@ check("About & Diagnostics exposes version and accessible GitHub link", () => {
 	}
 });
 
+check("policy content title has a subordinate 15px hierarchy", () => {
+	for (const needle of ["prompt-content-field", "font-size: 15px;", "line-height: 20px;", "margin-bottom: 6px;"]) {
+		if (!pluginSource.includes(needle)) throw new Error(`policy content hierarchy missing: ${needle}`);
+	}
+});
+
+check("runtime diagnostics help uses the group-title info icon", () => {
+	if (!pluginSource.includes('h(GroupHeader, { label: t("group_diagnostics"), hint: t("set_diag_note") })')) {
+		throw new Error("diagnostics group hint missing");
+	}
+	if (pluginSource.includes('className: `${CSS_PREFIX}-note`, style: { marginBottom: "8px" } }, t("set_diag_note")')) {
+		throw new Error("standalone diagnostics note remains");
+	}
+});
+
+check("manual updater verifies official release assets and keeps a backup", () => {
+	for (const needle of [
+		"const UpdateService", "releases/latest", "release SHA-256 digest missing",
+		"asset SHA-256 mismatch", "plugin name mismatch", "copyFileSync(target, backup)",
+		'BdApi.UI.showConfirmationModal(', 't("update_install")'
+	]) {
+		if (!pluginSource.includes(needle)) throw new Error(`manual updater safeguard missing: ${needle}`);
+	}
+});
+
 check("observer()/onSwitch() are safe", () => { instance.observer(); instance.onSwitch(); });
 check("stop() cleans up", () => instance.stop());
 check("settings were persisted on stop", () => {

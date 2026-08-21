@@ -381,6 +381,18 @@ module.exports = (() => {
 			group_about: "关于插件",
 			about_description: "用 AI 审查并安全清理你自己发送的历史消息。",
 			about_github: "在 GitHub 查看源代码",
+			update_check: "检查更新",
+			update_checking: "正在检查更新…",
+			update_current: "已是最新稳定版 v{version}",
+			update_available: "发现新版本 v{version}",
+			update_development: "当前 v{current} 高于最新稳定版 v{latest}（开发候选版本）",
+			update_failed: "检查或更新失败：{detail}",
+			update_view_release: "查看说明",
+			update_install: "下载并安装",
+			update_installing: "正在下载、校验并安装…",
+			update_install_title: "安装更新 v{version}",
+			update_install_body: "将从官方 GitHub Release 下载并校验插件，备份当前 v{current} 后替换。确认继续？",
+			update_installed: "v{version} 已安装并校验，BetterDiscord 将重新加载插件。",
 			group_diagnostics: "运行诊断",
 			set_diag_note: "Discord 更新导致功能异常时，先看这里。",
 			diag_entry: "输入框按钮入口",
@@ -609,6 +621,18 @@ module.exports = (() => {
 			group_about: "About",
 			about_description: "AI-review and safely clean the message history you sent.",
 			about_github: "View source on GitHub",
+			update_check: "Check for Updates",
+			update_checking: "Checking for updates…",
+			update_current: "Latest stable version: v{version}",
+			update_available: "New version available: v{version}",
+			update_development: "Current v{current} is newer than stable v{latest} (development candidate)",
+			update_failed: "Update check or install failed: {detail}",
+			update_view_release: "Release Notes",
+			update_install: "Download & Install",
+			update_installing: "Downloading, verifying, and installing…",
+			update_install_title: "Install update v{version}",
+			update_install_body: "Download and verify the official GitHub Release asset, back up current v{current}, then replace it. Continue?",
+			update_installed: "v{version} installed and verified. BetterDiscord will reload the plugin.",
 			group_diagnostics: "Runtime Diagnostics",
 			set_diag_note: "Start here when a Discord update breaks something.",
 			diag_entry: "Chat input button entry",
@@ -2045,6 +2069,153 @@ module.exports = (() => {
 			throw mkError("EXPORT_FAILED", t("err_export_failed", { detail: Utils.truncate(lastError && lastError.message || "unknown", 120) }));
 		}
 	};
+	// ==================== 14c. UPDATE SERVICE ====================
+	// Manual-only updater: GitHub latest release -> verified official asset ->
+	// backup current plugin -> replace. No background checks and no downgrade.
+
+	const UpdateService = {
+		API_URL: "https://api.github.com/repos/ROOT94-MAX/DiscordAIMessageCleaner/releases/latest",
+		PROJECT_URL: "https://github.com/ROOT94-MAX/DiscordAIMessageCleaner",
+		ASSET_NAME: "DiscordAIMessageCleaner.plugin.js",
+		normalizeVersion(value) {
+			return String(value || "").trim().replace(/^v/i, "").split("+")[0];
+		},
+		compareVersions(left, right) {
+			const parse = value => {
+				const normalized = UpdateService.normalizeVersion(value);
+				const parts = normalized.split("-", 2);
+				const nums = parts[0].split(".").map(item => Number(item) || 0);
+				return { nums: [nums[0] || 0, nums[1] || 0, nums[2] || 0], pre: parts[1] || "" };
+			};
+			const a = parse(left);
+			const b = parse(right);
+			for (let i = 0; i < 3; i++) {
+				if (a.nums[i] !== b.nums[i]) return a.nums[i] > b.nums[i] ? 1 : -1;
+			}
+			if (a.pre === b.pre) return 0;
+			if (!a.pre) return 1;
+			if (!b.pre) return -1;
+			return a.pre > b.pre ? 1 : -1;
+		},
+		_runtime(overrides) {
+			return Object.assign({
+				fetch: (url, init) => BdApi.Net.fetch(url, init),
+				fs: require("fs"),
+				path: require("path"),
+				plugins: BdApi.Plugins,
+				crypto: typeof globalThis !== "undefined" ? globalThis.crypto : null,
+				TextDecoder: typeof TextDecoder === "function" ? TextDecoder : null
+			}, overrides || {});
+		},
+		async check(overrides) {
+			const runtime = UpdateService._runtime(overrides);
+			const response = await runtime.fetch(UpdateService.API_URL, {
+				method: "GET",
+				headers: { Accept: "application/vnd.github+json" },
+				timeout: 10000
+			});
+			if (!response || !response.ok) throw new Error(`GitHub HTTP ${response && response.status || "?"}`);
+			const release = await response.json();
+			const latest = UpdateService.normalizeVersion(release && release.tag_name);
+			if (!latest) throw new Error("release tag missing");
+			const assets = Array.isArray(release.assets) ? release.assets : [];
+			const asset = assets.find(item => item && item.name === UpdateService.ASSET_NAME);
+			if (!asset || !asset.browser_download_url) throw new Error("plugin asset missing");
+			const comparison = UpdateService.compareVersions(PLUGIN_VERSION, latest);
+			return {
+				current: PLUGIN_VERSION,
+				latest,
+				status: comparison < 0 ? "available" : comparison > 0 ? "development" : "current",
+				releaseUrl: String(release.html_url || `${UpdateService.PROJECT_URL}/releases/tag/v${latest}`),
+				body: String(release.body || ""),
+				asset: {
+					url: String(asset.browser_download_url),
+					digest: String(asset.digest || ""),
+					size: Number(asset.size) || 0
+				}
+			};
+		},
+		_isOfficialAssetUrl(value) {
+			try {
+				const url = new URL(String(value));
+				return url.protocol === "https:" && url.hostname === "github.com" &&
+					url.pathname.startsWith("/ROOT94-MAX/DiscordAIMessageCleaner/releases/download/") &&
+					url.pathname.endsWith(`/${UpdateService.ASSET_NAME}`);
+			} catch (e) { return false; }
+		},
+		async _sha256(bytes, runtime) {
+			const cryptoApi = runtime.crypto;
+			if (!cryptoApi || !cryptoApi.subtle || typeof cryptoApi.subtle.digest !== "function") {
+				throw new Error("Web Crypto SHA-256 unavailable");
+			}
+			const digest = await cryptoApi.subtle.digest("SHA-256", bytes);
+			return Array.from(new Uint8Array(digest)).map(value => value.toString(16).padStart(2, "0")).join("");
+		},
+		_validateSource(source, expectedVersion) {
+			const name = String(source).match(/^\s*\*\s*@name\s+(\S+)/m);
+			const version = String(source).match(/^\s*\*\s*@version\s+(\S+)/m);
+			if (!name || name[1] !== PLUGIN_ID) throw new Error("plugin name mismatch");
+			if (!version || UpdateService.normalizeVersion(version[1]) !== UpdateService.normalizeVersion(expectedVersion)) {
+				throw new Error("plugin version mismatch");
+			}
+			if (!String(source).includes("module.exports")) throw new Error("plugin export missing");
+		},
+		async _download(info, runtime) {
+			if (!info || info.status !== "available") throw new Error("no newer release selected");
+			if (!UpdateService._isOfficialAssetUrl(info.asset && info.asset.url)) throw new Error("untrusted asset URL");
+			const digestMatch = String(info.asset.digest || "").match(/^sha256:([a-f0-9]{64})$/i);
+			if (!digestMatch) throw new Error("release SHA-256 digest missing");
+			const response = await runtime.fetch(info.asset.url, {
+				method: "GET",
+				headers: { Accept: "application/octet-stream" },
+				timeout: 30000
+			});
+			if (!response || !response.ok) throw new Error(`asset HTTP ${response && response.status || "?"}`);
+			const bytes = new Uint8Array(await response.arrayBuffer());
+			if (info.asset.size > 0 && bytes.length !== info.asset.size) throw new Error("asset size mismatch");
+			const digest = await UpdateService._sha256(bytes, runtime);
+			if (digest.toLowerCase() !== digestMatch[1].toLowerCase()) throw new Error("asset SHA-256 mismatch");
+			if (!runtime.TextDecoder) throw new Error("TextDecoder unavailable");
+			const source = new runtime.TextDecoder("utf-8", { fatal: true }).decode(bytes);
+			UpdateService._validateSource(source, info.latest);
+			return { bytes, source, digest };
+		},
+		async install(info, overrides) {
+			const runtime = UpdateService._runtime(overrides);
+			const downloaded = await UpdateService._download(info, runtime);
+			const folderValue = String(runtime.plugins && runtime.plugins.folder || "").trim();
+			if (!folderValue) throw new Error("plugin folder unavailable");
+			const folder = runtime.path.resolve(folderValue);
+			const target = runtime.path.resolve(folder, UpdateService.ASSET_NAME);
+			if (runtime.path.dirname(target) !== folder) throw new Error("plugin target escaped folder");
+			const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+			const backup = `${target}.v${PLUGIN_VERSION}.${stamp}.bak`;
+			const temp = `${target}.${Date.now()}.update.tmp`;
+			let backedUp = false;
+			let replaced = false;
+			try {
+				if (runtime.fs.existsSync(target)) {
+					runtime.fs.copyFileSync(target, backup);
+					backedUp = true;
+				}
+				runtime.fs.writeFileSync(temp, downloaded.bytes);
+				const tempDigest = await UpdateService._sha256(runtime.fs.readFileSync(temp), runtime);
+				if (tempDigest !== downloaded.digest) throw new Error("temporary file verification failed");
+				runtime.fs.copyFileSync(temp, target);
+				replaced = true;
+				const targetDigest = await UpdateService._sha256(runtime.fs.readFileSync(target), runtime);
+				if (targetDigest !== downloaded.digest) throw new Error("installed file verification failed");
+				try { runtime.fs.unlinkSync(temp); } catch (e) { /* harmless */ }
+				return { version: info.latest, target, backup: backedUp ? backup : "", digest: downloaded.digest };
+			} catch (error) {
+				if (replaced && backedUp) {
+					try { runtime.fs.copyFileSync(backup, target); } catch (restoreError) { /* report original */ }
+				}
+				try { if (runtime.fs.existsSync(temp)) runtime.fs.unlinkSync(temp); } catch (e) { /* ignore */ }
+				throw error;
+			}
+		}
+	};
 	// ==================== 15. STYLES ====================
 
 	const PLUGIN_CSS = `
@@ -3205,9 +3376,19 @@ module.exports = (() => {
 		}
 		/* settings: prompt editor + diagnostics */
 		.${CSS_PREFIX}-prompt-editor { margin-top: 8px; margin-bottom: 2px; }
+		.${CSS_PREFIX}-prompt-content-field .${CSS_PREFIX}-f-label {
+			font-size: 15px;
+			font-weight: 600;
+			line-height: 20px;
+		}
+		.${CSS_PREFIX}-prompt-content-field .${CSS_PREFIX}-f-row {
+			min-height: 24px;
+			margin-bottom: 6px;
+		}
 		.${CSS_PREFIX}-about-card {
 			display: flex;
 			align-items: center;
+			flex-wrap: wrap;
 			gap: 12px;
 			padding: 12px;
 			border-radius: 8px;
@@ -3274,6 +3455,32 @@ module.exports = (() => {
 			box-shadow: 0 0 0 2px color-mix(in srgb, var(--damc-brand, #5865f2) 38%, transparent);
 		}
 		.${CSS_PREFIX}-about-github svg { width: 18px; height: 18px; }
+		.${CSS_PREFIX}-about-update {
+			flex: 1 0 100%;
+			min-height: 28px;
+			box-sizing: border-box;
+			padding-left: 48px;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 10px;
+		}
+		.${CSS_PREFIX}-about-update-status {
+			flex: 1 1 auto;
+			min-width: 0;
+			font-size: 13px;
+			line-height: 1.4;
+			color: var(--damc-text-faint, #949ba4);
+		}
+		.${CSS_PREFIX}-about-update-status.${CSS_PREFIX}-ok { color: var(--damc-ok, #23a55a); }
+		.${CSS_PREFIX}-about-update-status.${CSS_PREFIX}-fail { color: var(--damc-danger, #f23f43); }
+		.${CSS_PREFIX}-about-update-actions {
+			flex: 0 0 auto;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+		.${CSS_PREFIX}-about-release { text-decoration: none; box-sizing: border-box; }
 		.${CSS_PREFIX}-diag-version {
 			font-size: 13px;
 			color: var(--damc-text-faint, #949ba4);
@@ -4932,6 +5139,9 @@ module.exports = (() => {
 		h("div", { className: `${CSS_PREFIX}-set-label` }, h(SettingTitle, { label: props.label, hint: props.hint })),
 		props.children
 	);
+	const GroupHeader = props => h("div", { className: `${CSS_PREFIX}-group-header` },
+		h(SettingTitle, { label: props.label, hint: props.hint })
+	);
 
 	const EYE_SVG = `<svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M12 5c-4.9 0-8.9 3.9-10 7 1.1 3.1 5.1 7 10 7s8.9-3.9 10-7c-1.1-3.1-5.1-7-10-7Zm0 11.5A4.5 4.5 0 1 1 16.5 12 4.5 4.5 0 0 1 12 16.5Zm0-7A2.5 2.5 0 1 0 14.5 12 2.5 2.5 0 0 0 12 9.5Z"/></svg>`;
 	const EYE_OFF_SVG = `<svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M12 5c-4.9 0-8.9 3.9-10 7a13.3 13.3 0 0 0 4.3 5.1l-2 2 1.4 1.4 16-16L20.3 3l-2.6 2.6A11.3 11.3 0 0 0 12 5Zm-4.5 7A4.5 4.5 0 0 1 12 7.5c.9 0 1.7.3 2.4.7l-1.5 1.5A2.5 2.5 0 0 0 9.7 13l-1.5 1.5a4.4 4.4 0 0 1-.7-2.5Zm4.5 7c1.5 0 3-.4 4.3-1l-2-2a4.5 4.5 0 0 0 2.1-5.4l3.3-3.3A13.4 13.4 0 0 1 22 12c-1.1 3.1-5.1 7-10 7Z"/></svg>`;
@@ -4957,7 +5167,10 @@ module.exports = (() => {
 		dangerouslySetInnerHTML: { __html: props.svg }
 	});
 
-	const Field = props => h("div", { className: `${CSS_PREFIX}-f-item`, style: props.style },
+	const Field = props => h("div", {
+		className: `${CSS_PREFIX}-f-item${props.className ? ` ${props.className}` : ""}`,
+		style: props.style
+	},
 		props.actions
 			? h("div", { className: `${CSS_PREFIX}-f-row` },
 				h("div", { className: `${CSS_PREFIX}-f-label` }, h(SettingTitle, { label: props.label, hint: props.hint })),
@@ -5435,7 +5648,12 @@ module.exports = (() => {
 					onCommit: value => { AIService.updatePolicy(activeId, { name: value }); props.onChanged(); }
 				})
 			) : null,
-			h(Field, { label: t("prompt_content"), hint: t("set_policy_note"), actions },
+			h(Field, {
+				className: `${CSS_PREFIX}-prompt-content-field`,
+				label: t("prompt_content"),
+				hint: t("set_policy_note"),
+				actions
+			},
 				h("textarea", {
 					className: `${CSS_PREFIX}-textarea`,
 					style: { minHeight: "150px" },
@@ -5574,6 +5792,7 @@ module.exports = (() => {
 	const DiagPage = () => {
 		const health = DiscordAdapter.health();
 		const entryKey = ChatEntry.status === "webpack" ? "entry_webpack" : ChatEntry.status === "dom" ? "entry_dom" : "entry_none";
+		const [updateState, setUpdateState] = useState({ phase: "idle", info: null, message: "" });
 		const copyDiag = () => {
 			const payload = {
 				plugin: `${PLUGIN_ID} v${PLUGIN_VERSION}`,
@@ -5586,8 +5805,55 @@ module.exports = (() => {
 				try { BdApi.UI.showToast(t("diag_copied"), { type: "success" }); } catch (e) { /* ignore */ }
 			}
 		};
+		const checkUpdates = async () => {
+			setUpdateState({ phase: "checking", info: null, message: "" });
+			try {
+				const info = await UpdateService.check();
+				setUpdateState({ phase: info.status, info, message: "" });
+			} catch (e) {
+				setUpdateState({ phase: "failed", info: null, message: t("update_failed", { detail: e && e.message || String(e) }) });
+			}
+		};
+		const installUpdate = async info => {
+			setUpdateState({ phase: "installing", info, message: "" });
+			try {
+				const result = await UpdateService.install(info);
+				const message = t("update_installed", { version: result.version });
+				setUpdateState({ phase: "installed", info, message });
+				try { BdApi.UI.showToast(message, { type: "success" }); } catch (e) { /* hot reload may win */ }
+				setTimeout(() => { try { BdApi.Plugins.reload(PLUGIN_ID); } catch (e) { /* file watcher also reloads */ } }, 750);
+			} catch (e) {
+				setUpdateState({ phase: "failed", info, message: t("update_failed", { detail: e && e.message || String(e) }) });
+			}
+		};
+		const confirmInstall = () => {
+			const info = updateState.info;
+			if (!info || info.status !== "available") return;
+			try {
+				BdApi.UI.showConfirmationModal(
+					t("update_install_title", { version: info.latest }),
+					t("update_install_body", { current: PLUGIN_VERSION }),
+					{
+						confirmText: t("update_install"),
+						cancelText: t("cancel"),
+						onConfirm: () => installUpdate(info)
+					}
+				);
+			} catch (e) {
+				try { BdApi.UI.showToast(t("err_confirm_unavailable"), { type: "error" }); } catch (e2) { /* ignore */ }
+			}
+		};
+		const updateText = updateState.message || (updateState.phase === "checking" ? t("update_checking")
+			: updateState.phase === "installing" ? t("update_installing")
+				: updateState.phase === "current" ? t("update_current", { version: updateState.info.latest })
+					: updateState.phase === "available" ? t("update_available", { version: updateState.info.latest })
+						: updateState.phase === "development" ? t("update_development", {
+							current: updateState.info.current, latest: updateState.info.latest
+						}) : "");
+		const updateTone = updateState.phase === "failed" ? "fail"
+			: (updateState.phase === "current" || updateState.phase === "installed") ? "ok" : null;
 		return h("div", null,
-			h("div", { className: `${CSS_PREFIX}-group-header` }, t("group_about")),
+			h(GroupHeader, { label: t("group_about") }),
 			h("div", { className: `${CSS_PREFIX}-about-card` },
 				h("div", { className: `${CSS_PREFIX}-about-icon`, dangerouslySetInnerHTML: { __html: CLEANER_ICON_SVG } }),
 				h("div", { className: `${CSS_PREFIX}-about-copy` },
@@ -5605,10 +5871,29 @@ module.exports = (() => {
 						title: t("about_github"),
 						dangerouslySetInnerHTML: { __html: GITHUB_SVG }
 					})
+				),
+				h("div", { className: `${CSS_PREFIX}-about-update` },
+					h("div", {
+						className: `${CSS_PREFIX}-about-update-status${updateTone ? ` ${CSS_PREFIX}-${updateTone}` : ""}`,
+						"aria-live": "polite"
+					}, updateText),
+					h("div", { className: `${CSS_PREFIX}-about-update-actions` },
+						updateState.info ? h("a", {
+							className: `${CSS_PREFIX}-btn-sm ${CSS_PREFIX}-btn-sec ${CSS_PREFIX}-about-release`,
+							href: updateState.info.releaseUrl,
+							target: "_blank",
+							rel: "noopener noreferrer"
+						}, t("update_view_release")) : null,
+						updateState.phase === "available" ? h(SmallBtn, { onClick: confirmInstall }, t("update_install")) : null,
+						h(SmallBtn, {
+							secondary: true,
+							disabled: updateState.phase === "checking" || updateState.phase === "installing",
+							onClick: checkUpdates
+						}, updateState.phase === "checking" ? t("update_checking") : t("update_check"))
+					)
 				)
 			),
-			h("div", { className: `${CSS_PREFIX}-group-header` }, t("group_diagnostics")),
-			h("div", { className: `${CSS_PREFIX}-note`, style: { marginBottom: "8px" } }, t("set_diag_note")),
+			h(GroupHeader, { label: t("group_diagnostics"), hint: t("set_diag_note") }),
 			h("div", { className: `${CSS_PREFIX}-diag-version` },
 				`BetterDiscord: ${BdApi.version || "?"}`),
 			h("div", { className: `${CSS_PREFIX}-diag-card` },

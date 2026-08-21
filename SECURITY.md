@@ -39,3 +39,7 @@ Security-sensitive examples include confirmation bypasses, deletion after dismis
 There is currently no bug-bounty program. Reports are handled on a best-effort basis, and confirmed fixes will be documented in the corresponding Release.
 
 本项目目前没有漏洞赏金计划；确认后的修复会记录在对应 Release 中。
+
+The in-plugin updater is manual-only. It accepts only this repository's official GitHub Release asset, requires GitHub's SHA-256 digest plus matching plugin metadata, keeps a local backup, verifies the installed file, and restores the backup on failure. It never performs background updates or downgrades a development candidate.
+
+插件内更新仅由用户手动触发，只接受本仓库的官方 GitHub Release 资产；必须通过 GitHub SHA-256 与插件元数据校验，安装前保留本地备份，写入后再次校验，失败时恢复。不会后台静默更新，也不会把开发候选版本降级。

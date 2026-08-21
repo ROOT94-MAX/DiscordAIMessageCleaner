@@ -13,6 +13,7 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const assert = require("assert");
+const webcrypto = require("crypto").webcrypto;
 
 const PLUGIN_PATH = process.argv[2] || path.join(__dirname, "..", "DiscordAIMessageCleaner.plugin.js");
 const VERSION_MATCH = fs.readFileSync(PLUGIN_PATH, "utf8").match(/^\s*\*\s*@version\s+(\S+)/m);
@@ -55,7 +56,7 @@ function loadPlugin() {
 	const src = fs.readFileSync(PLUGIN_PATH, "utf8");
 	const marker = "\treturn class DiscordAIMessageCleaner {";
 	if (!src.includes(marker)) throw new Error("plugin shape changed: class marker not found");
-	const exposed = `\tglobalThis.__DAMC__ = { Utils, I18N, t, SettingsStore, DiscordAdapter, ChannelContext, MessageService, SearchService, Normalizer, ReviewBatcher, AIService, DeleteService, ExportService, PluginError };\n${marker}`;
+	const exposed = `\tglobalThis.__DAMC__ = { Utils, I18N, t, SettingsStore, DiscordAdapter, ChannelContext, MessageService, SearchService, Normalizer, ReviewBatcher, AIService, DeleteService, ExportService, UpdateService, PluginError };\n${marker}`;
 	const patched = src.replace(marker, exposed);
 	const tmp = path.join(os.tmpdir(), `damc-under-test-${process.pid}.js`);
 	fs.writeFileSync(tmp, patched);
@@ -572,6 +573,102 @@ const ctx = { channelId: "200000000000000001", isPrivate: false };
 		} catch (e) { thrown = e; }
 		assert.ok(thrown && thrown.code === "EXPORT_FAILED", "disk failure is reported");
 		assert.match(thrown.message, /disk blocked/);
+	});
+
+	section("UpdateService");
+	const releaseAssetUrl = version => `https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/releases/download/v${version}/DiscordAIMessageCleaner.plugin.js`;
+	const pluginFixture = version => `/**\n * @name DiscordAIMessageCleaner\n * @version ${version}\n */\nmodule.exports = class DiscordAIMessageCleaner {};\n`;
+	const sha256 = async bytes => {
+		const digest = await webcrypto.subtle.digest("SHA-256", bytes);
+		return Array.from(new Uint8Array(digest)).map(value => value.toString(16).padStart(2, "0")).join("");
+	};
+	const arrayBufferOf = bytes => bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+
+	await test("manual update check classifies available/current/development versions", async () => {
+		const makeRelease = version => ({
+			tag_name: `v${version}`,
+			html_url: `https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/releases/tag/v${version}`,
+			body: "notes",
+			assets: [{ name: api.UpdateService.ASSET_NAME, browser_download_url: releaseAssetUrl(version), digest: `sha256:${"a".repeat(64)}`, size: 123 }]
+		});
+		const run = version => api.UpdateService.check({ fetch: async () => ({ ok: true, status: 200, json: async () => makeRelease(version) }) });
+		assert.strictEqual((await run("0.6.9")).status, "available");
+		assert.strictEqual((await run(PLUGIN_VERSION_UNDER_TEST)).status, "current");
+		assert.strictEqual((await run("0.6.7")).status, "development");
+		assert.strictEqual(api.UpdateService.compareVersions("1.0.0", "1.0.0-beta"), 1);
+	});
+
+	await test("verified official asset backs up and replaces the plugin", async () => {
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "damc-update-ok-"));
+		const target = path.join(dir, api.UpdateService.ASSET_NAME);
+		const oldSource = pluginFixture(PLUGIN_VERSION_UNDER_TEST);
+		const newSource = pluginFixture("0.6.9");
+		const bytes = new TextEncoder().encode(newSource);
+		const digest = await sha256(bytes);
+		fs.writeFileSync(target, oldSource, "utf8");
+		const info = {
+			status: "available", latest: "0.6.9", releaseUrl: "https://example.test/release",
+			asset: { url: releaseAssetUrl("0.6.9"), digest: `sha256:${digest}`, size: bytes.length }
+		};
+		const result = await api.UpdateService.install(info, {
+			fetch: async () => ({ ok: true, status: 200, arrayBuffer: async () => arrayBufferOf(bytes) }),
+			plugins: { folder: dir }, crypto: webcrypto, TextDecoder
+		});
+		assert.strictEqual(fs.readFileSync(target, "utf8"), newSource);
+		assert.ok(result.backup && fs.existsSync(result.backup), "backup created");
+		assert.strictEqual(fs.readFileSync(result.backup, "utf8"), oldSource);
+		assert.strictEqual(result.digest, digest);
+	});
+
+	await test("digest mismatch leaves the installed plugin untouched", async () => {
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "damc-update-bad-"));
+		const target = path.join(dir, api.UpdateService.ASSET_NAME);
+		const oldSource = pluginFixture(PLUGIN_VERSION_UNDER_TEST);
+		const bytes = new TextEncoder().encode(pluginFixture("0.6.9"));
+		fs.writeFileSync(target, oldSource, "utf8");
+		let thrown = null;
+		try {
+			await api.UpdateService.install({
+				status: "available", latest: "0.6.9",
+				asset: { url: releaseAssetUrl("0.6.9"), digest: `sha256:${"0".repeat(64)}`, size: bytes.length }
+			}, {
+				fetch: async () => ({ ok: true, status: 200, arrayBuffer: async () => arrayBufferOf(bytes) }),
+				plugins: { folder: dir }, crypto: webcrypto, TextDecoder
+			});
+		} catch (e) { thrown = e; }
+		assert.match(String(thrown && thrown.message), /SHA-256 mismatch/);
+		assert.strictEqual(fs.readFileSync(target, "utf8"), oldSource);
+	});
+
+	await test("post-replacement verification failure restores the backup", async () => {
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "damc-update-restore-"));
+		const target = path.join(dir, api.UpdateService.ASSET_NAME);
+		const oldSource = pluginFixture(PLUGIN_VERSION_UNDER_TEST);
+		const newSource = pluginFixture("0.6.9");
+		const bytes = new TextEncoder().encode(newSource);
+		const digest = await sha256(bytes);
+		fs.writeFileSync(target, oldSource, "utf8");
+		const corruptingFs = Object.assign({}, fs, {
+			copyFileSync(source, destination) {
+				if (destination === target && String(source).endsWith(".update.tmp")) {
+					fs.writeFileSync(destination, "corrupt", "utf8");
+					return;
+				}
+				fs.copyFileSync(source, destination);
+			}
+		});
+		let thrown = null;
+		try {
+			await api.UpdateService.install({
+				status: "available", latest: "0.6.9",
+				asset: { url: releaseAssetUrl("0.6.9"), digest: `sha256:${digest}`, size: bytes.length }
+			}, {
+				fetch: async () => ({ ok: true, status: 200, arrayBuffer: async () => arrayBufferOf(bytes) }),
+				fs: corruptingFs, plugins: { folder: dir }, crypto: webcrypto, TextDecoder
+			});
+		} catch (e) { thrown = e; }
+		assert.match(String(thrown && thrown.message), /installed file verification failed/);
+		assert.strictEqual(fs.readFileSync(target, "utf8"), oldSource, "backup restored");
 	});
 
 	console.log(`\n${results.pass} passed, ${results.fail} failed`);

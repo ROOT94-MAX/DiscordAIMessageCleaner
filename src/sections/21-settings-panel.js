@@ -61,6 +61,9 @@
 		h("div", { className: `${CSS_PREFIX}-set-label` }, h(SettingTitle, { label: props.label, hint: props.hint })),
 		props.children
 	);
+	const GroupHeader = props => h("div", { className: `${CSS_PREFIX}-group-header` },
+		h(SettingTitle, { label: props.label, hint: props.hint })
+	);
 
 	const EYE_SVG = `<svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M12 5c-4.9 0-8.9 3.9-10 7 1.1 3.1 5.1 7 10 7s8.9-3.9 10-7c-1.1-3.1-5.1-7-10-7Zm0 11.5A4.5 4.5 0 1 1 16.5 12 4.5 4.5 0 0 1 12 16.5Zm0-7A2.5 2.5 0 1 0 14.5 12 2.5 2.5 0 0 0 12 9.5Z"/></svg>`;
 	const EYE_OFF_SVG = `<svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M12 5c-4.9 0-8.9 3.9-10 7a13.3 13.3 0 0 0 4.3 5.1l-2 2 1.4 1.4 16-16L20.3 3l-2.6 2.6A11.3 11.3 0 0 0 12 5Zm-4.5 7A4.5 4.5 0 0 1 12 7.5c.9 0 1.7.3 2.4.7l-1.5 1.5A2.5 2.5 0 0 0 9.7 13l-1.5 1.5a4.4 4.4 0 0 1-.7-2.5Zm4.5 7c1.5 0 3-.4 4.3-1l-2-2a4.5 4.5 0 0 0 2.1-5.4l3.3-3.3A13.4 13.4 0 0 1 22 12c-1.1 3.1-5.1 7-10 7Z"/></svg>`;
@@ -86,7 +89,10 @@
 		dangerouslySetInnerHTML: { __html: props.svg }
 	});
 
-	const Field = props => h("div", { className: `${CSS_PREFIX}-f-item`, style: props.style },
+	const Field = props => h("div", {
+		className: `${CSS_PREFIX}-f-item${props.className ? ` ${props.className}` : ""}`,
+		style: props.style
+	},
 		props.actions
 			? h("div", { className: `${CSS_PREFIX}-f-row` },
 				h("div", { className: `${CSS_PREFIX}-f-label` }, h(SettingTitle, { label: props.label, hint: props.hint })),
@@ -564,7 +570,12 @@
 					onCommit: value => { AIService.updatePolicy(activeId, { name: value }); props.onChanged(); }
 				})
 			) : null,
-			h(Field, { label: t("prompt_content"), hint: t("set_policy_note"), actions },
+			h(Field, {
+				className: `${CSS_PREFIX}-prompt-content-field`,
+				label: t("prompt_content"),
+				hint: t("set_policy_note"),
+				actions
+			},
 				h("textarea", {
 					className: `${CSS_PREFIX}-textarea`,
 					style: { minHeight: "150px" },
@@ -703,6 +714,7 @@
 	const DiagPage = () => {
 		const health = DiscordAdapter.health();
 		const entryKey = ChatEntry.status === "webpack" ? "entry_webpack" : ChatEntry.status === "dom" ? "entry_dom" : "entry_none";
+		const [updateState, setUpdateState] = useState({ phase: "idle", info: null, message: "" });
 		const copyDiag = () => {
 			const payload = {
 				plugin: `${PLUGIN_ID} v${PLUGIN_VERSION}`,
@@ -715,8 +727,55 @@
 				try { BdApi.UI.showToast(t("diag_copied"), { type: "success" }); } catch (e) { /* ignore */ }
 			}
 		};
+		const checkUpdates = async () => {
+			setUpdateState({ phase: "checking", info: null, message: "" });
+			try {
+				const info = await UpdateService.check();
+				setUpdateState({ phase: info.status, info, message: "" });
+			} catch (e) {
+				setUpdateState({ phase: "failed", info: null, message: t("update_failed", { detail: e && e.message || String(e) }) });
+			}
+		};
+		const installUpdate = async info => {
+			setUpdateState({ phase: "installing", info, message: "" });
+			try {
+				const result = await UpdateService.install(info);
+				const message = t("update_installed", { version: result.version });
+				setUpdateState({ phase: "installed", info, message });
+				try { BdApi.UI.showToast(message, { type: "success" }); } catch (e) { /* hot reload may win */ }
+				setTimeout(() => { try { BdApi.Plugins.reload(PLUGIN_ID); } catch (e) { /* file watcher also reloads */ } }, 750);
+			} catch (e) {
+				setUpdateState({ phase: "failed", info, message: t("update_failed", { detail: e && e.message || String(e) }) });
+			}
+		};
+		const confirmInstall = () => {
+			const info = updateState.info;
+			if (!info || info.status !== "available") return;
+			try {
+				BdApi.UI.showConfirmationModal(
+					t("update_install_title", { version: info.latest }),
+					t("update_install_body", { current: PLUGIN_VERSION }),
+					{
+						confirmText: t("update_install"),
+						cancelText: t("cancel"),
+						onConfirm: () => installUpdate(info)
+					}
+				);
+			} catch (e) {
+				try { BdApi.UI.showToast(t("err_confirm_unavailable"), { type: "error" }); } catch (e2) { /* ignore */ }
+			}
+		};
+		const updateText = updateState.message || (updateState.phase === "checking" ? t("update_checking")
+			: updateState.phase === "installing" ? t("update_installing")
+				: updateState.phase === "current" ? t("update_current", { version: updateState.info.latest })
+					: updateState.phase === "available" ? t("update_available", { version: updateState.info.latest })
+						: updateState.phase === "development" ? t("update_development", {
+							current: updateState.info.current, latest: updateState.info.latest
+						}) : "");
+		const updateTone = updateState.phase === "failed" ? "fail"
+			: (updateState.phase === "current" || updateState.phase === "installed") ? "ok" : null;
 		return h("div", null,
-			h("div", { className: `${CSS_PREFIX}-group-header` }, t("group_about")),
+			h(GroupHeader, { label: t("group_about") }),
 			h("div", { className: `${CSS_PREFIX}-about-card` },
 				h("div", { className: `${CSS_PREFIX}-about-icon`, dangerouslySetInnerHTML: { __html: CLEANER_ICON_SVG } }),
 				h("div", { className: `${CSS_PREFIX}-about-copy` },
@@ -734,10 +793,29 @@
 						title: t("about_github"),
 						dangerouslySetInnerHTML: { __html: GITHUB_SVG }
 					})
+				),
+				h("div", { className: `${CSS_PREFIX}-about-update` },
+					h("div", {
+						className: `${CSS_PREFIX}-about-update-status${updateTone ? ` ${CSS_PREFIX}-${updateTone}` : ""}`,
+						"aria-live": "polite"
+					}, updateText),
+					h("div", { className: `${CSS_PREFIX}-about-update-actions` },
+						updateState.info ? h("a", {
+							className: `${CSS_PREFIX}-btn-sm ${CSS_PREFIX}-btn-sec ${CSS_PREFIX}-about-release`,
+							href: updateState.info.releaseUrl,
+							target: "_blank",
+							rel: "noopener noreferrer"
+						}, t("update_view_release")) : null,
+						updateState.phase === "available" ? h(SmallBtn, { onClick: confirmInstall }, t("update_install")) : null,
+						h(SmallBtn, {
+							secondary: true,
+							disabled: updateState.phase === "checking" || updateState.phase === "installing",
+							onClick: checkUpdates
+						}, updateState.phase === "checking" ? t("update_checking") : t("update_check"))
+					)
 				)
 			),
-			h("div", { className: `${CSS_PREFIX}-group-header` }, t("group_diagnostics")),
-			h("div", { className: `${CSS_PREFIX}-note`, style: { marginBottom: "8px" } }, t("set_diag_note")),
+			h(GroupHeader, { label: t("group_diagnostics"), hint: t("set_diag_note") }),
 			h("div", { className: `${CSS_PREFIX}-diag-version` },
 				`BetterDiscord: ${BdApi.version || "?"}`),
 			h("div", { className: `${CSS_PREFIX}-diag-card` },
