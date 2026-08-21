@@ -103,6 +103,7 @@
 - 保存链现在依次尝试 BetterDiscord 保存对话框、Discord 原生保存对话框和 Downloads 回退；只有目标文件真实存在且 UTF-8 字节数一致时才报告成功。
 - 保存对话框使用绝对 Downloads 默认路径及所选格式过滤器；兼容 `saveWithDialog2`、旧 `saveWithDialog` 及多种取消字段。
 - 补齐 `sanitizeFilename`，服务器/频道名称含空格或特殊字符时也能正常打开保存框；删除完成页不再重复提供“导出删除记录”。
+- 保存实现对齐总结插件的运行时约束，只使用 BetterDiscord 中可用的 `fs`、`path` 与 `USERPROFILE/HOME`；移除会被插件加载器误解析成相对路径的 `os` / `buffer` 引用。
 - 失败方向保持安全：请求了删除前备份时，取消或所有保存方式均失败都会放弃删除。
 
 ## 安全与隐私

@@ -1901,8 +1901,6 @@ module.exports = (() => {
 			return Object.assign({
 				fs: require("fs"),
 				path: require("path"),
-				os: require("os"),
-				buffer: require("buffer").Buffer,
 				ui: Api.UI || BdApi.UI || null,
 				discordNative,
 				downloadsDir: ""
@@ -1920,9 +1918,7 @@ module.exports = (() => {
 					addHome(process.env.USERPROFILE);
 					addHome(process.env.HOME);
 				}
-			} catch (e) { /* use os.homedir below */ }
-			try { if (runtime.os && typeof runtime.os.homedir === "function") addHome(runtime.os.homedir()); }
-			catch (e) { /* checked below */ }
+			} catch (e) { /* checked below */ }
 			if (!homes.length) throw new Error("no home directory");
 			for (const home of homes) {
 				const candidate = runtime.path.join(home, "Downloads");
@@ -1934,11 +1930,31 @@ module.exports = (() => {
 			runtime.fs.mkdirSync(target, { recursive: true });
 			return target;
 		},
+		_utf8Bytes(content) {
+			const value = String(content);
+			if (typeof TextEncoder === "function") return new TextEncoder().encode(value);
+			const bytes = [];
+			for (let i = 0; i < value.length; i++) {
+				let code = value.charCodeAt(i);
+				if (code >= 0xd800 && code <= 0xdbff) {
+					const low = value.charCodeAt(i + 1);
+					if (low >= 0xdc00 && low <= 0xdfff) {
+						code = 0x10000 + ((code - 0xd800) << 10) + (low - 0xdc00);
+						i++;
+					} else code = 0xfffd;
+				} else if (code >= 0xdc00 && code <= 0xdfff) code = 0xfffd;
+				if (code <= 0x7f) bytes.push(code);
+				else if (code <= 0x7ff) bytes.push(0xc0 | (code >> 6), 0x80 | (code & 0x3f));
+				else if (code <= 0xffff) bytes.push(0xe0 | (code >> 12), 0x80 | ((code >> 6) & 0x3f), 0x80 | (code & 0x3f));
+				else bytes.push(0xf0 | (code >> 18), 0x80 | ((code >> 12) & 0x3f), 0x80 | ((code >> 6) & 0x3f), 0x80 | (code & 0x3f));
+			}
+			return Uint8Array.from(bytes);
+		},
 		_verifySavedFile(runtime, filePath, content) {
 			if (!filePath) throw new Error("save API returned no file path");
 			const target = runtime.path.resolve(String(filePath));
 			const stat = runtime.fs.statSync(target);
-			const expectedBytes = runtime.buffer.byteLength(String(content), "utf8");
+			const expectedBytes = ExportService._utf8Bytes(content).length;
 			if (!stat.isFile()) throw new Error("save target is not a file");
 			if (stat.size !== expectedBytes) throw new Error(`saved file size mismatch (${stat.size} != ${expectedBytes})`);
 			return target;
@@ -1982,9 +1998,7 @@ module.exports = (() => {
 			try {
 				const fileManager = runtime.discordNative && runtime.discordNative.fileManager;
 				if (fileManager) {
-					const bytes = typeof TextEncoder !== "undefined"
-						? new TextEncoder().encode(String(content))
-						: runtime.buffer.from(String(content), "utf8");
+					const bytes = ExportService._utf8Bytes(content);
 					if (typeof fileManager.saveWithDialog2 === "function") {
 						const result = await fileManager.saveWithDialog2(bytes, safeName, downloadsDir || undefined, true);
 						if (!result || result.canceledByUser || result.cancelled || result.canceled) return { cancelled: true };

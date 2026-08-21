@@ -416,6 +416,13 @@ const ctx = { channelId: "200000000000000001", isPrivate: false };
 		assert.strictEqual(api.ExportService.buildLog, undefined, "no duplicate post-deletion log exporter");
 	});
 
+	await test("BetterDiscord runtime path uses no os/buffer require and UTF-8 sizing is exact", async () => {
+		const pluginSource = fs.readFileSync(PLUGIN_PATH, "utf8");
+		assert.doesNotMatch(pluginSource, /require\(["'](?:os|buffer)["']\)/, "unsupported bare built-in require removed");
+		assert.strictEqual(api.ExportService._utf8Bytes("你好").length, 6);
+		assert.strictEqual(api.ExportService._utf8Bytes("A😀").length, 5);
+	});
+
 	await test("pre-deletion backup renders Markdown, TXT, and JSON", async () => {
 		const md = api.ExportService.buildBackup(exportContext, exportMessages, "md", "zh-CN");
 		assert.match(md, /^# AI 消息删除前备份/m);

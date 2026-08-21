@@ -57,7 +57,7 @@ REGRESSION.md                发版前的人工回归清单（自动化测不到
 | 12-review-batcher | 按条数+字符预算切审查批次、token 估算 |
 | 13-ai-service | 多平台配置解析、验证/取模型、并发工作池审查、容错判定解析（解析失败进重试桶，绝不误标） |
 | 14a-delete-service | 单并发节流删除队列：404=跳过、403=中止全队（错误带出已删部分供调用方收尾）、429 风暴自动暂停、逐条 channelId 路由 |
-| 14b-export-service | 删除前消息导出（MD/TXT/JSON）；三级保存链（openDialog → saveWithDialog2/saveWithDialog → Downloads），返回路径与落盘字节数验证后才算成功 |
+| 14b-export-service | 删除前消息导出（MD/TXT/JSON）；三级保存链（openDialog → saveWithDialog2/saveWithDialog → Downloads），返回路径与落盘字节数验证后才算成功；遵循 BD 加载器约束，不裸加载 os/buffer |
 | 15-styles | `--damc-*` 设计令牌层（映射 Discord CSS 变量）+ 全部组件样式 |
 | 16-lifecycle-registries | Disposables/ActiveRuns；**ReviewSession**（后台审查会话，唯一写入点）；**MiniPill**（悬浮胶囊，锚定聊天输入框列并避让其他悬浮元素）；**ScanCache**（误关弹窗恢复） |
 | 17-ui-react-helpers | h、Btn、ProgressStrip 等 |

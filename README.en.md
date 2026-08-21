@@ -103,6 +103,7 @@ The settings panel has four tabs:
 - The save chain now tries the BetterDiscord dialog, Discord's native dialog, and a Downloads fallback; success is reported only after the target exists with the expected UTF-8 byte length.
 - The dialog receives an absolute Downloads default path and the selected format filter, with support for `saveWithDialog2`, legacy `saveWithDialog`, and multiple cancellation field names.
 - Adds the missing `sanitizeFilename` helper so server/channel names with spaces or special characters reach the save dialog; the duplicate post-deletion “Export deletion log” action is removed.
+- Aligns with the sibling summary plugin's runtime constraints by using only BetterDiscord-compatible `fs`, `path`, and `USERPROFILE/HOME`; bare `os` / `buffer` imports that the plugin loader misread as relative paths are removed.
 - Failure remains safe: when a pre-deletion backup was requested, cancelling or exhausting every save tier abandons deletion.
 
 ## Security & privacy
