@@ -124,6 +124,25 @@ check("model combo keeps fetched options after selection and reopens unfiltered"
 	}
 });
 
+check("model popup uses a viewport-bounded adaptive portal", () => {
+	for (const needle of [
+		"ReactDOM.createPortal(menu, document.body)", "getBoundingClientRect()",
+		"const below =", "const above =", "const openUp =", "const maxHeight =",
+		'document.addEventListener("scroll", update, true)'
+	]) {
+		if (needle && !pluginSource.includes(needle)) throw new Error(`missing adaptive model popup behavior: ${needle}`);
+	}
+	if (!pluginSource.includes("position: fixed;") || !pluginSource.includes("z-index: 10050;")) {
+		throw new Error("fixed portal popup CSS missing");
+	}
+});
+
+check("settings sections use compact summary-plugin spacing", () => {
+	for (const needle of ["margin-top: 14px;", "padding-top: 10px;", "min-height: 36px;", "margin-top: 12px;"]) {
+		if (!pluginSource.includes(needle)) throw new Error(`compact settings spacing missing: ${needle}`);
+	}
+});
+
 check("observer()/onSwitch() are safe", () => { instance.observer(); instance.onSwitch(); });
 check("stop() cleans up", () => instance.stop());
 check("settings were persisted on stop", () => {

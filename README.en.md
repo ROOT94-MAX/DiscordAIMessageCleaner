@@ -112,6 +112,8 @@ The settings panel has four tabs:
 - Mouse hover and keyboard focus show a Discord-style Tooltip, with native `title` fallback when the component is unavailable.
 - Policy content, concurrency, confirmation threshold, edited-message handling, deletion pacing, and deletion cap use this pattern; group-level diagnostics guidance remains visible.
 - The model combo now separates the current value, filter query, and fetched-model cache: selecting a model keeps the chevron and full list available, and reopening clears the filter to show every fetched model.
+- The model list is a fixed `document.body` Portal: it compares available space above and below, chooses the better direction, caps its height to that space with internal scrolling, and repositions on window scroll/resize without panel clipping.
+- Settings sections adopt the sibling summary plugin's compact ~24px rhythm: the divider remains, while the former ~40px combined gap becomes 14px outer margin + 10px inner padding; rows and field items are tightened as well.
 
 ## Security & privacy
 

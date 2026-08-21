@@ -457,16 +457,17 @@
 			font-weight: 700;
 			letter-spacing: 0.3px;
 			color: var(--damc-text-sub, #b5bac1);
-			margin: 0 0 10px;
+			margin: 0 0 8px;
 		}
-		/* Every group after the first reads as a new section: hairline + air. */
+		/* Match the sibling summary plugin's ~24px section rhythm while keeping
+		   a hairline divider: 14px outer gap + 10px inner padding. */
 		.${CSS_PREFIX}-group-header:not(:first-child) {
-			margin-top: 24px;
-			padding-top: 16px;
+			margin-top: 14px;
+			padding-top: 10px;
 			border-top: 1px solid var(--damc-border, rgba(78, 80, 88, 0.32));
 		}
 		.${CSS_PREFIX}-set-row {
-			min-height: 40px;
+			min-height: 36px;
 			display: flex;
 			align-items: center;
 			justify-content: space-between;
@@ -775,12 +776,12 @@
 		}
 		.${CSS_PREFIX}-tabpage {
 			min-height: 360px;
-			margin-top: 16px;
+			margin-top: 12px;
 			/* Let self-drawn dropdowns overflow the panel instead of being clipped. */
 			overflow: visible;
 		}
 		/* settings: fields */
-		.${CSS_PREFIX}-f-item { margin-bottom: 16px; }
+		.${CSS_PREFIX}-f-item { margin-bottom: 12px; }
 		.${CSS_PREFIX}-f-item:last-child { margin-bottom: 0; }
 		.${CSS_PREFIX}-f-label {
 			font-size: 16px;
@@ -935,6 +936,15 @@
 		.${CSS_PREFIX}-pop.${CSS_PREFIX}-pop-up {
 			top: auto;
 			bottom: calc(100% + 4px);
+		}
+		.${CSS_PREFIX}-pop.${CSS_PREFIX}-pop-fixed {
+			position: fixed;
+			top: auto;
+			right: auto;
+			bottom: auto;
+			box-sizing: border-box;
+			z-index: 10050;
+			overscroll-behavior: contain;
 		}
 		.${CSS_PREFIX}-pop::-webkit-scrollbar { width: 8px; }
 		.${CSS_PREFIX}-pop::-webkit-scrollbar-thumb { background: var(--damc-scroll-thumb); border-radius: 4px; }
@@ -1154,7 +1164,7 @@
 			transform: translateX(16px);
 		}
 		/* settings: prompt editor + diagnostics */
-		.${CSS_PREFIX}-prompt-editor { margin-top: 12px; margin-bottom: 4px; }
+		.${CSS_PREFIX}-prompt-editor { margin-top: 8px; margin-bottom: 2px; }
 		.${CSS_PREFIX}-diag-version {
 			font-size: 13px;
 			color: var(--damc-text-faint, #949ba4);

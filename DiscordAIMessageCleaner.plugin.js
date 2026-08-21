@@ -2496,16 +2496,17 @@ module.exports = (() => {
 			font-weight: 700;
 			letter-spacing: 0.3px;
 			color: var(--damc-text-sub, #b5bac1);
-			margin: 0 0 10px;
+			margin: 0 0 8px;
 		}
-		/* Every group after the first reads as a new section: hairline + air. */
+		/* Match the sibling summary plugin's ~24px section rhythm while keeping
+		   a hairline divider: 14px outer gap + 10px inner padding. */
 		.${CSS_PREFIX}-group-header:not(:first-child) {
-			margin-top: 24px;
-			padding-top: 16px;
+			margin-top: 14px;
+			padding-top: 10px;
 			border-top: 1px solid var(--damc-border, rgba(78, 80, 88, 0.32));
 		}
 		.${CSS_PREFIX}-set-row {
-			min-height: 40px;
+			min-height: 36px;
 			display: flex;
 			align-items: center;
 			justify-content: space-between;
@@ -2814,12 +2815,12 @@ module.exports = (() => {
 		}
 		.${CSS_PREFIX}-tabpage {
 			min-height: 360px;
-			margin-top: 16px;
+			margin-top: 12px;
 			/* Let self-drawn dropdowns overflow the panel instead of being clipped. */
 			overflow: visible;
 		}
 		/* settings: fields */
-		.${CSS_PREFIX}-f-item { margin-bottom: 16px; }
+		.${CSS_PREFIX}-f-item { margin-bottom: 12px; }
 		.${CSS_PREFIX}-f-item:last-child { margin-bottom: 0; }
 		.${CSS_PREFIX}-f-label {
 			font-size: 16px;
@@ -2974,6 +2975,15 @@ module.exports = (() => {
 		.${CSS_PREFIX}-pop.${CSS_PREFIX}-pop-up {
 			top: auto;
 			bottom: calc(100% + 4px);
+		}
+		.${CSS_PREFIX}-pop.${CSS_PREFIX}-pop-fixed {
+			position: fixed;
+			top: auto;
+			right: auto;
+			bottom: auto;
+			box-sizing: border-box;
+			z-index: 10050;
+			overscroll-behavior: contain;
 		}
 		.${CSS_PREFIX}-pop::-webkit-scrollbar { width: 8px; }
 		.${CSS_PREFIX}-pop::-webkit-scrollbar-thumb { background: var(--damc-scroll-thumb); border-radius: 4px; }
@@ -3193,7 +3203,7 @@ module.exports = (() => {
 			transform: translateX(16px);
 		}
 		/* settings: prompt editor + diagnostics */
-		.${CSS_PREFIX}-prompt-editor { margin-top: 12px; margin-bottom: 4px; }
+		.${CSS_PREFIX}-prompt-editor { margin-top: 8px; margin-bottom: 2px; }
 		.${CSS_PREFIX}-diag-version {
 			font-size: 13px;
 			color: var(--damc-text-faint, #949ba4);
@@ -4888,10 +4898,13 @@ module.exports = (() => {
 	const usePopover = () => {
 		const [open, setOpen] = useState(false);
 		const rootRef = useRef(null);
+		const floatingRef = useRef(null);
 		useEffect(() => {
 			if (!open) return undefined;
 			const onDown = event => {
-				if (rootRef.current && !rootRef.current.contains(event.target)) setOpen(false);
+				const inRoot = rootRef.current && rootRef.current.contains(event.target);
+				const inFloating = floatingRef.current && floatingRef.current.contains(event.target);
+				if (!inRoot && !inFloating) setOpen(false);
 			};
 			const onKey = event => { if (event.key === "Escape") setOpen(false); };
 			document.addEventListener("mousedown", onDown);
@@ -4901,7 +4914,7 @@ module.exports = (() => {
 				document.removeEventListener("keydown", onKey);
 			};
 		}, [open]);
-		return { open, setOpen, rootRef };
+		return { open, setOpen, rootRef, floatingRef };
 	};
 
 	// Self-drawn select (native <select> and datalist render OS-native,
@@ -4992,21 +5005,83 @@ module.exports = (() => {
 		const [val, setVal] = useState(String(props.value || ""));
 		const [filter, setFilter] = useState("");
 		const [cachedModels, setCachedModels] = useState(() => Array.isArray(props.models) ? props.models.slice() : []);
+		const [floating, setFloating] = useState(null);
 		const pop = usePopover();
 		useEffect(() => {
 			const incoming = Array.isArray(props.models) ? props.models : [];
 			if (incoming.length) setCachedModels(incoming.slice());
 		}, [props.models]);
 		useEffect(() => { setVal(String(props.value || "")); }, [props.value]);
+		const models = props.models.length ? props.models : cachedModels;
 		useEffect(() => {
-			if (props.openSignal > 0 && (props.models.length > 0 || cachedModels.length > 0)) {
+			if (props.openSignal > 0 && models.length > 0) {
 				setFilter("");
 				pop.setOpen(true);
 			}
 		}, [props.openSignal]);
-		const models = props.models.length ? props.models : cachedModels;
+		useEffect(() => {
+			if (!pop.open) { setFloating(null); return undefined; }
+			const update = () => {
+				const anchor = pop.rootRef.current;
+				if (!anchor || typeof anchor.getBoundingClientRect !== "function") return;
+				const rect = anchor.getBoundingClientRect();
+				const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+				const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+				const margin = 8;
+				const gap = 4;
+				const below = Math.max(0, viewportHeight - rect.bottom - gap - margin);
+				const above = Math.max(0, rect.top - gap - margin);
+				const openUp = below < 180 && above > below;
+				const available = openUp ? above : below;
+				const maxHeight = Math.max(32, Math.min(280, Math.floor(available)));
+				const width = Math.min(rect.width, Math.max(0, viewportWidth - margin * 2));
+				const left = Utils.clamp(rect.left, margin, Math.max(margin, viewportWidth - margin - width));
+				const style = {
+					left: Math.round(left),
+					width: Math.round(width),
+					maxHeight
+				};
+				if (openUp) style.bottom = Math.round(viewportHeight - rect.top + gap);
+				else style.top = Math.round(rect.bottom + gap);
+				setFloating({ openUp, style });
+			};
+			update();
+			window.addEventListener("resize", update);
+			document.addEventListener("scroll", update, true);
+			return () => {
+				window.removeEventListener("resize", update);
+				document.removeEventListener("scroll", update, true);
+			};
+		}, [pop.open, models.length]);
 		const query = filter.trim().toLowerCase();
 		const list = query ? models.filter(model => model.toLowerCase().includes(query)) : models;
+		const menu = pop.open && models.length && floating ? h("div", {
+			ref: pop.floatingRef,
+			className: `${CSS_PREFIX}-ui ${CSS_PREFIX}-pop ${CSS_PREFIX}-pop-fixed${floating.openUp ? ` ${CSS_PREFIX}-pop-fixed-up` : ""}`,
+			style: floating.style,
+			role: "listbox"
+		},
+			list.length
+				? list.map(model => h("button", {
+					key: model,
+					type: "button",
+					role: "option",
+					title: model,
+					"aria-selected": model === val,
+					className: `${CSS_PREFIX}-pop-item${model === val ? ` ${CSS_PREFIX}-pop-current` : ""}`,
+					onMouseDown: event => {
+						event.preventDefault();
+						setVal(model);
+						setFilter("");
+						props.onCommit(model, models);
+						pop.setOpen(false);
+					}
+				}, model))
+				: h("div", { className: `${CSS_PREFIX}-pop-empty` }, t("combo_no_match"))
+		) : null;
+		const floatingMenu = menu && ReactDOM && typeof ReactDOM.createPortal === "function" && document.body
+			? ReactDOM.createPortal(menu, document.body)
+			: menu;
 		return h("div", { className: `${CSS_PREFIX}-combo`, ref: pop.rootRef },
 			h("input", {
 				className: `${CSS_PREFIX}-input`,
@@ -5033,29 +5108,7 @@ module.exports = (() => {
 				},
 				dangerouslySetInnerHTML: { __html: CHEVRON_SVG }
 			}) : null,
-			// Drop UP: the model field is always the last row of the form, so a
-			// downward list gets clipped by the settings modal's bottom edge.
-			pop.open && models.length ? h("div", { className: `${CSS_PREFIX}-pop ${CSS_PREFIX}-pop-up`, role: "listbox" },
-				list.length
-					? list.map(model => h("button", {
-						key: model,
-						type: "button",
-						role: "option",
-						title: model,
-						"aria-selected": model === val,
-						className: `${CSS_PREFIX}-pop-item${model === val ? ` ${CSS_PREFIX}-pop-current` : ""}`,
-						// mousedown (not click): usePopover's outside-mousedown
-						// handler can otherwise tear the list down before click.
-						onMouseDown: event => {
-							event.preventDefault();
-							setVal(model);
-							setFilter("");
-							props.onCommit(model, models);
-							pop.setOpen(false);
-						}
-					}, model))
-					: h("div", { className: `${CSS_PREFIX}-pop-empty` }, t("combo_no_match"))
-			) : null
+			floatingMenu
 		);
 	};
 
