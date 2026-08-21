@@ -8,7 +8,7 @@
 用 AI 审查并删除**当前登录账号自己**在 Discord 发过的历史消息。安全模型是全部设计的出发点：
 
 - 只搜索、只审查、只删除自己的消息；他人消息永不删除。
-- 删除不可逆，因此永不静默删除：先审后删 → 人工勾选 → 危险确认（内含备份勾选）→ 可选 JSON 备份 → 节流执行。
+- 删除不可逆，因此永不静默删除：先审后删 → 人工勾选 → 危险确认（内含导出勾选与 MD/TXT/JSON 格式）→ 系统保存成功 → 节流执行。
 - 不可逆动作只挂在确认按钮上：取消按钮、Esc、点击背板、确认弹窗打开失败，任一路径都不会删除任何消息。
 - AI 只见文本（表情转 `:name:`、附件转文件名占位符），图片/附件内容不上传。
 - 消息内容只发往用户自配的 AI 端点，无遥测；日志不落消息正文与密钥。
@@ -57,7 +57,7 @@ REGRESSION.md                发版前的人工回归清单（自动化测不到
 | 12-review-batcher | 按条数+字符预算切审查批次、token 估算 |
 | 13-ai-service | 多平台配置解析、验证/取模型、并发工作池审查、容错判定解析（解析失败进重试桶，绝不误标） |
 | 14a-delete-service | 单并发节流删除队列：404=跳过、403=中止全队（错误带出已删部分供调用方收尾）、429 风暴自动暂停、逐条 channelId 路由 |
-| 14b-export-service | 删除前备份/删除记录 JSON；三级保存链（openDialog → saveWithDialog2/saveWithDialog → Downloads），返回路径与落盘字节数验证后才算成功 |
+| 14b-export-service | 删除前消息导出（MD/TXT/JSON）；三级保存链（openDialog → saveWithDialog2/saveWithDialog → Downloads），返回路径与落盘字节数验证后才算成功 |
 | 15-styles | `--damc-*` 设计令牌层（映射 Discord CSS 变量）+ 全部组件样式 |
 | 16-lifecycle-registries | Disposables/ActiveRuns；**ReviewSession**（后台审查会话，唯一写入点）；**MiniPill**（悬浮胶囊，锚定聊天输入框列并避让其他悬浮元素）；**ScanCache**（误关弹窗恢复） |
 | 17-ui-react-helpers | h、Btn、ProgressStrip 等 |
@@ -92,11 +92,12 @@ REGRESSION.md                发版前的人工回归清单（自动化测不到
                ├─ AI 审查：并发工作池逐批判定 → 命中标注+自动勾选
                │   可「后台运行」：关弹窗，ReviewSession 继续跑，MiniPill 显示进度
                ├─ 继续扫描更早的消息（cancelled/capped 时，resumeCursor 续扫合并）
-               └─ 删除选中 → 危险确认弹窗（正文含条数/超上限提示 + 备份勾选，
-                   初始值来自 delete.backupBeforeDelete，always 锁定为勾选）
-                   → 勾选则先导出 JSON 备份（保存失败/取消即放弃删除）→ [deleting]
+               └─ 删除选中 → 危险确认弹窗（正文含条数/超上限提示 + 导出勾选与
+                   MD/TXT/JSON 格式选择；初始值来自 delete.backupBeforeDelete，always 锁定为勾选）
+                   → 勾选则打开系统保存框，文件验证成功后才进入 [deleting]
+                     （保存失败/取消即放弃删除）
   → [deleting] 单并发节流 + 暂停/恢复 + 429 风暴自动暂停
-  → [done]     成功/跳过/失败报告 + 删除记录导出；已删项从工作集移除
+  → [done]     成功/跳过/失败报告（不再重复导出删除记录）；已删项从工作集移除
                403 中途中止也进入本阶段（部分报告 + 错误横幅同时显示）
 ```
 

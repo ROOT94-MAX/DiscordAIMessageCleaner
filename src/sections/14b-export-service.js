@@ -1,10 +1,15 @@
 	// ==================== 14b. EXPORT SERVICE ====================
-	// Pre-deletion JSON backup and deletion-log export. A tier only counts as
+	// Pre-deletion message export (Markdown / TXT / JSON). A tier only counts as
 	// successful after the target file exists with the expected byte length:
 	// BetterDiscord dialog -> DiscordNative dialog -> verified Downloads write.
 	// Returns {saved, path} or {cancelled}.
 
 	const ExportService = {
+		FORMATS: ["md", "txt", "json"],
+		normalizeFormat(format) {
+			const value = String(format || "md").toLowerCase();
+			return ExportService.FORMATS.includes(value) ? value : "md";
+		},
 		buildFilename(context, suffix, ext) {
 			const stamp = ts => {
 				const d = new Date(ts);
@@ -15,34 +20,87 @@
 				: `${Utils.sanitizeFilename(context.guildName || context.guildId)}_${Utils.sanitizeFilename(context.channelName || context.channelId)}`;
 			return `AIMessageCleaner_${scope}_${stamp(Date.now())}${suffix || ""}.${ext || "json"}`;
 		},
-		buildBackup(context, messages) {
-			return JSON.stringify({
-				plugin: `${PLUGIN_ID} v${PLUGIN_VERSION}`,
-				exportedAt: new Date().toISOString(),
-				guild: context.guildName || context.guildId || null,
-				channel: context.channelName || context.channelId || null,
-				channelId: context.channelId,
-				count: messages.length,
-				messages: messages.map(message => ({
-					id: message.id,
-					channelId: message.channelId || null,
-					timestamp: new Date(message.timestamp).toISOString(),
-					content: message.content,
-					attachments: message.attachments.map(att => ({ filename: att.filename, url: att.url })),
-					edited: message.edited
-				}))
-			}, null, 2);
-		},
-		buildLog(context, report) {
-			return JSON.stringify({
-				plugin: `${PLUGIN_ID} v${PLUGIN_VERSION}`,
-				ranAt: new Date().toISOString(),
-				channelId: context.channelId,
-				channel: context.channelName || context.channelId || null,
-				deleted: report.deleted.map(item => ({ id: item.id, timestamp: new Date(item.timestamp).toISOString(), excerpt: item.excerpt })),
-				skipped: report.skipped.map(item => item.id),
-				failed: report.failed
-			}, null, 2);
+		buildBackup(context, messages, format, lang) {
+			const targetFormat = ExportService.normalizeFormat(format);
+			const exportedAt = new Date();
+			const normalized = messages.map(message => ({
+				id: message.id,
+				channelId: message.channelId || context.channelId || null,
+				timestamp: new Date(message.timestamp).toISOString(),
+				content: String(message.content || ""),
+				attachments: (Array.isArray(message.attachments) ? message.attachments : [])
+					.map(att => ({ filename: att.filename || "attachment", url: att.url || "" })),
+				edited: Boolean(message.edited)
+			}));
+			if (targetFormat === "json") {
+				return JSON.stringify({
+					plugin: `${PLUGIN_ID} v${PLUGIN_VERSION}`,
+					exportedAt: exportedAt.toISOString(),
+					guild: context.guildName || context.guildId || null,
+					channel: context.channelName || context.channelId || null,
+					channelId: context.channelId,
+					count: normalized.length,
+					messages: normalized
+				}, null, 2);
+			}
+			const zh = String(lang || I18N.resolveUiLanguage()).toLowerCase().startsWith("zh");
+			const labels = zh ? {
+				title: "AI 消息删除前备份", exported: "导出时间", guild: "服务器", channel: "频道",
+				count: "消息数", id: "消息 ID", channelId: "频道 ID", edited: "已编辑", attachments: "附件",
+				yes: "是", no: "否", empty: "（无文本）"
+			} : {
+				title: "AI Message Pre-deletion Backup", exported: "Exported", guild: "Server", channel: "Channel",
+				count: "Messages", id: "Message ID", channelId: "Channel ID", edited: "Edited", attachments: "Attachments",
+				yes: "yes", no: "no", empty: "(no text)"
+			};
+			const guild = context.guildName || context.guildId || "DM";
+			const channel = context.channelName || context.channelId || "?";
+			const attachmentText = att => att.url ? `${att.filename}: ${att.url}` : att.filename;
+			if (targetFormat === "txt") {
+				const lines = [
+					labels.title,
+					`${labels.exported}: ${Utils.formatDateTime(exportedAt.getTime())}`,
+					`${labels.guild}: ${guild}`,
+					`${labels.channel}: ${channel}`,
+					`${labels.count}: ${normalized.length}`,
+					"=".repeat(72)
+				];
+				for (const message of normalized) {
+					lines.push(`[${Utils.formatDateTime(new Date(message.timestamp).getTime())}] ${labels.id}: ${message.id}`);
+					lines.push(`${labels.channelId}: ${message.channelId || "?"} | ${labels.edited}: ${message.edited ? labels.yes : labels.no}`);
+					lines.push(message.content || labels.empty);
+					if (message.attachments.length) lines.push(`${labels.attachments}: ${message.attachments.map(attachmentText).join(" | ")}`);
+					lines.push("-".repeat(72));
+				}
+				return lines.join("\n");
+			}
+			const lines = [
+				`# ${labels.title}`,
+				"",
+				"| | |",
+				"|---|---|",
+				`| ${labels.exported} | ${Utils.formatDateTime(exportedAt.getTime())} |`,
+				`| ${labels.guild} | ${guild} |`,
+				`| ${labels.channel} | ${channel} |`,
+				`| ${labels.count} | ${normalized.length} |`,
+				""
+			];
+			for (const message of normalized) {
+				lines.push(`## ${Utils.formatDateTime(new Date(message.timestamp).getTime())}`);
+				lines.push("");
+				lines.push(`- **${labels.id}:** \`${message.id}\``);
+				lines.push(`- **${labels.channelId}:** \`${message.channelId || "?"}\``);
+				lines.push(`- **${labels.edited}:** ${message.edited ? labels.yes : labels.no}`);
+				lines.push("");
+				lines.push(message.content || labels.empty);
+				if (message.attachments.length) {
+					lines.push("");
+					lines.push(`**${labels.attachments}:**`);
+					for (const att of message.attachments) lines.push(`- ${att.url ? `[${att.filename}](${att.url})` : att.filename}`);
+				}
+				lines.push("");
+			}
+			return lines.join("\n");
 		},
 		_runtime(overrides) {
 			let discordNative = null;

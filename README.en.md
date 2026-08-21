@@ -26,7 +26,7 @@ The messages you regret — violations, private info, throwaway lines — are sc
 - **Only touches your messages:** filters by the logged-in account's id, hitting only what you sent; other people's messages are read for context only and never deleted.
 - **Whole server in one pass:** switch scope between "this channel" and "whole server"; server scope sweeps every channel you can see at once, no channel-by-channel visits.
 - **You define the standard:** six built-in categories (abuse / privacy / NSFW / political / spam / other), plus any number of named custom policies you can switch between.
-- **Deletion safety first:** review-then-delete, manual selection, a second confirmation, optional JSON backup; deletion is strictly serial + throttled + rate-limit auto-pause + a per-run cap. Never deletes silently.
+- **Deletion safety first:** review-then-delete, manual selection, a second confirmation, optional MD / TXT / JSON export; deletion is strictly serial + throttled + rate-limit auto-pause + a per-run cap. Never deletes silently.
 - **Single-file install:** depends only on BetterDiscord's own `BdApi`, no third-party library; modular sources build deterministically into one readable plugin file.
 
 ## Features
@@ -36,7 +36,7 @@ The messages you regret — violations, private info, throwaway lines — are sc
 - **Run in background:** if review is slow, minimize it to a floating pill, keep chatting, and click the pill to return when done.
 - **Result triage:** "flagged only" filter, per-channel dropdown in server scope, inline custom emoji and image thumbnails (click to enlarge), and manual selection.
 - **Resumable scans:** if a scan is cancelled or hits the cap, continue scanning older messages from where it stopped, keeping your selection and verdicts.
-- **Safe deletion:** second confirmation → optional backup → throttled deletion with pausable/cancelable progress, ending in a deleted/skipped/failed report you can export.
+- **Safe deletion:** second confirmation → optional MD / TXT / JSON export → throttled deletion after a successful save, with pausable/cancelable progress and a deleted/skipped/failed report.
 
 ## Supported AI providers
 
@@ -76,7 +76,7 @@ One full pass:
 1. **Pick a scope**: this channel / whole server (server option only inside guilds), then a time range (1d / 7d / 30d / all / custom), and click "Scan my messages".
 2. **Review**: click "AI Review"; hits get a category, severity and reason and are auto-selected. Click "Run in background" if it's slow.
 3. **Filter & select**: toggle "Flagged only", filter by channel via the dropdown in server scope, adjust selection by hand.
-4. **Delete**: click "Delete selected" → an irreversible-warning confirmation → an optional backup per your setting → throttled deletion, ending in a report.
+4. **Delete**: click "Delete selected" → an irreversible-warning confirmation → opt into export and choose Markdown / TXT / JSON → save through the system dialog → throttled deletion, ending in a report.
 
 ## Settings
 
@@ -101,12 +101,13 @@ The settings panel has four tabs:
 
 - Fixes a v0.6.6 path where a save API could return no file path but still be reported as successful.
 - The save chain now tries the BetterDiscord dialog, Discord's native dialog, and a Downloads fallback; success is reported only after the target exists with the expected UTF-8 byte length.
-- The dialog receives an absolute Downloads default path and a JSON filter, with support for `saveWithDialog2`, legacy `saveWithDialog`, and multiple cancellation field names.
+- The dialog receives an absolute Downloads default path and the selected format filter, with support for `saveWithDialog2`, legacy `saveWithDialog`, and multiple cancellation field names.
+- Adds the missing `sanitizeFilename` helper so server/channel names with spaces or special characters reach the save dialog; the duplicate post-deletion “Export deletion log” action is removed.
 - Failure remains safe: when a pre-deletion backup was requested, cancelling or exhausting every save tier abandons deletion.
 
 ## Security & privacy
 
-- Deletion is **irreversible**. The default flow is review-then-delete with manual selection and a second confirmation; nothing is deleted silently. For your first runs, set the backup mode to "ask each time" and export a JSON backup before deleting.
+- Deletion is **irreversible**. The default flow is review-then-delete with manual selection and a second confirmation; nothing is deleted silently. For your first runs, set the backup mode to "ask each time" and export MD / TXT / JSON before deleting.
 - Your API key is stored in plain text in the local plugin config (a BD storage limitation); don't enter important keys on a shared machine. Local servers can be left blank.
 - Your message contents are sent only to the AI endpoint **you configure** — no telemetry, no third-party reporting. With a local model, content can stay entirely on your machine.
 - Logs record only progress and results, never message bodies or keys.

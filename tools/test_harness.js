@@ -399,8 +399,36 @@ const ctx = { channelId: "200000000000000001", isPrivate: false };
 		assert.ok(thrown && thrown.code === "AI_PARSE", "throws AI_PARSE");
 	});
 
-	section("ExportService.save");
+	section("ExportService");
 	const exportDir = label => fs.mkdtempSync(path.join(os.tmpdir(), `damc-export-${label}-`));
+	const exportContext = {
+		guildId: "g1", guildName: "Guild / Demo", channelId: "c1", channelName: "general:chat", isPrivate: false
+	};
+	const exportMessages = [{
+		id: "m1", channelId: "c1", timestamp: Date.now(), content: "你好 backup", edited: true,
+		attachments: [{ filename: "proof.png", url: "https://example.test/proof.png" }]
+	}];
+
+	await test("filename sanitization works and deletion-log export is retired", async () => {
+		const filename = api.ExportService.buildFilename(exportContext, "_backup", "md");
+		assert.match(filename, /^AIMessageCleaner_Guild_Demo_general_chat_\d{8}-\d{4}_backup\.md$/);
+		assert.strictEqual(api.Utils.sanitizeFilename("  a/b:c  "), "a_b_c");
+		assert.strictEqual(api.ExportService.buildLog, undefined, "no duplicate post-deletion log exporter");
+	});
+
+	await test("pre-deletion backup renders Markdown, TXT, and JSON", async () => {
+		const md = api.ExportService.buildBackup(exportContext, exportMessages, "md", "zh-CN");
+		assert.match(md, /^# AI 消息删除前备份/m);
+		assert.match(md, /你好 backup/);
+		assert.match(md, /\[proof\.png\]\(https:\/\/example\.test\/proof\.png\)/);
+		const txt = api.ExportService.buildBackup(exportContext, exportMessages, "txt", "zh-CN");
+		assert.match(txt, /^AI 消息删除前备份/m);
+		assert.match(txt, /proof\.png: https:\/\/example\.test\/proof\.png/);
+		const json = JSON.parse(api.ExportService.buildBackup(exportContext, exportMessages, "json", "en-US"));
+		assert.strictEqual(json.plugin, "DiscordAIMessageCleaner v0.6.7");
+		assert.strictEqual(json.count, 1);
+		assert.strictEqual(json.messages[0].content, "你好 backup");
+	});
 
 	await test("BetterDiscord save dialog writes and verifies the selected file", async () => {
 		const dir = exportDir("bd");
@@ -416,6 +444,21 @@ const ctx = { channelId: "200000000000000001", isPrivate: false };
 		assert.strictEqual(fs.readFileSync(target, "utf8"), "你好 export");
 		assert.strictEqual(options.defaultPath, path.join(dir, "default.json"), "absolute default path");
 		assert.deepStrictEqual(options.filters, [{ name: "JSON", extensions: ["json"] }]);
+	});
+
+	await test("system save dialog filter follows the selected MD/TXT/JSON format", async () => {
+		const dir = exportDir("filters");
+		for (const format of ["md", "txt", "json"]) {
+			const target = path.join(dir, `selected.${format}`);
+			let options = null;
+			await api.ExportService.save("format", `default.${format}`, {
+				downloadsDir: dir,
+				discordNative: null,
+				ui: { openDialog: async value => { options = value; return { canceled: false, filePath: target }; } }
+			});
+			assert.deepStrictEqual(options.filters, [{ name: format.toUpperCase(), extensions: [format] }]);
+			assert.strictEqual(fs.readFileSync(target, "utf8"), "format");
+		}
 	});
 
 	await test("BetterDiscord dialog cancel returns cancelled without fallback write", async () => {
