@@ -117,7 +117,7 @@ The settings panel has four tabs:
 - Interface language moves from Review Policy to General. Diagnostics becomes About & Diagnostics: an About card presents the description, version badge, and accessible GitHub icon, followed by runtime health and copy-diagnostics controls.
 - The Content title matches Current Policy: 16px, weight 500, normal text color, 20px line height, the same 36px title row, and the global 4px label-to-textarea gap. Runtime Diagnostics guidance moves into the heading's info icon.
 - Update checking lives in a separate Version & Updates group, not inside the About card. It prefers the official GitHub API and falls back to the latest Release page on 403/rate limits; fallback mode offers the manual Release link only. Download & Install appears only when the API supplies an official digest, then enforces URL/SHA-256/plugin-metadata validation, backup, post-write verification, and failure restoration—without background updates or candidate downgrades.
-- AI provider forms use a scoped type hierarchy: provider title 16px/700; Name, API URL, API Key, and Model labels 14px/600 in secondary color; input text 15px/400; field action buttons 14px. Other settings pages are unaffected.
+- All setting labels share one typography token: Name, API Base URL, API Key, Model, Current Policy, Content, Concurrent Review Requests, and peers use 16px/500/20px in the normal text color; provider titles remain 16px/700, input text 15px/400, and field action buttons 14px.
 
 ## Security & privacy
 

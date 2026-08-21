@@ -176,8 +176,10 @@ check("About & Diagnostics exposes version and accessible GitHub link", () => {
 
 check("policy content title matches the current-policy hierarchy", () => {
 	for (const needle of [
-		"prompt-content-field", "font-size: 16px;", "font-weight: 500;", "line-height: 20px;",
-		"color: var(--damc-text, #dbdee1);", "var(--damc-settings-label-control-gap)"
+		"prompt-content-field", "--damc-settings-label-size: 16px;",
+		"--damc-settings-label-weight: 500;", "--damc-settings-label-line-height: 20px;",
+		"--damc-settings-label-color: var(--damc-text, #dbdee1);",
+		"font-size: var(--damc-settings-label-size);", "var(--damc-settings-label-control-gap)"
 	]) {
 		if (!pluginSource.includes(needle)) throw new Error(`policy content hierarchy missing: ${needle}`);
 	}
@@ -209,15 +211,23 @@ check("manual updater verifies official release assets and keeps a backup", () =
 	if (pluginSource.includes("about-update")) throw new Error("update controls still live inside the About card");
 });
 
-check("AI provider form uses a subordinate field typography scale", () => {
+check("all setting labels share one typography scale", () => {
 	for (const needle of [
 		'`${CSS_PREFIX}-prov-form`',
-		'.${CSS_PREFIX}-prov-form .${CSS_PREFIX}-f-label', "font-size: 14px;", "font-weight: 600;",
-		"line-height: 20px;", "color: var(--damc-text-sub, #b5bac1);",
+		"--damc-settings-label-size: 16px;", "--damc-settings-label-weight: 500;",
+		"--damc-settings-label-line-height: 20px;", "--damc-settings-label-color: var(--damc-text, #dbdee1);",
+		"font-size: var(--damc-settings-label-size);", "font-weight: var(--damc-settings-label-weight);",
+		"line-height: var(--damc-settings-label-line-height);", "color: var(--damc-settings-label-color);",
 		'.${CSS_PREFIX}-prov-form .${CSS_PREFIX}-input', "font-size: 15px;", "font-weight: 400;",
 		'.${CSS_PREFIX}-prov-form .${CSS_PREFIX}-btn-sm { font-size: 14px; }'
 	]) {
-		if (!pluginSource.includes(needle)) throw new Error(`provider typography missing: ${needle}`);
+		if (!pluginSource.includes(needle)) throw new Error(`unified setting typography missing: ${needle}`);
+	}
+	if (pluginSource.includes('.${CSS_PREFIX}-prov-form .${CSS_PREFIX}-f-label')) {
+		throw new Error("provider-only field label typography override remains");
+	}
+	if (pluginSource.includes('.${CSS_PREFIX}-prompt-content-field .${CSS_PREFIX}-f-label')) {
+		throw new Error("policy-content-only field label typography override remains");
 	}
 });
 

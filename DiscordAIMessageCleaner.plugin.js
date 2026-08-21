@@ -2727,6 +2727,10 @@ module.exports = (() => {
 			--damc-settings-row-height: 36px;
 			--damc-settings-field-gap: 16px;
 			--damc-settings-label-control-gap: 4px;
+			--damc-settings-label-size: 16px;
+			--damc-settings-label-weight: 500;
+			--damc-settings-label-line-height: 20px;
+			--damc-settings-label-color: var(--damc-text, #dbdee1);
 			display: flex;
 			flex-direction: column;
 			color: var(--damc-text, #dbdee1);
@@ -2750,9 +2754,10 @@ module.exports = (() => {
 			flex: 1 1 auto;
 			min-width: 0;
 			overflow: visible;
-			font-size: 16px;
-			font-weight: 500;
-			color: var(--damc-text, #dbdee1);
+			font-size: var(--damc-settings-label-size);
+			font-weight: var(--damc-settings-label-weight);
+			line-height: var(--damc-settings-label-line-height);
+			color: var(--damc-settings-label-color);
 		}
 		/* Info icon trails the title text inline. It belongs to the label, not
 		   the row's right-side control area. */
@@ -3057,9 +3062,10 @@ module.exports = (() => {
 		.${CSS_PREFIX}-f-item { margin-bottom: var(--damc-settings-field-gap); }
 		.${CSS_PREFIX}-f-item:last-child { margin-bottom: 0; }
 		.${CSS_PREFIX}-f-label {
-			font-size: 16px;
-			font-weight: 600;
-			color: var(--damc-text-strong, #f2f3f5);
+			font-size: var(--damc-settings-label-size);
+			font-weight: var(--damc-settings-label-weight);
+			line-height: var(--damc-settings-label-line-height);
+			color: var(--damc-settings-label-color);
 			margin: 0 0 var(--damc-settings-label-control-gap);
 		}
 		.${CSS_PREFIX}-f-row {
@@ -3350,12 +3356,6 @@ module.exports = (() => {
 			text-overflow: ellipsis;
 			white-space: nowrap;
 		}
-		.${CSS_PREFIX}-prov-form .${CSS_PREFIX}-f-label {
-			font-size: 14px;
-			font-weight: 600;
-			line-height: 20px;
-			color: var(--damc-text-sub, #b5bac1);
-		}
 		.${CSS_PREFIX}-prov-form .${CSS_PREFIX}-input {
 			font-size: 15px;
 			font-weight: 400;
@@ -3449,12 +3449,6 @@ module.exports = (() => {
 		}
 		/* settings: prompt editor + diagnostics */
 		.${CSS_PREFIX}-prompt-editor { margin: 0; }
-		.${CSS_PREFIX}-prompt-content-field .${CSS_PREFIX}-f-label {
-			font-size: 16px;
-			font-weight: 500;
-			line-height: 20px;
-			color: var(--damc-text, #dbdee1);
-		}
 		.${CSS_PREFIX}-about-card {
 			display: flex;
 			align-items: center;
