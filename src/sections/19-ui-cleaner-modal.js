@@ -947,10 +947,17 @@
 			const masterState = displayedSelected === 0 ? "none" : displayedSelected === displayed.length ? "all" : "some";
 			// Search-results panel: tool row in the head band, day-grouped
 			// message cards in the scrollable body, load-more as the tail row.
+			// Channel badges only earn their space when the results actually
+			// span more than one channel and no channel filter is active.
+			const multiChannel = Boolean(channelOptions && channelOptions.length > 2);
+			let dayFormat = null;
+			try {
+				dayFormat = new Intl.DateTimeFormat(I18N.resolveUiLanguage(), { year: "numeric", month: "long", day: "numeric" });
+			} catch (e) { /* fall back to ISO dates */ }
 			const listRows = [];
 			let lastDay = null;
 			for (const message of displayed) {
-				const day = Utils.formatDate(message.timestamp);
+				const day = dayFormat ? dayFormat.format(new Date(message.timestamp)) : Utils.formatDate(message.timestamp);
 				if (day !== lastDay) {
 					lastDay = day;
 					listRows.push(h("div", { key: `day-${day}`, className: `${CSS_PREFIX}-day` }, day));
@@ -960,7 +967,7 @@
 					message,
 					selected: selected.has(message.id),
 					verdict: verdicts ? verdicts.get(message.id) : null,
-					showChannel: fetchResult.scope === "guild" && effectiveChannelFilter === null,
+					showChannel: multiChannel && effectiveChannelFilter === null,
 					onPreview: att => setLightbox({ url: att.url, name: att.filename }),
 					onToggle: toggleSelected
 				}));

@@ -2548,13 +2548,11 @@ module.exports = (() => {
 			flex-wrap: wrap;
 			align-items: center;
 		}
-		/* Footer action zone: the host's own modal-footer pairing (#313338 body
-		   over #2b2d31 footer), bleeding edge to edge past the modal padding. */
+		/* Footer action row: explicit buttons, right-aligned, on the modal
+		   background (the tinted footer container was rejected in testing). */
 		.${CSS_PREFIX}-actions-footer {
 			justify-content: flex-end;
-			margin: 2px -16px -16px;
-			padding: 12px 16px;
-			background: var(--damc-surface, #2b2d31);
+			margin-top: 2px;
 		}
 		.${CSS_PREFIX}-btn {
 			height: 32px;
@@ -2710,6 +2708,14 @@ module.exports = (() => {
 		}
 		.${CSS_PREFIX}-panel-spacer {
 			flex: 1 1 auto;
+		}
+		/* The channel filter rides the head band: one size smaller than the
+		   settings-page triggers so the band stays a band. */
+		.${CSS_PREFIX}-panel-head .${CSS_PREFIX}-select-trigger {
+			height: 26px;
+			min-width: 0;
+			max-width: 220px;
+			font-size: 12.5px;
 		}
 		.${CSS_PREFIX}-panel-count {
 			font-size: 12.5px;
@@ -5343,10 +5349,17 @@ module.exports = (() => {
 			const masterState = displayedSelected === 0 ? "none" : displayedSelected === displayed.length ? "all" : "some";
 			// Search-results panel: tool row in the head band, day-grouped
 			// message cards in the scrollable body, load-more as the tail row.
+			// Channel badges only earn their space when the results actually
+			// span more than one channel and no channel filter is active.
+			const multiChannel = Boolean(channelOptions && channelOptions.length > 2);
+			let dayFormat = null;
+			try {
+				dayFormat = new Intl.DateTimeFormat(I18N.resolveUiLanguage(), { year: "numeric", month: "long", day: "numeric" });
+			} catch (e) { /* fall back to ISO dates */ }
 			const listRows = [];
 			let lastDay = null;
 			for (const message of displayed) {
-				const day = Utils.formatDate(message.timestamp);
+				const day = dayFormat ? dayFormat.format(new Date(message.timestamp)) : Utils.formatDate(message.timestamp);
 				if (day !== lastDay) {
 					lastDay = day;
 					listRows.push(h("div", { key: `day-${day}`, className: `${CSS_PREFIX}-day` }, day));
@@ -5356,7 +5369,7 @@ module.exports = (() => {
 					message,
 					selected: selected.has(message.id),
 					verdict: verdicts ? verdicts.get(message.id) : null,
-					showChannel: fetchResult.scope === "guild" && effectiveChannelFilter === null,
+					showChannel: multiChannel && effectiveChannelFilter === null,
 					onPreview: att => setLightbox({ url: att.url, name: att.filename }),
 					onToggle: toggleSelected
 				}));

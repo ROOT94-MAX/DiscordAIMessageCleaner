@@ -260,13 +260,11 @@
 			flex-wrap: wrap;
 			align-items: center;
 		}
-		/* Footer action zone: the host's own modal-footer pairing (#313338 body
-		   over #2b2d31 footer), bleeding edge to edge past the modal padding. */
+		/* Footer action row: explicit buttons, right-aligned, on the modal
+		   background (the tinted footer container was rejected in testing). */
 		.${CSS_PREFIX}-actions-footer {
 			justify-content: flex-end;
-			margin: 2px -16px -16px;
-			padding: 12px 16px;
-			background: var(--damc-surface, #2b2d31);
+			margin-top: 2px;
 		}
 		.${CSS_PREFIX}-btn {
 			height: 32px;
@@ -422,6 +420,14 @@
 		}
 		.${CSS_PREFIX}-panel-spacer {
 			flex: 1 1 auto;
+		}
+		/* The channel filter rides the head band: one size smaller than the
+		   settings-page triggers so the band stays a band. */
+		.${CSS_PREFIX}-panel-head .${CSS_PREFIX}-select-trigger {
+			height: 26px;
+			min-width: 0;
+			max-width: 220px;
+			font-size: 12.5px;
 		}
 		.${CSS_PREFIX}-panel-count {
 			font-size: 12.5px;
