@@ -3664,6 +3664,8 @@ module.exports = (() => {
 			align-items: center;
 			gap: 6px;
 		}
+		/* Read-only badge in Discord's idle-amber: a semantic "locked" state
+		   that stands off the head strip without shouting. */
 		.${CSS_PREFIX}-policy-lock {
 			flex: 0 0 auto;
 			display: inline-flex;
@@ -3674,8 +3676,8 @@ module.exports = (() => {
 			border-radius: 9px;
 			font-size: 11px;
 			font-weight: 600;
-			color: var(--damc-text-faint, #949ba4);
-			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
+			color: var(--damc-warn, #f0b232);
+			background: color-mix(in srgb, var(--damc-warn, #f0b232) 13%, transparent);
 		}
 		.${CSS_PREFIX}-policy-lock-ic { display: inline-flex; }
 		.${CSS_PREFIX}-policy-lock-ic svg { width: 10px; height: 10px; display: block; }
@@ -3692,8 +3694,9 @@ module.exports = (() => {
 			min-height: 150px;
 			padding: 10px 12px;
 			border: 0;
-			/* One step darker than the head strip so the card reads as two zones. */
-			background: color-mix(in srgb, var(--damc-input-bg, #1e1f22) 55%, transparent);
+			/* Full input-dark body: the content zone clearly separates from the
+			   head strip; read-only is carried by text tone + the lock badge. */
+			background: var(--damc-input-bg, #1e1f22);
 			color: var(--damc-text-sub, #b5bac1);
 			font-size: 14px;
 			line-height: 1.55;
