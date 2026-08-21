@@ -14,3 +14,6 @@ coverage/
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# local browser-automation artifacts
+.playwright-mcp/
