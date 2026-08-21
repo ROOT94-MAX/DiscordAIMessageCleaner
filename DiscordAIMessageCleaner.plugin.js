@@ -381,6 +381,9 @@ module.exports = (() => {
 			group_about: "关于插件",
 			about_description: "用 AI 审查并安全清理你自己发送的历史消息。",
 			about_github: "在 GitHub 查看源代码",
+			about_repo: "GitHub 仓库",
+			about_feedback: "意见反馈",
+			update_badge_install: "更新到 v{version}",
 			update_check: "检查更新",
 			update_checking: "正在检查更新…",
 			update_current: "已是最新稳定版 v{version}",
@@ -394,8 +397,6 @@ module.exports = (() => {
 			update_install_title: "安装更新 v{version}",
 			update_install_body: "将从官方 GitHub Release 下载并校验插件，备份当前 v{current} 后替换。确认继续？",
 			update_installed: "v{version} 已安装并校验，BetterDiscord 将重新加载插件。",
-			group_updates: "版本与更新",
-			update_current_version: "当前版本 v{version}",
 			group_diagnostics: "运行诊断",
 			set_diag_note: "Discord 更新导致功能异常时，先看这里。",
 			diag_entry: "输入框按钮入口",
@@ -421,16 +422,19 @@ module.exports = (() => {
 			key_placeholder_local: "本地服务通常无需密钥",
 			aria_toggle_key: "显示/隐藏 API 密钥",
 			aria_open_models: "展开模型列表",
-			set_base_url: "API Base URL",
-			set_api_key: "API Key",
-			set_model: "Model",
+			set_base_url: "API 地址",
+			set_api_key: "API 密钥",
+			set_model: "模型",
+			provider_status_models: "已获取 {count} 个可用模型",
+			provider_status_ready: "已配置，尚未获取模型",
+			provider_status_unset: "尚未配置",
 			btn_validate: "验证配置",
 			btn_fetch_models: "获取模型",
 			validating: "正在验证…",
 			fetching_models: "正在获取模型…",
 			validate_ok: "验证通过（{model}）：{preview}",
 			validate_fail: "验证失败：{detail}",
-			models_loaded: "已加载 {count} 个模型，可在 Model 输入框选择。",
+			models_loaded: "已加载 {count} 个模型，可在下拉列表选择。",
 			models_fail: "获取模型失败：{detail}",
 			// settings: review policy
 			set_policy: "审查策略提示词",
@@ -624,6 +628,9 @@ module.exports = (() => {
 			group_about: "About",
 			about_description: "AI-review and safely clean the message history you sent.",
 			about_github: "View source on GitHub",
+			about_repo: "GitHub Repo",
+			about_feedback: "Feedback",
+			update_badge_install: "Update to v{version}",
 			update_check: "Check for Updates",
 			update_checking: "Checking for updates…",
 			update_current: "Latest stable version: v{version}",
@@ -637,8 +644,6 @@ module.exports = (() => {
 			update_install_title: "Install update v{version}",
 			update_install_body: "Download and verify the official GitHub Release asset, back up current v{current}, then replace it. Continue?",
 			update_installed: "v{version} installed and verified. BetterDiscord will reload the plugin.",
-			group_updates: "Version & Updates",
-			update_current_version: "Current version v{version}",
 			group_diagnostics: "Runtime Diagnostics",
 			set_diag_note: "Start here when a Discord update breaks something.",
 			diag_entry: "Chat input button entry",
@@ -666,13 +671,16 @@ module.exports = (() => {
 			set_base_url: "API Base URL",
 			set_api_key: "API Key",
 			set_model: "Model",
+			provider_status_models: "{count} models available",
+			provider_status_ready: "Configured, models not fetched",
+			provider_status_unset: "Not configured yet",
 			btn_validate: "Validate Config",
 			btn_fetch_models: "Fetch Models",
 			validating: "Validating…",
 			fetching_models: "Fetching models…",
 			validate_ok: "Validation passed ({model}): {preview}",
 			validate_fail: "Validation failed: {detail}",
-			models_loaded: "Loaded {count} models. Pick one in the Model input.",
+			models_loaded: "Loaded {count} models. Pick one in the dropdown.",
 			models_fail: "Failed to fetch models: {detail}",
 			set_policy: "Review policy prompt",
 			set_policy_note: "Empty = built-in template. Describe what counts as a violation; the AI judges only by this. Placeholder: {{LANGUAGE}}.",
@@ -2465,15 +2473,20 @@ module.exports = (() => {
 			height: 32px;
 			padding: 0 10px;
 			font-size: 16px;
-			border-radius: 4px;
+			border-radius: 6px;
 			border: 1px solid var(--damc-input-border, rgba(78, 80, 88, 0.48));
 			background: var(--damc-input-bg, #1e1f22);
 			color: var(--damc-text, #dbdee1);
 			font-family: inherit;
 			outline: none;
+			transition: border-color 120ms ease, box-shadow 120ms ease;
+		}
+		.${CSS_PREFIX}-input:hover {
+			border-color: color-mix(in srgb, var(--damc-text, #dbdee1) 16%, transparent);
 		}
 		.${CSS_PREFIX}-input:focus {
 			border-color: var(--damc-brand, #5865f2);
+			box-shadow: 0 0 0 3px color-mix(in srgb, var(--damc-brand, #5865f2) 18%, transparent);
 		}
 		.${CSS_PREFIX}-input::-webkit-calendar-picker-indicator {
 			filter: invert(0.65);
@@ -2726,11 +2739,16 @@ module.exports = (() => {
 			--damc-settings-section-title-gap: 8px;
 			--damc-settings-row-height: 36px;
 			--damc-settings-field-gap: 16px;
-			--damc-settings-label-control-gap: 4px;
+			--damc-settings-label-control-gap: 8px;
 			--damc-settings-label-size: 16px;
 			--damc-settings-label-weight: 500;
 			--damc-settings-label-line-height: 20px;
 			--damc-settings-label-color: var(--damc-text, #dbdee1);
+			/* Eyebrow labels above full-width inputs: small, bold, muted, so the
+			   user's own value is the brightest thing in each field. */
+			--damc-field-label-size: 12px;
+			--damc-field-label-weight: 700;
+			--damc-field-label-color: var(--damc-text-sub, #b5bac1);
 			display: flex;
 			flex-direction: column;
 			color: var(--damc-text, #dbdee1);
@@ -2803,15 +2821,17 @@ module.exports = (() => {
 			padding: 0 8px;
 			font-size: 16px;
 			text-align: right;
-			border-radius: 4px;
+			border-radius: 6px;
 			border: 1px solid var(--damc-input-border, rgba(78, 80, 88, 0.48));
 			background: var(--damc-input-bg, #1e1f22);
 			color: var(--damc-text, #dbdee1);
 			font-family: inherit;
 			outline: none;
+			transition: border-color 120ms ease, box-shadow 120ms ease;
 		}
 		.${CSS_PREFIX}-num-input:focus {
 			border-color: var(--damc-brand, #5865f2);
+			box-shadow: 0 0 0 3px color-mix(in srgb, var(--damc-brand, #5865f2) 18%, transparent);
 		}
 		.${CSS_PREFIX}-seg {
 			display: flex;
@@ -3062,10 +3082,12 @@ module.exports = (() => {
 		.${CSS_PREFIX}-f-item { margin-bottom: var(--damc-settings-field-gap); }
 		.${CSS_PREFIX}-f-item:last-child { margin-bottom: 0; }
 		.${CSS_PREFIX}-f-label {
-			font-size: var(--damc-settings-label-size);
-			font-weight: var(--damc-settings-label-weight);
-			line-height: var(--damc-settings-label-line-height);
-			color: var(--damc-settings-label-color);
+			font-size: var(--damc-field-label-size);
+			font-weight: var(--damc-field-label-weight);
+			line-height: 16px;
+			letter-spacing: 0.02em;
+			text-transform: uppercase;
+			color: var(--damc-field-label-color);
 			margin: 0 0 var(--damc-settings-label-control-gap);
 		}
 		.${CSS_PREFIX}-f-row {
@@ -3086,17 +3108,22 @@ module.exports = (() => {
 			font-size: 15px;
 			line-height: 1.45;
 			resize: vertical;
-			border-radius: 4px;
+			border-radius: 6px;
 			border: 1px solid var(--damc-input-border, rgba(78, 80, 88, 0.48));
 			background: var(--damc-input-bg, #1e1f22);
 			color: var(--damc-text, #dbdee1);
 			font-family: inherit;
 			outline: none;
+			transition: border-color 120ms ease, box-shadow 120ms ease;
 			scrollbar-width: thin;
 			scrollbar-color: var(--damc-scroll-thumb) transparent;
 		}
+		.${CSS_PREFIX}-textarea:hover {
+			border-color: color-mix(in srgb, var(--damc-text, #dbdee1) 16%, transparent);
+		}
 		.${CSS_PREFIX}-textarea:focus {
 			border-color: var(--damc-brand, #5865f2);
+			box-shadow: 0 0 0 3px color-mix(in srgb, var(--damc-brand, #5865f2) 18%, transparent);
 		}
 		.${CSS_PREFIX}-textarea::-webkit-scrollbar { width: 8px; }
 		.${CSS_PREFIX}-textarea::-webkit-scrollbar-thumb {
@@ -3162,7 +3189,7 @@ module.exports = (() => {
 			justify-content: center;
 			border: 0;
 			border-left: 1px solid var(--damc-input-border, rgba(78, 80, 88, 0.48));
-			border-radius: 0 3px 3px 0;
+			border-radius: 0 5px 5px 0;
 			background: transparent;
 			color: var(--damc-icon, #b5bac1);
 			cursor: pointer;
@@ -3186,7 +3213,7 @@ module.exports = (() => {
 			justify-content: center;
 			border: 0;
 			border-left: 1px solid var(--damc-input-border, rgba(78, 80, 88, 0.48));
-			border-radius: 0 3px 3px 0;
+			border-radius: 0 5px 5px 0;
 			background: transparent;
 			color: var(--damc-icon, #b5bac1);
 			cursor: pointer;
@@ -3266,6 +3293,17 @@ module.exports = (() => {
 		}
 		.${CSS_PREFIX}-status-line.${CSS_PREFIX}-ok { color: var(--damc-ok, #23a55a); }
 		.${CSS_PREFIX}-status-line.${CSS_PREFIX}-fail { color: var(--damc-danger, #f23f43); }
+		.${CSS_PREFIX}-status-line.${CSS_PREFIX}-ok::before,
+		.${CSS_PREFIX}-status-line.${CSS_PREFIX}-fail::before {
+			content: "";
+			display: inline-block;
+			width: 6px;
+			height: 6px;
+			border-radius: 50%;
+			background: currentColor;
+			margin-right: 6px;
+			vertical-align: 2px;
+		}
 		/* settings: provider rail */
 		.${CSS_PREFIX}-prov-grid {
 			display: grid;
@@ -3300,9 +3338,10 @@ module.exports = (() => {
 		}
 		.${CSS_PREFIX}-prov-row.${CSS_PREFIX}-prov-selected,
 		.${CSS_PREFIX}-prov-row.${CSS_PREFIX}-prov-selected:hover {
-			background: var(--damc-selected, rgba(255, 255, 255, 0.09));
+			background: color-mix(in srgb, var(--damc-brand, #5865f2) 13%, transparent);
 			color: var(--damc-text-strong, #f2f3f5);
 			font-weight: 600;
+			box-shadow: inset 2px 0 0 var(--damc-brand, #5865f2);
 		}
 		.${CSS_PREFIX}-prov-dot {
 			flex: 0 0 auto;
@@ -3339,26 +3378,93 @@ module.exports = (() => {
 			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
 			color: var(--damc-text, #dbdee1);
 		}
-		.${CSS_PREFIX}-prov-form-head {
-			height: 28px;
-			margin-bottom: 12px;
+		/* provider head card: identity + connection summary before the fields */
+		.${CSS_PREFIX}-prov-card {
 			display: flex;
 			align-items: center;
-			gap: 8px;
+			gap: 10px;
+			padding: 8px 10px;
+			border-radius: 8px;
+			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
+			background: var(--damc-surface, #2b2d31);
+			margin-bottom: var(--damc-settings-field-gap);
 		}
-		.${CSS_PREFIX}-prov-title {
-			flex: 1 1 auto;
-			min-width: 0;
-			font-size: 16px;
+		.${CSS_PREFIX}-prov-tile {
+			width: 30px;
+			height: 30px;
+			border-radius: 8px;
+			flex: 0 0 auto;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background: color-mix(in srgb, var(--damc-brand, #5865f2) 16%, transparent);
+			color: color-mix(in srgb, var(--damc-brand, #5865f2) 45%, var(--damc-text-strong, #f2f3f5));
+		}
+		.${CSS_PREFIX}-prov-tile svg { width: 18px; height: 18px; display: block; }
+		.${CSS_PREFIX}-prov-card-copy { flex: 1 1 auto; min-width: 0; }
+		.${CSS_PREFIX}-prov-card-name {
+			font-size: 15px;
 			font-weight: 700;
 			color: var(--damc-text-strong, #f2f3f5);
 			overflow: hidden;
 			text-overflow: ellipsis;
 			white-space: nowrap;
 		}
+		.${CSS_PREFIX}-prov-card-sub {
+			margin-top: 1px;
+			font-size: 12px;
+			color: var(--damc-text-faint, #949ba4);
+			display: flex;
+			align-items: center;
+			gap: 5px;
+			min-width: 0;
+		}
+		.${CSS_PREFIX}-prov-card-sub-text {
+			min-width: 0;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+		.${CSS_PREFIX}-prov-card-dot {
+			flex: 0 0 auto;
+			width: 6px;
+			height: 6px;
+			border-radius: 50%;
+			background: var(--damc-border, rgba(78, 80, 88, 0.48));
+		}
+		.${CSS_PREFIX}-prov-card-dot.${CSS_PREFIX}-prov-card-dot-ok { background: var(--damc-ok, #23a55a); }
+		.${CSS_PREFIX}-prov-split {
+			height: 1px;
+			background: var(--damc-border, rgba(78, 80, 88, 0.48));
+			opacity: 0.55;
+			margin: 0 0 var(--damc-settings-field-gap);
+		}
 		.${CSS_PREFIX}-prov-form .${CSS_PREFIX}-input {
+			height: 38px;
 			font-size: 15px;
 			font-weight: 400;
+		}
+		/* model combo with an attached fetch (refresh) button */
+		.${CSS_PREFIX}-combo-group { display: flex; align-items: stretch; }
+		.${CSS_PREFIX}-combo-group .${CSS_PREFIX}-combo { flex: 1 1 auto; min-width: 0; }
+		.${CSS_PREFIX}-combo-group .${CSS_PREFIX}-combo .${CSS_PREFIX}-input { border-radius: 6px 0 0 6px; }
+		.${CSS_PREFIX}-combo-fetch {
+			flex: 0 0 auto;
+			width: 36px;
+			margin-left: -1px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border: 1px solid var(--damc-input-border, rgba(78, 80, 88, 0.48));
+			border-radius: 0 6px 6px 0;
+			background: var(--damc-sunken, #1e1f22);
+			color: var(--damc-icon, #b5bac1);
+			cursor: pointer;
+		}
+		.${CSS_PREFIX}-combo-fetch svg { width: 15px; height: 15px; }
+		.${CSS_PREFIX}-combo-fetch:hover {
+			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
+			color: var(--damc-icon-hover, #dbdee1);
 		}
 		.${CSS_PREFIX}-prov-form .${CSS_PREFIX}-btn-sm { font-size: 14px; }
 		.${CSS_PREFIX}-active-badge {
@@ -3449,13 +3555,21 @@ module.exports = (() => {
 		}
 		/* settings: prompt editor + diagnostics */
 		.${CSS_PREFIX}-prompt-editor { margin: 0; }
+		/* about card (brand mist): identity row / hairline / action badges */
 		.${CSS_PREFIX}-about-card {
+			padding: 14px 16px;
+			border-radius: 8px;
+			background: color-mix(in srgb, var(--damc-brand, #5865f2) 6%, var(--damc-surface, #2b2d31));
+		}
+		.${CSS_PREFIX}-about-id {
 			display: flex;
 			align-items: center;
 			gap: 12px;
-			padding: 12px;
-			border-radius: 8px;
-			background: color-mix(in srgb, var(--damc-brand, #5865f2) 8%, var(--damc-surface, #2b2d31));
+		}
+		.${CSS_PREFIX}-about-split {
+			height: 1px;
+			background: color-mix(in srgb, var(--damc-text, #dbdee1) 8%, transparent);
+			margin: 12px 0;
 		}
 		.${CSS_PREFIX}-about-icon {
 			width: 36px;
@@ -3481,13 +3595,8 @@ module.exports = (() => {
 			line-height: 1.4;
 			color: var(--damc-text-faint, #949ba4);
 		}
-		.${CSS_PREFIX}-about-meta {
-			flex: 0 0 auto;
-			display: flex;
-			align-items: center;
-			gap: 8px;
-		}
 		.${CSS_PREFIX}-about-version {
+			flex: 0 0 auto;
 			height: 22px;
 			padding: 0 8px;
 			display: inline-flex;
@@ -3498,42 +3607,72 @@ module.exports = (() => {
 			font-size: 12px;
 			font-weight: 700;
 		}
-		.${CSS_PREFIX}-about-github {
-			width: 30px;
-			height: 30px;
+		/* pill badges: GitHub repo / check updates / feedback */
+		.${CSS_PREFIX}-about-badges {
+			display: flex;
+			align-items: center;
+			flex-wrap: wrap;
+			gap: 8px;
+		}
+		.${CSS_PREFIX}-badge {
+			height: 26px;
+			padding: 0 11px;
+			box-sizing: border-box;
+			border-radius: 13px;
+			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
+			background: color-mix(in srgb, var(--damc-brand, #5865f2) 9%, var(--damc-surface, #2b2d31));
+			color: var(--damc-text, #dbdee1);
+			font-family: inherit;
+			font-size: 12px;
+			font-weight: 600;
 			display: inline-flex;
 			align-items: center;
-			justify-content: center;
-			border-radius: 4px;
-			color: var(--damc-icon, #b5bac1);
+			gap: 6px;
+			white-space: nowrap;
+			cursor: pointer;
 			text-decoration: none;
+			transition: border-color 120ms ease, color 120ms ease;
 		}
-		.${CSS_PREFIX}-about-github:hover,
-		.${CSS_PREFIX}-about-github:focus-visible {
-			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
+		.${CSS_PREFIX}-badge-ic { display: flex; }
+		.${CSS_PREFIX}-badge-ic svg {
+			width: 14px;
+			height: 14px;
+			display: block;
+			color: var(--damc-icon, #b5bac1);
+		}
+		.${CSS_PREFIX}-badge:hover {
+			border-color: color-mix(in srgb, var(--damc-brand, #5865f2) 55%, transparent);
 			color: var(--damc-text-strong, #f2f3f5);
-			outline: none;
 		}
-		.${CSS_PREFIX}-about-github:focus-visible {
+		.${CSS_PREFIX}-badge:hover .${CSS_PREFIX}-badge-ic svg {
+			color: color-mix(in srgb, var(--damc-brand, #5865f2) 50%, var(--damc-text-strong, #f2f3f5));
+		}
+		.${CSS_PREFIX}-badge:focus-visible {
+			outline: none;
 			box-shadow: 0 0 0 2px color-mix(in srgb, var(--damc-brand, #5865f2) 38%, transparent);
 		}
-		.${CSS_PREFIX}-about-github svg { width: 18px; height: 18px; }
+		.${CSS_PREFIX}-badge:disabled { opacity: 0.55; cursor: default; }
+		.${CSS_PREFIX}-badge.${CSS_PREFIX}-badge-brand {
+			background: var(--damc-brand, #5865f2);
+			border-color: transparent;
+			color: var(--damc-on-brand, #fff);
+		}
+		.${CSS_PREFIX}-badge.${CSS_PREFIX}-badge-brand .${CSS_PREFIX}-badge-ic svg { color: var(--damc-on-brand, #fff); }
 		.${CSS_PREFIX}-update-status {
-			margin-top: 4px;
-			font-size: 13px;
+			margin-top: 10px;
+			font-size: 12.5px;
 			line-height: 1.4;
 			color: var(--damc-text-faint, #949ba4);
 		}
 		.${CSS_PREFIX}-update-status.${CSS_PREFIX}-ok { color: var(--damc-ok, #23a55a); }
 		.${CSS_PREFIX}-update-status.${CSS_PREFIX}-fail { color: var(--damc-danger, #f23f43); }
-		.${CSS_PREFIX}-update-actions {
-			margin-top: 8px;
-			display: flex;
-			align-items: center;
-			justify-content: flex-end;
-			gap: 8px;
+		.${CSS_PREFIX}-update-links { margin-top: 6px; }
+		.${CSS_PREFIX}-update-link {
+			font-size: 12.5px;
+			color: var(--damc-brand, #5865f2);
+			text-decoration: none;
 		}
-		.${CSS_PREFIX}-update-release { text-decoration: none; box-sizing: border-box; }
+		.${CSS_PREFIX}-update-link:hover { text-decoration: underline; }
 		.${CSS_PREFIX}-diag-version {
 			font-size: 13px;
 			color: var(--damc-text-faint, #949ba4);
@@ -5203,6 +5342,18 @@ module.exports = (() => {
 	const CHEVRON_SVG = `<svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>`;
 	const GITHUB_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.87c-2.78.6-3.37-1.18-3.37-1.18-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.9 1.53 2.35 1.09 2.92.83.09-.65.35-1.09.64-1.34-2.22-.25-4.56-1.11-4.56-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02A9.55 9.55 0 0 1 12 6.82a9.5 9.5 0 0 1 2.5.34c1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.86v2.76c0 .27.18.58.69.48A10 10 0 0 0 12 2Z"/></svg>`;
 	const PROJECT_URL = "https://github.com/ROOT94-MAX/DiscordAIMessageCleaner";
+	const REFRESH_SVG = `<svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M17.65 6.35A8 8 0 1 0 19.73 14h-2.08a6 6 0 1 1-1.41-6.24L13 11h7V4Z"/></svg>`;
+	const FEEDBACK_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3C6.48 3 2 6.86 2 11.6c0 2.72 1.48 5.14 3.79 6.72L5 22l4.34-2.03c.85.17 1.74.26 2.66.26 5.52 0 10-3.86 10-8.6S17.52 3 12 3Z"/></svg>`;
+	const DOWNLOAD_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M11 3h2v10.17l3.59-3.58L18 11l-6 6-6-6 1.41-1.41L11 13.17V3ZM5 19h14v2H5Z"/></svg>`;
+	// Preset provider brand marks (Simple Icons, monochrome via currentColor).
+	// Custom providers fall back to the plugin's own CLEANER_ICON_SVG.
+	const PROVIDER_ICON_SVGS = {
+		openai: `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg>`,
+		deepseek: `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M23.748 4.651c-.254-.124-.364.113-.512.233-.051.04-.094.09-.137.137-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.155-.708-.311-.955-.65-.172-.24-.219-.509-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.094.172.187.129.323-.082.28-.18.553-.266.833-.055.179-.137.218-.328.14a5.5 5.5 0 0 1-1.737-1.179c-.857-.828-1.631-1.743-2.597-2.46a12 12 0 0 0-.689-.47c-.985-.957.13-1.743.387-1.836.27-.098.094-.433-.778-.428-.872.003-1.67.295-2.687.685a3 3 0 0 1-.465.136 9.6 9.6 0 0 0-2.883-.101c-1.885.21-3.39 1.1-4.497 2.622C.082 8.776-.231 10.854.152 13.02c.403 2.284 1.568 4.175 3.36 5.653 1.857 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.132-.284 4.994-1.86.47.234.962.328 1.78.398.629.058 1.235-.031 1.705-.129.735-.155.684-.836.418-.961-2.155-1.004-1.682-.595-2.112-.926 1.095-1.295 2.768-3.598 3.284-6.733.05-.346.115-.834.108-1.114-.004-.171.035-.238.23-.257a4.2 4.2 0 0 0 1.545-.475c1.397-.763 1.96-2.016 2.093-3.517.02-.23-.004-.467-.247-.588M11.58 18.168c-2.088-1.642-3.101-2.183-3.52-2.16-.39.024-.32.472-.234.763.09.288.207.487.371.74.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.168-1.361-.801-2.5-1.86-3.301-3.306-.775-1.393-1.225-2.888-1.299-4.482-.02-.385.094-.522.477-.592a4.7 4.7 0 0 1 1.53-.038c2.131.311 3.946 1.264 5.467 2.774.868.86 1.525 1.887 2.202 2.89.72 1.066 1.494 2.082 2.48 2.915.348.291.626.513.892.677-.802.09-2.14.109-3.055-.615zm1.001-6.44a.306.306 0 0 1 .415-.287.3.3 0 0 1 .113.074.3.3 0 0 1 .086.214c0 .17-.136.307-.308.307a.303.303 0 0 1-.306-.307m3.11 1.596c-.2.081-.4.151-.591.16a1.25 1.25 0 0 1-.798-.254c-.274-.23-.47-.358-.551-.758a1.7 1.7 0 0 1 .015-.588c.07-.327-.007-.537-.238-.727-.188-.156-.426-.199-.689-.199a.6.6 0 0 1-.254-.078.253.253 0 0 1-.114-.358 1 1 0 0 1 .192-.21c.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.392.451.462.576.685.915.176.264.336.536.446.848.066.194-.02.353-.25.45"/></svg>`,
+		gemini: `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M11.04 19.32Q12 21.51 12 24q0-2.49.93-4.68.96-2.19 2.58-3.81t3.81-2.55Q21.51 12 24 12q-2.49 0-4.68-.93a12.3 12.3 0 0 1-3.81-2.58 12.3 12.3 0 0 1-2.58-3.81Q12 2.49 12 0q0 2.49-.96 4.68-.93 2.19-2.55 3.81a12.3 12.3 0 0 1-3.81 2.58Q2.49 12 0 12q2.49 0 4.68.96 2.19.93 3.81 2.55t2.55 3.81"/></svg>`,
+		ollama: `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.361 10.26a.894.894 0 0 0-.558.47l-.072.148.001.207c0 .193.004.217.059.353.076.193.152.312.291.448.24.238.51.3.872.205a.86.86 0 0 0 .517-.436.752.752 0 0 0 .08-.498c-.064-.453-.33-.782-.724-.897a1.06 1.06 0 0 0-.466 0zm-9.203.005c-.305.096-.533.32-.65.639a1.187 1.187 0 0 0-.06.52c.057.309.31.59.598.667.362.095.632.033.872-.205.14-.136.215-.255.291-.448.055-.136.059-.16.059-.353l.001-.207-.072-.148a.894.894 0 0 0-.565-.472 1.02 1.02 0 0 0-.474.007Zm4.184 2c-.131.071-.223.25-.195.383.031.143.157.288.353.407.105.063.112.072.117.136.004.038-.01.146-.029.243-.02.094-.036.194-.036.222.002.074.07.195.143.253.064.052.076.054.255.059.164.005.198.001.264-.03.169-.082.212-.234.15-.525-.052-.243-.042-.28.087-.355.137-.08.281-.219.324-.314a.365.365 0 0 0-.175-.48.394.394 0 0 0-.181-.033c-.126 0-.207.03-.355.124l-.085.053-.053-.032c-.219-.13-.259-.145-.391-.143a.396.396 0 0 0-.193.032zm.39-2.195c-.373.036-.475.05-.654.086-.291.06-.68.195-.951.328-.94.46-1.589 1.226-1.787 2.114-.04.176-.045.234-.045.53 0 .294.005.357.043.524.264 1.16 1.332 2.017 2.714 2.173.3.033 1.596.033 1.896 0 1.11-.125 2.064-.727 2.493-1.571.114-.226.169-.372.22-.602.039-.167.044-.23.044-.523 0-.297-.005-.355-.045-.531-.288-1.29-1.539-2.304-3.072-2.497a6.873 6.873 0 0 0-.855-.031zm.645.937a3.283 3.283 0 0 1 1.44.514c.223.148.537.458.671.662.166.251.26.508.303.82.02.143.01.251-.043.482-.08.345-.332.705-.672.957a3.115 3.115 0 0 1-.689.348c-.382.122-.632.144-1.525.138-.582-.006-.686-.01-.853-.042-.57-.107-1.022-.334-1.35-.68-.264-.28-.385-.535-.45-.946-.03-.192.025-.509.137-.776.136-.326.488-.73.836-.963.403-.269.934-.46 1.422-.512.187-.02.586-.02.773-.002zm-5.503-11a1.653 1.653 0 0 0-.683.298C5.617.74 5.173 1.666 4.985 2.819c-.07.436-.119 1.04-.119 1.503 0 .544.064 1.24.155 1.721.02.107.031.202.023.208a8.12 8.12 0 0 1-.187.152 5.324 5.324 0 0 0-.949 1.02 5.49 5.49 0 0 0-.94 2.339 6.625 6.625 0 0 0-.023 1.357c.091.78.325 1.438.727 2.04l.13.195-.037.064c-.269.452-.498 1.105-.605 1.732-.084.496-.095.629-.095 1.294 0 .67.009.803.088 1.266.095.555.288 1.143.503 1.534.071.128.243.393.264.407.007.003-.014.067-.046.141a7.405 7.405 0 0 0-.548 1.873c-.062.417-.071.552-.071.991 0 .56.031.832.148 1.279L3.42 24h1.478l-.05-.091c-.297-.552-.325-1.575-.068-2.597.117-.472.25-.819.498-1.296l.148-.29v-.177c0-.165-.003-.184-.057-.293a.915.915 0 0 0-.194-.25 1.74 1.74 0 0 1-.385-.543c-.424-.92-.506-2.286-.208-3.451.124-.486.329-.918.544-1.154a.787.787 0 0 0 .223-.531c0-.195-.07-.355-.224-.522a3.136 3.136 0 0 1-.817-1.729c-.14-.96.114-2.005.69-2.834.563-.814 1.353-1.336 2.237-1.475.199-.033.57-.028.776.01.226.04.367.028.512-.041.179-.085.268-.19.374-.431.093-.215.165-.333.36-.576.234-.29.46-.489.822-.729.413-.27.884-.467 1.352-.561.17-.035.25-.04.569-.04.319 0 .398.005.569.04a4.07 4.07 0 0 1 1.914.997c.117.109.398.457.488.602.034.057.095.177.132.267.105.241.195.346.374.43.14.068.286.082.503.045.343-.058.607-.053.943.016 1.144.23 2.14 1.173 2.581 2.437.385 1.108.276 2.267-.296 3.153-.097.15-.193.27-.333.419-.301.322-.301.722-.001 1.053.493.539.801 1.866.708 3.036-.062.772-.26 1.463-.533 1.854a2.096 2.096 0 0 1-.224.258.916.916 0 0 0-.194.25c-.054.109-.057.128-.057.293v.178l.148.29c.248.476.38.823.498 1.295.253 1.008.231 2.01-.059 2.581a.845.845 0 0 0-.044.098c0 .006.329.009.732.009h.73l.02-.074.036-.134c.019-.076.057-.3.088-.516.029-.217.029-1.016 0-1.258-.11-.875-.295-1.57-.597-2.226-.032-.074-.053-.138-.046-.141.008-.005.057-.074.108-.152.376-.569.607-1.284.724-2.228.031-.26.031-1.378 0-1.628-.083-.645-.182-1.082-.348-1.525a6.083 6.083 0 0 0-.329-.7l-.038-.064.131-.194c.402-.604.636-1.262.727-2.04a6.625 6.625 0 0 0-.024-1.358 5.512 5.512 0 0 0-.939-2.339 5.325 5.325 0 0 0-.95-1.02 8.097 8.097 0 0 1-.186-.152.692.692 0 0 1 .023-.208c.208-1.087.201-2.443-.017-3.503-.19-.924-.535-1.658-.98-2.082-.354-.338-.716-.482-1.15-.455-.996.059-1.8 1.205-2.116 3.01a6.805 6.805 0 0 0-.097.726c0 .036-.007.066-.015.066a.96.96 0 0 1-.149-.078A4.857 4.857 0 0 0 12 3.03c-.832 0-1.687.243-2.456.698a.958.958 0 0 1-.148.078c-.008 0-.015-.03-.015-.066a6.71 6.71 0 0 0-.097-.725C8.997 1.392 8.337.319 7.46.048a2.096 2.096 0 0 0-.585-.041Zm.293 1.402c.248.197.523.759.682 1.388.03.113.06.244.069.292.007.047.026.152.041.233.067.365.098.76.102 1.24l.002.475-.12.175-.118.178h-.278c-.324 0-.646.041-.954.124l-.238.06c-.033.007-.038-.003-.057-.144a8.438 8.438 0 0 1 .016-2.323c.124-.788.413-1.501.696-1.711.067-.05.079-.049.157.013zm9.825-.012c.17.126.358.46.498.888.28.854.36 2.028.212 3.145-.019.14-.024.151-.057.144l-.238-.06a3.693 3.693 0 0 0-.954-.124h-.278l-.119-.178-.119-.175.002-.474c.004-.669.066-1.19.214-1.772.157-.623.434-1.185.68-1.382.078-.062.09-.063.159-.012z"/></svg>`,
+		lmstudio: `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M14.025 0c3.492 0 5.237 0 6.571.68a6.24 6.24 0 0 1 2.725 2.724C24 4.738 24 6.484 24 9.975v4.05c0 3.492 0 5.237-.68 6.571a6.24 6.24 0 0 1-2.724 2.725c-1.334.679-3.08.679-6.571.679h-4.05c-3.492 0-5.237 0-6.571-.68A6.24 6.24 0 0 1 .68 20.597C0 19.262 0 17.516 0 14.025v-4.05c0-3.492 0-5.237.68-6.571A6.23 6.23 0 0 1 3.404.68C4.738 0 6.484 0 9.975 0zM7.688 16.313a1.313 1.313 0 0 0 0 2.625h11.625a1.313 1.313 0 0 0 0-2.625zm-3-3.75a1.313 1.313 0 0 0 0 2.624h11.625a1.313 1.313 0 0 0 0-2.624zm3-3.75a1.313 1.313 0 0 0 0 2.624h11.625a1.313 1.313 0 0 0 0-2.624zm-3-3.75a1.313 1.313 0 0 0 0 2.625h11.625a1.313 1.313 0 0 0 0-2.625z"/></svg>`
+	};
 
 	const SmallBtn = props => h("button", {
 		type: "button",
@@ -5520,9 +5671,23 @@ module.exports = (() => {
 			}
 		};
 
+		// Head card summary: fetched models beat "configured", which beats "unset".
+		const modelsCount = Array.isArray(models) ? models.length : 0;
+		const configured = providerConfiguredDot(id);
+		const summaryKey = modelsCount ? "provider_status_models" : configured ? "provider_status_ready" : "provider_status_unset";
 		return h("div", { className: `${CSS_PREFIX}-prov-form` },
-			h("div", { className: `${CSS_PREFIX}-prov-form-head` },
-				h("div", { className: `${CSS_PREFIX}-prov-title` }, displayName),
+			h("div", { className: `${CSS_PREFIX}-prov-card` },
+				h("div", {
+					className: `${CSS_PREFIX}-prov-tile`,
+					dangerouslySetInnerHTML: { __html: PROVIDER_ICON_SVGS[id] || CLEANER_ICON_SVG }
+				}),
+				h("div", { className: `${CSS_PREFIX}-prov-card-copy` },
+					h("div", { className: `${CSS_PREFIX}-prov-card-name` }, displayName),
+					h("div", { className: `${CSS_PREFIX}-prov-card-sub` },
+						h("span", { className: `${CSS_PREFIX}-prov-card-dot${(modelsCount || configured) ? ` ${CSS_PREFIX}-prov-card-dot-ok` : ""}` }),
+						h("span", { className: `${CSS_PREFIX}-prov-card-sub-text` }, t(summaryKey, { count: modelsCount }))
+					)
+				),
 				isActive
 					? h("div", { className: `${CSS_PREFIX}-active-badge` }, t("provider_active_badge"))
 					: h(SmallBtn, { onClick: () => { AIService.setActiveProvider(id); props.onChanged(); } }, t("provider_set_active")),
@@ -5550,26 +5715,38 @@ module.exports = (() => {
 					onCommit: value => { AIService.setProviderField(id, "apiKey", value); props.onChanged(); }
 				})
 			),
+			h("div", { className: `${CSS_PREFIX}-prov-split` }),
 			h(Field, {
 				label: t("set_model"),
 				actions: [
-					h(SmallBtn, { key: "fetch", secondary: true, onClick: fetchModels }, t("btn_fetch_models")),
 					h(SmallBtn, { key: "validate", secondary: true, onClick: validate }, t("btn_validate"))
 				]
 			},
-				h(ModelCombo, {
-					value: record.model,
-					models,
-					openSignal,
-					placeholder: preset && preset.model ? preset.model : "model-id",
-					onCommit: (value, availableModels) => {
-						AIService.setProviderField(id, "model", value);
-						if (Array.isArray(availableModels) && availableModels.length) {
-							AIService.setProviderField(id, "models", availableModels.slice());
+				// Fetch lives inside the combo as an attached refresh button so the
+				// label row keeps a single action.
+				h("div", { className: `${CSS_PREFIX}-combo-group` },
+					h(ModelCombo, {
+						value: record.model,
+						models,
+						openSignal,
+						placeholder: preset && preset.model ? preset.model : "model-id",
+						onCommit: (value, availableModels) => {
+							AIService.setProviderField(id, "model", value);
+							if (Array.isArray(availableModels) && availableModels.length) {
+								AIService.setProviderField(id, "models", availableModels.slice());
+							}
+							props.onChanged();
 						}
-						props.onChanged();
-					}
-				}),
+					}),
+					h("button", {
+						type: "button",
+						className: `${CSS_PREFIX}-combo-fetch`,
+						title: t("btn_fetch_models"),
+						"aria-label": t("btn_fetch_models"),
+						onClick: fetchModels,
+						dangerouslySetInnerHTML: { __html: REFRESH_SVG }
+					})
+				),
 				h(StatusLine, { text: status.text, tone: status.tone })
 			)
 		);
@@ -5907,49 +6084,70 @@ module.exports = (() => {
 						}) : "");
 		const updateTone = updateState.phase === "failed" ? "fail"
 			: (updateState.phase === "current" || updateState.phase === "installed") ? "ok" : null;
+		// The update badge morphs: neutral "check" pill until a new installable
+		// version is known, then a brand-solid "update to vX" pill.
+		const updateBusy = updateState.phase === "checking" || updateState.phase === "installing";
+		const installReady = updateState.phase === "available" && updateState.info && updateState.info.installable;
+		const installBadge = installReady || updateState.phase === "installing";
+		const updateBadgeLabel = installBadge
+			? t("update_badge_install", { version: updateState.info ? updateState.info.latest : PLUGIN_VERSION })
+			: updateState.phase === "checking" ? t("update_checking") : t("update_check");
 		return h("div", null,
 			h(GroupHeader, { label: t("group_about") }),
 			h("div", { className: `${CSS_PREFIX}-about-card` },
-				h("div", { className: `${CSS_PREFIX}-about-icon`, dangerouslySetInnerHTML: { __html: CLEANER_ICON_SVG } }),
-				h("div", { className: `${CSS_PREFIX}-about-copy` },
-					h("div", { className: `${CSS_PREFIX}-about-name` }, PLUGIN_ID),
-					h("div", { className: `${CSS_PREFIX}-about-description` }, t("about_description"))
+				h("div", { className: `${CSS_PREFIX}-about-id` },
+					h("div", { className: `${CSS_PREFIX}-about-icon`, dangerouslySetInnerHTML: { __html: CLEANER_ICON_SVG } }),
+					h("div", { className: `${CSS_PREFIX}-about-copy` },
+						h("div", { className: `${CSS_PREFIX}-about-name` }, PLUGIN_ID),
+						h("div", { className: `${CSS_PREFIX}-about-description` }, t("about_description"))
+					),
+					h("span", { className: `${CSS_PREFIX}-about-version` }, `v${PLUGIN_VERSION}`)
 				),
-				h("div", { className: `${CSS_PREFIX}-about-meta` },
-					h("span", { className: `${CSS_PREFIX}-about-version` }, `v${PLUGIN_VERSION}`),
+				h("div", { className: `${CSS_PREFIX}-about-split` }),
+				h("div", { className: `${CSS_PREFIX}-about-badges` },
 					h("a", {
-						className: `${CSS_PREFIX}-about-github`,
+						className: `${CSS_PREFIX}-badge`,
 						href: PROJECT_URL,
 						target: "_blank",
 						rel: "noopener noreferrer",
-						"aria-label": t("about_github"),
-						title: t("about_github"),
-						dangerouslySetInnerHTML: { __html: GITHUB_SVG }
-					})
-				)
+						title: t("about_github")
+					},
+						h("span", { className: `${CSS_PREFIX}-badge-ic`, dangerouslySetInnerHTML: { __html: GITHUB_SVG } }),
+						t("about_repo")
+					),
+					h("button", {
+						type: "button",
+						className: `${CSS_PREFIX}-badge${installBadge ? ` ${CSS_PREFIX}-badge-brand` : ""}`,
+						disabled: updateBusy,
+						onClick: installReady ? confirmInstall : checkUpdates
+					},
+						h("span", { className: `${CSS_PREFIX}-badge-ic`, dangerouslySetInnerHTML: { __html: installBadge ? DOWNLOAD_SVG : REFRESH_SVG } }),
+						updateBadgeLabel
+					),
+					h("a", {
+						className: `${CSS_PREFIX}-badge`,
+						href: `${PROJECT_URL}/issues/new/choose`,
+						target: "_blank",
+						rel: "noopener noreferrer",
+						title: t("about_feedback")
+					},
+						h("span", { className: `${CSS_PREFIX}-badge-ic`, dangerouslySetInnerHTML: { __html: FEEDBACK_SVG } }),
+						t("about_feedback")
+					)
+				),
+				updateText ? h("div", {
+					className: `${CSS_PREFIX}-update-status${updateTone ? ` ${CSS_PREFIX}-${updateTone}` : ""}`,
+					"aria-live": "polite"
+				}, updateText) : null,
+				updateState.info && updateState.info.releaseUrl ? h("div", { className: `${CSS_PREFIX}-update-links` },
+					h("a", {
+						className: `${CSS_PREFIX}-update-link`,
+						href: updateState.info.releaseUrl,
+						target: "_blank",
+						rel: "noopener noreferrer"
+					}, t("update_view_release"))
+				) : null
 			),
-			h(GroupHeader, { label: t("group_updates") }),
-			h(SetRow, { label: t("update_current_version", { version: PLUGIN_VERSION }) },
-				h(SmallBtn, {
-					secondary: true,
-					disabled: updateState.phase === "checking" || updateState.phase === "installing",
-					onClick: checkUpdates
-				}, updateState.phase === "checking" ? t("update_checking") : t("update_check"))
-			),
-			updateText ? h("div", {
-				className: `${CSS_PREFIX}-update-status${updateTone ? ` ${CSS_PREFIX}-${updateTone}` : ""}`,
-				"aria-live": "polite"
-			}, updateText) : null,
-			updateState.info ? h("div", { className: `${CSS_PREFIX}-update-actions` },
-				h("a", {
-					className: `${CSS_PREFIX}-btn-sm ${CSS_PREFIX}-btn-sec ${CSS_PREFIX}-update-release`,
-					href: updateState.info.releaseUrl,
-					target: "_blank",
-					rel: "noopener noreferrer"
-				}, t("update_view_release")),
-				updateState.phase === "available" && updateState.info.installable
-					? h(SmallBtn, { onClick: confirmInstall }, t("update_install")) : null
-			) : null,
 			h(GroupHeader, { label: t("group_diagnostics"), hint: t("set_diag_note") }),
 			h("div", { className: `${CSS_PREFIX}-diag-version` },
 				`BetterDiscord: ${BdApi.version || "?"}`),

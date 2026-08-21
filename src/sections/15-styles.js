@@ -191,15 +191,20 @@
 			height: 32px;
 			padding: 0 10px;
 			font-size: 16px;
-			border-radius: 4px;
+			border-radius: 6px;
 			border: 1px solid var(--damc-input-border, rgba(78, 80, 88, 0.48));
 			background: var(--damc-input-bg, #1e1f22);
 			color: var(--damc-text, #dbdee1);
 			font-family: inherit;
 			outline: none;
+			transition: border-color 120ms ease, box-shadow 120ms ease;
+		}
+		.${CSS_PREFIX}-input:hover {
+			border-color: color-mix(in srgb, var(--damc-text, #dbdee1) 16%, transparent);
 		}
 		.${CSS_PREFIX}-input:focus {
 			border-color: var(--damc-brand, #5865f2);
+			box-shadow: 0 0 0 3px color-mix(in srgb, var(--damc-brand, #5865f2) 18%, transparent);
 		}
 		.${CSS_PREFIX}-input::-webkit-calendar-picker-indicator {
 			filter: invert(0.65);
@@ -452,11 +457,16 @@
 			--damc-settings-section-title-gap: 8px;
 			--damc-settings-row-height: 36px;
 			--damc-settings-field-gap: 16px;
-			--damc-settings-label-control-gap: 4px;
+			--damc-settings-label-control-gap: 8px;
 			--damc-settings-label-size: 16px;
 			--damc-settings-label-weight: 500;
 			--damc-settings-label-line-height: 20px;
 			--damc-settings-label-color: var(--damc-text, #dbdee1);
+			/* Eyebrow labels above full-width inputs: small, bold, muted, so the
+			   user's own value is the brightest thing in each field. */
+			--damc-field-label-size: 12px;
+			--damc-field-label-weight: 700;
+			--damc-field-label-color: var(--damc-text-sub, #b5bac1);
 			display: flex;
 			flex-direction: column;
 			color: var(--damc-text, #dbdee1);
@@ -529,15 +539,17 @@
 			padding: 0 8px;
 			font-size: 16px;
 			text-align: right;
-			border-radius: 4px;
+			border-radius: 6px;
 			border: 1px solid var(--damc-input-border, rgba(78, 80, 88, 0.48));
 			background: var(--damc-input-bg, #1e1f22);
 			color: var(--damc-text, #dbdee1);
 			font-family: inherit;
 			outline: none;
+			transition: border-color 120ms ease, box-shadow 120ms ease;
 		}
 		.${CSS_PREFIX}-num-input:focus {
 			border-color: var(--damc-brand, #5865f2);
+			box-shadow: 0 0 0 3px color-mix(in srgb, var(--damc-brand, #5865f2) 18%, transparent);
 		}
 		.${CSS_PREFIX}-seg {
 			display: flex;
@@ -788,10 +800,12 @@
 		.${CSS_PREFIX}-f-item { margin-bottom: var(--damc-settings-field-gap); }
 		.${CSS_PREFIX}-f-item:last-child { margin-bottom: 0; }
 		.${CSS_PREFIX}-f-label {
-			font-size: var(--damc-settings-label-size);
-			font-weight: var(--damc-settings-label-weight);
-			line-height: var(--damc-settings-label-line-height);
-			color: var(--damc-settings-label-color);
+			font-size: var(--damc-field-label-size);
+			font-weight: var(--damc-field-label-weight);
+			line-height: 16px;
+			letter-spacing: 0.02em;
+			text-transform: uppercase;
+			color: var(--damc-field-label-color);
 			margin: 0 0 var(--damc-settings-label-control-gap);
 		}
 		.${CSS_PREFIX}-f-row {
@@ -812,17 +826,22 @@
 			font-size: 15px;
 			line-height: 1.45;
 			resize: vertical;
-			border-radius: 4px;
+			border-radius: 6px;
 			border: 1px solid var(--damc-input-border, rgba(78, 80, 88, 0.48));
 			background: var(--damc-input-bg, #1e1f22);
 			color: var(--damc-text, #dbdee1);
 			font-family: inherit;
 			outline: none;
+			transition: border-color 120ms ease, box-shadow 120ms ease;
 			scrollbar-width: thin;
 			scrollbar-color: var(--damc-scroll-thumb) transparent;
 		}
+		.${CSS_PREFIX}-textarea:hover {
+			border-color: color-mix(in srgb, var(--damc-text, #dbdee1) 16%, transparent);
+		}
 		.${CSS_PREFIX}-textarea:focus {
 			border-color: var(--damc-brand, #5865f2);
+			box-shadow: 0 0 0 3px color-mix(in srgb, var(--damc-brand, #5865f2) 18%, transparent);
 		}
 		.${CSS_PREFIX}-textarea::-webkit-scrollbar { width: 8px; }
 		.${CSS_PREFIX}-textarea::-webkit-scrollbar-thumb {
@@ -888,7 +907,7 @@
 			justify-content: center;
 			border: 0;
 			border-left: 1px solid var(--damc-input-border, rgba(78, 80, 88, 0.48));
-			border-radius: 0 3px 3px 0;
+			border-radius: 0 5px 5px 0;
 			background: transparent;
 			color: var(--damc-icon, #b5bac1);
 			cursor: pointer;
@@ -912,7 +931,7 @@
 			justify-content: center;
 			border: 0;
 			border-left: 1px solid var(--damc-input-border, rgba(78, 80, 88, 0.48));
-			border-radius: 0 3px 3px 0;
+			border-radius: 0 5px 5px 0;
 			background: transparent;
 			color: var(--damc-icon, #b5bac1);
 			cursor: pointer;
@@ -992,6 +1011,17 @@
 		}
 		.${CSS_PREFIX}-status-line.${CSS_PREFIX}-ok { color: var(--damc-ok, #23a55a); }
 		.${CSS_PREFIX}-status-line.${CSS_PREFIX}-fail { color: var(--damc-danger, #f23f43); }
+		.${CSS_PREFIX}-status-line.${CSS_PREFIX}-ok::before,
+		.${CSS_PREFIX}-status-line.${CSS_PREFIX}-fail::before {
+			content: "";
+			display: inline-block;
+			width: 6px;
+			height: 6px;
+			border-radius: 50%;
+			background: currentColor;
+			margin-right: 6px;
+			vertical-align: 2px;
+		}
 		/* settings: provider rail */
 		.${CSS_PREFIX}-prov-grid {
 			display: grid;
@@ -1026,9 +1056,10 @@
 		}
 		.${CSS_PREFIX}-prov-row.${CSS_PREFIX}-prov-selected,
 		.${CSS_PREFIX}-prov-row.${CSS_PREFIX}-prov-selected:hover {
-			background: var(--damc-selected, rgba(255, 255, 255, 0.09));
+			background: color-mix(in srgb, var(--damc-brand, #5865f2) 13%, transparent);
 			color: var(--damc-text-strong, #f2f3f5);
 			font-weight: 600;
+			box-shadow: inset 2px 0 0 var(--damc-brand, #5865f2);
 		}
 		.${CSS_PREFIX}-prov-dot {
 			flex: 0 0 auto;
@@ -1065,26 +1096,93 @@
 			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
 			color: var(--damc-text, #dbdee1);
 		}
-		.${CSS_PREFIX}-prov-form-head {
-			height: 28px;
-			margin-bottom: 12px;
+		/* provider head card: identity + connection summary before the fields */
+		.${CSS_PREFIX}-prov-card {
 			display: flex;
 			align-items: center;
-			gap: 8px;
+			gap: 10px;
+			padding: 8px 10px;
+			border-radius: 8px;
+			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
+			background: var(--damc-surface, #2b2d31);
+			margin-bottom: var(--damc-settings-field-gap);
 		}
-		.${CSS_PREFIX}-prov-title {
-			flex: 1 1 auto;
-			min-width: 0;
-			font-size: 16px;
+		.${CSS_PREFIX}-prov-tile {
+			width: 30px;
+			height: 30px;
+			border-radius: 8px;
+			flex: 0 0 auto;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background: color-mix(in srgb, var(--damc-brand, #5865f2) 16%, transparent);
+			color: color-mix(in srgb, var(--damc-brand, #5865f2) 45%, var(--damc-text-strong, #f2f3f5));
+		}
+		.${CSS_PREFIX}-prov-tile svg { width: 18px; height: 18px; display: block; }
+		.${CSS_PREFIX}-prov-card-copy { flex: 1 1 auto; min-width: 0; }
+		.${CSS_PREFIX}-prov-card-name {
+			font-size: 15px;
 			font-weight: 700;
 			color: var(--damc-text-strong, #f2f3f5);
 			overflow: hidden;
 			text-overflow: ellipsis;
 			white-space: nowrap;
 		}
+		.${CSS_PREFIX}-prov-card-sub {
+			margin-top: 1px;
+			font-size: 12px;
+			color: var(--damc-text-faint, #949ba4);
+			display: flex;
+			align-items: center;
+			gap: 5px;
+			min-width: 0;
+		}
+		.${CSS_PREFIX}-prov-card-sub-text {
+			min-width: 0;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+		.${CSS_PREFIX}-prov-card-dot {
+			flex: 0 0 auto;
+			width: 6px;
+			height: 6px;
+			border-radius: 50%;
+			background: var(--damc-border, rgba(78, 80, 88, 0.48));
+		}
+		.${CSS_PREFIX}-prov-card-dot.${CSS_PREFIX}-prov-card-dot-ok { background: var(--damc-ok, #23a55a); }
+		.${CSS_PREFIX}-prov-split {
+			height: 1px;
+			background: var(--damc-border, rgba(78, 80, 88, 0.48));
+			opacity: 0.55;
+			margin: 0 0 var(--damc-settings-field-gap);
+		}
 		.${CSS_PREFIX}-prov-form .${CSS_PREFIX}-input {
+			height: 38px;
 			font-size: 15px;
 			font-weight: 400;
+		}
+		/* model combo with an attached fetch (refresh) button */
+		.${CSS_PREFIX}-combo-group { display: flex; align-items: stretch; }
+		.${CSS_PREFIX}-combo-group .${CSS_PREFIX}-combo { flex: 1 1 auto; min-width: 0; }
+		.${CSS_PREFIX}-combo-group .${CSS_PREFIX}-combo .${CSS_PREFIX}-input { border-radius: 6px 0 0 6px; }
+		.${CSS_PREFIX}-combo-fetch {
+			flex: 0 0 auto;
+			width: 36px;
+			margin-left: -1px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border: 1px solid var(--damc-input-border, rgba(78, 80, 88, 0.48));
+			border-radius: 0 6px 6px 0;
+			background: var(--damc-sunken, #1e1f22);
+			color: var(--damc-icon, #b5bac1);
+			cursor: pointer;
+		}
+		.${CSS_PREFIX}-combo-fetch svg { width: 15px; height: 15px; }
+		.${CSS_PREFIX}-combo-fetch:hover {
+			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
+			color: var(--damc-icon-hover, #dbdee1);
 		}
 		.${CSS_PREFIX}-prov-form .${CSS_PREFIX}-btn-sm { font-size: 14px; }
 		.${CSS_PREFIX}-active-badge {
@@ -1175,13 +1273,21 @@
 		}
 		/* settings: prompt editor + diagnostics */
 		.${CSS_PREFIX}-prompt-editor { margin: 0; }
+		/* about card (brand mist): identity row / hairline / action badges */
 		.${CSS_PREFIX}-about-card {
+			padding: 14px 16px;
+			border-radius: 8px;
+			background: color-mix(in srgb, var(--damc-brand, #5865f2) 6%, var(--damc-surface, #2b2d31));
+		}
+		.${CSS_PREFIX}-about-id {
 			display: flex;
 			align-items: center;
 			gap: 12px;
-			padding: 12px;
-			border-radius: 8px;
-			background: color-mix(in srgb, var(--damc-brand, #5865f2) 8%, var(--damc-surface, #2b2d31));
+		}
+		.${CSS_PREFIX}-about-split {
+			height: 1px;
+			background: color-mix(in srgb, var(--damc-text, #dbdee1) 8%, transparent);
+			margin: 12px 0;
 		}
 		.${CSS_PREFIX}-about-icon {
 			width: 36px;
@@ -1207,13 +1313,8 @@
 			line-height: 1.4;
 			color: var(--damc-text-faint, #949ba4);
 		}
-		.${CSS_PREFIX}-about-meta {
-			flex: 0 0 auto;
-			display: flex;
-			align-items: center;
-			gap: 8px;
-		}
 		.${CSS_PREFIX}-about-version {
+			flex: 0 0 auto;
 			height: 22px;
 			padding: 0 8px;
 			display: inline-flex;
@@ -1224,42 +1325,72 @@
 			font-size: 12px;
 			font-weight: 700;
 		}
-		.${CSS_PREFIX}-about-github {
-			width: 30px;
-			height: 30px;
+		/* pill badges: GitHub repo / check updates / feedback */
+		.${CSS_PREFIX}-about-badges {
+			display: flex;
+			align-items: center;
+			flex-wrap: wrap;
+			gap: 8px;
+		}
+		.${CSS_PREFIX}-badge {
+			height: 26px;
+			padding: 0 11px;
+			box-sizing: border-box;
+			border-radius: 13px;
+			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
+			background: color-mix(in srgb, var(--damc-brand, #5865f2) 9%, var(--damc-surface, #2b2d31));
+			color: var(--damc-text, #dbdee1);
+			font-family: inherit;
+			font-size: 12px;
+			font-weight: 600;
 			display: inline-flex;
 			align-items: center;
-			justify-content: center;
-			border-radius: 4px;
-			color: var(--damc-icon, #b5bac1);
+			gap: 6px;
+			white-space: nowrap;
+			cursor: pointer;
 			text-decoration: none;
+			transition: border-color 120ms ease, color 120ms ease;
 		}
-		.${CSS_PREFIX}-about-github:hover,
-		.${CSS_PREFIX}-about-github:focus-visible {
-			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
+		.${CSS_PREFIX}-badge-ic { display: flex; }
+		.${CSS_PREFIX}-badge-ic svg {
+			width: 14px;
+			height: 14px;
+			display: block;
+			color: var(--damc-icon, #b5bac1);
+		}
+		.${CSS_PREFIX}-badge:hover {
+			border-color: color-mix(in srgb, var(--damc-brand, #5865f2) 55%, transparent);
 			color: var(--damc-text-strong, #f2f3f5);
-			outline: none;
 		}
-		.${CSS_PREFIX}-about-github:focus-visible {
+		.${CSS_PREFIX}-badge:hover .${CSS_PREFIX}-badge-ic svg {
+			color: color-mix(in srgb, var(--damc-brand, #5865f2) 50%, var(--damc-text-strong, #f2f3f5));
+		}
+		.${CSS_PREFIX}-badge:focus-visible {
+			outline: none;
 			box-shadow: 0 0 0 2px color-mix(in srgb, var(--damc-brand, #5865f2) 38%, transparent);
 		}
-		.${CSS_PREFIX}-about-github svg { width: 18px; height: 18px; }
+		.${CSS_PREFIX}-badge:disabled { opacity: 0.55; cursor: default; }
+		.${CSS_PREFIX}-badge.${CSS_PREFIX}-badge-brand {
+			background: var(--damc-brand, #5865f2);
+			border-color: transparent;
+			color: var(--damc-on-brand, #fff);
+		}
+		.${CSS_PREFIX}-badge.${CSS_PREFIX}-badge-brand .${CSS_PREFIX}-badge-ic svg { color: var(--damc-on-brand, #fff); }
 		.${CSS_PREFIX}-update-status {
-			margin-top: 4px;
-			font-size: 13px;
+			margin-top: 10px;
+			font-size: 12.5px;
 			line-height: 1.4;
 			color: var(--damc-text-faint, #949ba4);
 		}
 		.${CSS_PREFIX}-update-status.${CSS_PREFIX}-ok { color: var(--damc-ok, #23a55a); }
 		.${CSS_PREFIX}-update-status.${CSS_PREFIX}-fail { color: var(--damc-danger, #f23f43); }
-		.${CSS_PREFIX}-update-actions {
-			margin-top: 8px;
-			display: flex;
-			align-items: center;
-			justify-content: flex-end;
-			gap: 8px;
+		.${CSS_PREFIX}-update-links { margin-top: 6px; }
+		.${CSS_PREFIX}-update-link {
+			font-size: 12.5px;
+			color: var(--damc-brand, #5865f2);
+			text-decoration: none;
 		}
-		.${CSS_PREFIX}-update-release { text-decoration: none; box-sizing: border-box; }
+		.${CSS_PREFIX}-update-link:hover { text-decoration: underline; }
 		.${CSS_PREFIX}-diag-version {
 			font-size: 13px;
 			color: var(--damc-text-faint, #949ba4);

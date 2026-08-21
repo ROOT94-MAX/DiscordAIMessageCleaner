@@ -141,7 +141,7 @@ check("settings sections use compact summary-plugin spacing", () => {
 	for (const needle of [
 		"--damc-settings-page-gap: 16px;", "--damc-settings-section-gap: 24px;",
 		"--damc-settings-section-title-gap: 8px;", "--damc-settings-row-height: 36px;",
-		"--damc-settings-field-gap: 16px;", "--damc-settings-label-control-gap: 4px;",
+		"--damc-settings-field-gap: 16px;", "--damc-settings-label-control-gap: 8px;",
 		"margin: var(--damc-settings-section-gap) 0 var(--damc-settings-section-title-gap);",
 		"min-height: var(--damc-settings-row-height);", "margin-top: var(--damc-settings-page-gap);"
 	]) {
@@ -164,11 +164,13 @@ check("language lives in General, not Review Policy", () => {
 	}
 });
 
-check("About & Diagnostics exposes version and accessible GitHub link", () => {
+check("About card carries version pill and repo/update/feedback badges", () => {
 	for (const needle of [
-		"about-card", "about-version", "about-github",
+		"about-card", "about-id", "about-split", "about-version", "about-badges",
 		'const PROJECT_URL = "https://github.com/ROOT94-MAX/DiscordAIMessageCleaner"',
-		'target: "_blank"', 'rel: "noopener noreferrer"', 'aria-label": t("about_github")'
+		'target: "_blank"', 'rel: "noopener noreferrer"',
+		't("about_repo")', 't("about_feedback")', "issues/new/choose",
+		'title: t("about_github")', 'title: t("about_feedback")'
 	]) {
 		if (needle && !pluginSource.includes(needle)) throw new Error(`missing About behavior: ${needle}`);
 	}
@@ -204,11 +206,12 @@ check("manual updater verifies official release assets and keeps a backup", () =
 	}
 	for (const needle of [
 		"FALLBACK_URL", "_checkFallback", "update_available_manual",
-		'h(GroupHeader, { label: t("group_updates") })', 't("update_current_version"'
+		't("update_badge_install"', "installReady ? confirmInstall : checkUpdates",
+		"badge-brand", "update-links", 't("update_view_release")'
 	]) {
 		if (!pluginSource.includes(needle)) throw new Error(`manual updater fallback/layout missing: ${needle}`);
 	}
-	if (pluginSource.includes("about-update")) throw new Error("update controls still live inside the About card");
+	if (pluginSource.includes('t("group_updates")')) throw new Error("standalone Version & Updates group remains");
 });
 
 check("all setting labels share one typography scale", () => {
@@ -216,6 +219,9 @@ check("all setting labels share one typography scale", () => {
 		'`${CSS_PREFIX}-prov-form`',
 		"--damc-settings-label-size: 16px;", "--damc-settings-label-weight: 500;",
 		"--damc-settings-label-line-height: 20px;", "--damc-settings-label-color: var(--damc-text, #dbdee1);",
+		// Field labels above full-width inputs use the small bold eyebrow scale.
+		"--damc-field-label-size: 12px;", "--damc-field-label-weight: 700;",
+		"font-size: var(--damc-field-label-size);", "text-transform: uppercase;",
 		"font-size: var(--damc-settings-label-size);", "font-weight: var(--damc-settings-label-weight);",
 		"line-height: var(--damc-settings-label-line-height);", "color: var(--damc-settings-label-color);",
 		'.${CSS_PREFIX}-prov-form .${CSS_PREFIX}-input', "font-size: 15px;", "font-weight: 400;",
