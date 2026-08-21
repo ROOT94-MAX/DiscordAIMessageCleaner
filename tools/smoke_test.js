@@ -4,6 +4,7 @@
 // Discord. The full functional harness arrives in M4.
 "use strict";
 
+const fs = require("fs");
 const path = require("path");
 
 let dataStore = {};
@@ -73,7 +74,9 @@ const renderTree = (node, depth) => {
 	if (node.children) renderTree(node.children, depth + 1);
 };
 
-const Plugin = require(path.join(__dirname, "..", "DiscordAIMessageCleaner.plugin.js"));
+const pluginPath = path.join(__dirname, "..", "DiscordAIMessageCleaner.plugin.js");
+const pluginSource = fs.readFileSync(pluginPath, "utf8");
+const Plugin = require(pluginPath);
 
 check("module loads and exports a class", () => {
 	if (typeof Plugin !== "function") throw new Error("export is not a constructor");
@@ -89,6 +92,276 @@ check("settings panel renders on every tab", () => {
 		renderTree(instance.getSettingsPanel(), 0);
 	}
 	forceTab = null;
+});
+
+check("field help uses inline trailing info hints instead of notes", () => {
+	const hintKeys = [
+		"set_concurrency_note", "set_confirm_tokens_note",
+		"set_include_edited_note", "set_delete_pacing_note", "set_delete_max_note"
+	];
+	for (const key of hintKeys) {
+		if (!pluginSource.includes(`hint: t("${key}")`)) throw new Error(`missing hint binding: ${key}`);
+	}
+	// The policy help moved into the policy-card head as a direct info hint.
+	if (!pluginSource.includes('h(InfoHint, { text: t("set_policy_note") })')) {
+		throw new Error("missing hint binding: set_policy_note");
+	}
+	if (!pluginSource.includes("display: inline-flex;") || !pluginSource.includes("gap: 5px;") ||
+		!pluginSource.includes("position: static;") || !pluginSource.includes("transform: translateY(-1px);")) {
+		throw new Error("info icon is not aligned inline after the title");
+	}
+	if (pluginSource.includes("top: -7px;") || pluginSource.includes("right: -15px;")) {
+		throw new Error("obsolete title-corner offsets remain");
+	}
+	if (!pluginSource.includes('"aria-label": props.text') || !pluginSource.includes("title: props.text")) {
+		throw new Error("info hint accessibility/fallback missing");
+	}
+});
+
+check("model combo keeps fetched options after selection and reopens unfiltered", () => {
+	for (const needle of [
+		"cachedModels", "setCachedModels(incoming.slice())", "setFilter(\"\")",
+		"const models = props.models.length ? props.models : cachedModels",
+		"props.onCommit(model, models)", "AIService.setProviderField(id, \"models\", availableModels.slice())"
+	]) {
+		if (!pluginSource.includes(needle)) throw new Error(`missing model-combo persistence behavior: ${needle}`);
+	}
+});
+
+check("model popup uses a viewport-bounded adaptive portal", () => {
+	for (const needle of [
+		"ReactDOM.createPortal(menu, document.body)", "getBoundingClientRect()",
+		"const below =", "const above =", "const openUp =", "const maxHeight =",
+		'document.addEventListener("scroll", update, true)'
+	]) {
+		if (needle && !pluginSource.includes(needle)) throw new Error(`missing adaptive model popup behavior: ${needle}`);
+	}
+	if (!pluginSource.includes("position: fixed;") || !pluginSource.includes("z-index: 10050;")) {
+		throw new Error("fixed portal popup CSS missing");
+	}
+});
+
+check("message results expose quiet channel metadata, attachment cards, links, and jump actions", () => {
+	for (const needle of [
+		"meta-badge", "channel-badge", "attachment-list", "image-direct", "attachment-file-icon", "emoji-token",
+		"row-link", "message-jump", "DiscordAdapter.openMessage", 'target: "_blank"', 'rel: "noopener noreferrer"',
+		"splitLinkTarget", "attachment-no-link", "closePreserving", "ScanCache.setView", '"aria-modal": true', "results-toolbar"
+	]) {
+		if (!pluginSource.includes(needle)) throw new Error(`missing result-list UI behavior: ${needle}`);
+	}
+	if (pluginSource.includes('key: "chan", className: `${CSS_PREFIX}-badge`')) {
+		throw new Error("message channel still reuses the settings-page badge class");
+	}
+	if (!pluginSource.includes('BdApi.Webpack.getByKeys("transitionTo")')) {
+		throw new Error("message navigation does not resolve the client HistoryUtils module");
+	}
+	if (!pluginSource.includes('"aria-label": t("select_message")')) {
+		throw new Error("row checkbox has no explicit accessible name");
+	}
+	if (pluginSource.includes('.${CSS_PREFIX}-attachment-preview {')) {
+		throw new Error("image attachments still use the legacy thumbnail-card preview");
+	}
+	for (const needle of ["width: 24px;", "height: 24px;", "font-size: 16px;", "height: 32px;"]) {
+		if (!pluginSource.includes(needle)) throw new Error(`results UI scale is not aligned with settings: ${needle}`);
+	}
+	if (!pluginSource.includes('messagePath ? h("button"') || pluginSource.includes("const messageUrl =")) {
+		throw new Error("message jump still carries a browser-link fallback");
+	}
+	if (!pluginSource.includes('t("message_jump_unavailable")')) {
+		throw new Error("missing in-client navigation failure feedback");
+	}
+	if (!pluginSource.includes('getByKeys("fetchMessages", "jumpToMessage")') ||
+		!pluginSource.includes('jumpToMessage({ channelId, messageId, flash: true, jumpType: "INSTANT" })')) {
+		throw new Error("message jump does not use Discord's native MessageActions");
+	}
+	if (pluginSource.includes("clientNavigate(path)") || pluginSource.includes("location.assign(path)")) {
+		throw new Error("message jump still reloads the Discord renderer");
+	}
+	for (const needle of [
+		'getByKeys("selectGuild", "transitionToGuildSync")',
+		'guildNavigation.transitionToGuildSync(guildId, {}, channelId)',
+		'getByKeys("selectChannel", "selectPrivateChannel")',
+		'channelNavigation.selectPrivateChannel(channelId)',
+		"jumpWhenChannelReady(channelId, messageId, 0)"
+	]) {
+		if (!pluginSource.includes(needle)) throw new Error(`missing native cross-channel jump stage: ${needle}`);
+	}
+	for (const needle of [
+		'if (scope === "guild" && context.guildId) return `guild:${context.guildId}`',
+		'return context.channelId ? `channel:${context.channelId}` : null',
+		"_entries: new Map()",
+		"ScanCache.remove(ctx, scope)",
+		"const current = ChannelContext.current()",
+		"ReviewSession.matches(ctx)",
+		"ScanCache.get(ctx)",
+		"scopeKey: ScanCache.key(ctx, fetchResult.scope || \"channel\")"
+	]) {
+		if (!pluginSource.includes(needle)) throw new Error(`missing scope-aware cache behavior: ${needle}`);
+	}
+});
+
+check("delete UX uses explicit buttons and exits an empty flagged filter", () => {
+	for (const needle of [
+		"confirm-delete", "confirm-actions",
+		'h(Btn, { tone: "secondary", onClick: closeConfirm }, t("cancel"))',
+		'h(Btn, { tone: "danger", onClick: commitDelete }, t("delete_confirm_ok"))',
+		"if (!verdictsRef.current.size) setFlagFilter(false)",
+		't("review_summary_cleared", { total })',
+		"setDeleteReport(null)"
+	]) {
+		if (!pluginSource.includes(needle)) throw new Error(`missing delete UX behavior: ${needle}`);
+	}
+	const confirmStart = pluginSource.indexOf("const confirmAndDelete =");
+	const confirmEnd = pluginSource.indexOf("// Run optional backup", confirmStart);
+	const confirmSource = pluginSource.slice(confirmStart, confirmEnd > confirmStart ? confirmEnd : undefined);
+	if (!confirmSource.includes("confirmText: null") || !confirmSource.includes("cancelText: null")) {
+		throw new Error("host link-style confirmation footer is still enabled");
+	}
+});
+
+check("settings sections use compact summary-plugin spacing", () => {
+	for (const needle of [
+		"--damc-settings-page-gap: 16px;", "--damc-settings-section-gap: 24px;",
+		"--damc-settings-section-title-gap: 8px;", "--damc-settings-row-height: 36px;",
+		"--damc-settings-field-gap: 16px;", "--damc-settings-label-control-gap: 8px;",
+		"margin: var(--damc-settings-section-gap) 0 var(--damc-settings-section-title-gap);",
+		"min-height: var(--damc-settings-row-height);", "margin-top: var(--damc-settings-page-gap);"
+	]) {
+		if (!pluginSource.includes(needle)) throw new Error(`compact settings spacing missing: ${needle}`);
+	}
+	if (pluginSource.includes("group-header:not(:first-child)")) throw new Error("obsolete group divider remains");
+	if (!pluginSource.includes(".${CSS_PREFIX}-policy-card {")) throw new Error("policy card styles missing");
+});
+
+check("language lives in General, not Review Policy", () => {
+	const reviewStart = pluginSource.indexOf("const ReviewPage =");
+	const generalStart = pluginSource.indexOf("const BehaviorPage =");
+	const diagStart = pluginSource.indexOf("const DiagPage =");
+	if (reviewStart < 0 || generalStart < 0 || diagStart < 0) throw new Error("settings page boundaries missing");
+	const reviewSource = pluginSource.slice(reviewStart, generalStart);
+	const generalSource = pluginSource.slice(generalStart, diagStart);
+	if (reviewSource.includes('t("set_language")')) throw new Error("language still appears in Review Policy");
+	if (!generalSource.includes('t("set_language")') || !generalSource.includes('t("group_language")')) {
+		throw new Error("language missing from General settings");
+	}
+});
+
+check("About card carries version pill and repo/update/feedback badges", () => {
+	for (const needle of [
+		"about-card", "about-id", "about-split", "about-version", "about-badges",
+		'const PROJECT_URL = "https://github.com/ROOT94-MAX/DiscordAIMessageCleaner"',
+		'target: "_blank"', 'rel: "noopener noreferrer"',
+		't("about_repo")', 't("about_feedback")', "issues/new/choose",
+		'title: t("about_github")', 'title: t("about_feedback")'
+	]) {
+		if (needle && !pluginSource.includes(needle)) throw new Error(`missing About behavior: ${needle}`);
+	}
+});
+
+check("policy card head matches the provider-card hierarchy", () => {
+	for (const needle of [
+		"policy-title", "--damc-settings-label-size: 16px;",
+		"--damc-settings-label-weight: 500;", "--damc-settings-label-line-height: 20px;",
+		"--damc-settings-label-color: var(--damc-text, #dbdee1);",
+		"font-size: var(--damc-settings-label-size);", "var(--damc-settings-label-control-gap)",
+		// The card title reuses the provider head-card name scale (16/700).
+		'h("span", { className: `${CSS_PREFIX}-prov-card-name` }, t("prompt_builtin"))'
+	]) {
+		if (!pluginSource.includes(needle)) throw new Error(`policy card hierarchy missing: ${needle}`);
+	}
+});
+
+check("runtime diagnostics help uses the group-title info icon", () => {
+	if (!pluginSource.includes('h(GroupHeader, { label: t("group_diagnostics"), hint: t("set_diag_note") })')) {
+		throw new Error("diagnostics group hint missing");
+	}
+	if (pluginSource.includes('className: `${CSS_PREFIX}-note`, style: { marginBottom: "8px" } }, t("set_diag_note")')) {
+		throw new Error("standalone diagnostics note remains");
+	}
+});
+
+check("manual updater verifies official release assets and keeps a backup", () => {
+	for (const needle of [
+		"const UpdateService", "releases/latest", "release SHA-256 digest missing",
+		"asset SHA-256 mismatch", "plugin name mismatch", "copyFileSync(target, backup)",
+		'BdApi.UI.showConfirmationModal(', 't("update_install")'
+	]) {
+		if (!pluginSource.includes(needle)) throw new Error(`manual updater safeguard missing: ${needle}`);
+	}
+	for (const needle of [
+		"FALLBACK_URL", "_checkFallback", "update_available_manual",
+		't("update_badge_install"', "installReady ? confirmInstall : checkUpdates",
+		"badge-brand", "update-links", 't("update_view_release")'
+	]) {
+		if (!pluginSource.includes(needle)) throw new Error(`manual updater fallback/layout missing: ${needle}`);
+	}
+	if (pluginSource.includes('t("group_updates")')) throw new Error("standalone Version & Updates group remains");
+});
+
+check("all setting labels share one typography scale", () => {
+	for (const needle of [
+		'`${CSS_PREFIX}-prov-form`',
+		"--damc-settings-label-size: 16px;", "--damc-settings-label-weight: 500;",
+		"--damc-settings-label-line-height: 20px;", "--damc-settings-label-color: var(--damc-text, #dbdee1);",
+		// Field labels above full-width inputs share the exact row-label scale:
+		// one 16px/500 label ramp across every settings tab, no eyebrow variant.
+		"--damc-field-label-size: 16px;", "--damc-field-label-weight: 500;",
+		"--damc-field-label-color: var(--damc-text, #dbdee1);",
+		"font-size: var(--damc-field-label-size);",
+		"font-size: var(--damc-settings-label-size);", "font-weight: var(--damc-settings-label-weight);",
+		"line-height: var(--damc-settings-label-line-height);", "color: var(--damc-settings-label-color);",
+		'.${CSS_PREFIX}-prov-form .${CSS_PREFIX}-input', "font-size: 15px;", "font-weight: 400;",
+		'.${CSS_PREFIX}-prov-form .${CSS_PREFIX}-btn-sm { font-size: 14px; }'
+	]) {
+		if (!pluginSource.includes(needle)) throw new Error(`unified setting typography missing: ${needle}`);
+	}
+	if (pluginSource.includes('.${CSS_PREFIX}-prov-form .${CSS_PREFIX}-f-label')) {
+		throw new Error("provider-only field label typography override remains");
+	}
+	if (pluginSource.includes('.${CSS_PREFIX}-prompt-content-field .${CSS_PREFIX}-f-label')) {
+		throw new Error("policy-content-only field label typography override remains");
+	}
+	if (pluginSource.includes("text-transform: uppercase;")) {
+		throw new Error("eyebrow uppercase label styling remains");
+	}
+});
+
+check("provider visuals: native brand marks, rail icons, inline rename", () => {
+	for (const needle of [
+		// DeepSeek keeps its official blue; Gemini its gradient; mono marks inherit.
+		'fill="#5786FE"', "damcGemGrad",
+		// Rail rows carry brand icons with a "configured" corner dot.
+		"prov-ic", "prov-mini", "prov-ic-custom",
+		// Neutral head-card tile; custom providers use the plugin's own mark.
+		"prov-tile-custom",
+		// Inline rename replaces the separate name field row.
+		"prov-rename", 't("provider_rename")', "prov-name-input",
+		// Model combo and validate share one input-height row.
+		"model-row",
+		// Diagnostics rows read state from a color dot.
+		"diag-dot"
+	]) {
+		if (!pluginSource.includes(needle)) throw new Error(`provider visual missing: ${needle}`);
+	}
+	if (pluginSource.includes('t("provider_name")')) throw new Error("separate provider name field row remains");
+	if (pluginSource.includes("prov-dot-ok")) throw new Error("legacy rail status dot remains");
+});
+
+check("policy card and library-sourced icons", () => {
+	for (const needle of [
+		// Policy editor is an object card with icon actions and a read-only badge.
+		"policy-card", "policy-head", "policy-lock", "policy-editable",
+		't("policy_readonly")', "LOCK_SVG", "ADD_SVG",
+		// Functional icons come from Material Symbols Rounded (960 grid)...
+		'viewBox="0 -960 960 960"',
+		// ...and the GitHub mark is the official Simple Icons path.
+		'd="M12 .297c-6.63',
+	]) {
+		if (!pluginSource.includes(needle)) throw new Error(`policy card / icon source missing: ${needle}`);
+	}
+	if (pluginSource.includes('t("prompt_name")')) throw new Error("separate policy name field row remains");
+	if (pluginSource.includes("prompt-editor")) throw new Error("legacy prompt editor wrapper remains");
+	if (pluginSource.includes('"M7 10l5 5 5-5z"')) throw new Error("hand-drawn solid-triangle chevron remains");
 });
 
 check("observer()/onSwitch() are safe", () => { instance.observer(); instance.onSwitch(); });

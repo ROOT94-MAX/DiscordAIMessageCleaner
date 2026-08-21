@@ -104,6 +104,154 @@
 				return null;
 			}
 		},
+		messagePath(guildId, channelId, messageId) {
+			if (!channelId || !messageId) return null;
+			return `/channels/${guildId || "@me"}/${channelId}/${messageId}`;
+		},
+		messageActions() {
+			if (DiscordAdapter._cache.has("messageActions")) return DiscordAdapter._cache.get("messageActions");
+			let result = null;
+			try {
+				if (typeof BdApi.Webpack.getByKeys === "function") {
+					result = BdApi.Webpack.getByKeys("fetchMessages", "jumpToMessage")
+						|| BdApi.Webpack.getByKeys("jumpToMessage");
+				}
+				if (!result) {
+					result = BdApi.Webpack.getModule(
+						module => module && typeof module.jumpToMessage === "function",
+						{ searchExports: true }
+					);
+				}
+			} catch (e) {
+				Logger.warn("Adapter lookup threw: messageActions", e);
+			}
+			result = result && typeof result.jumpToMessage === "function" ? result : null;
+			if (result) DiscordAdapter._cache.set("messageActions", result);
+			DiscordAdapter._health.messageActions = result ? "ok" : "missing";
+			if (!result) Logger.warn("Adapter lookup missing: messageActions");
+			return result;
+		},
+		guildNavigation() {
+			return DiscordAdapter._resolve("guildNavigation", () => {
+				if (typeof BdApi.Webpack.getByKeys === "function") {
+					return BdApi.Webpack.getByKeys("selectGuild", "transitionToGuildSync")
+						|| BdApi.Webpack.getByKeys("transitionToGuildSync");
+				}
+				return BdApi.Webpack.getModule(
+					module => module && typeof module.transitionToGuildSync === "function",
+					{ searchExports: true }
+				);
+			});
+		},
+		channelNavigation() {
+			return DiscordAdapter._resolve("channelNavigation", () => {
+				if (typeof BdApi.Webpack.getByKeys === "function") {
+					return BdApi.Webpack.getByKeys("selectChannel", "selectPrivateChannel")
+						|| BdApi.Webpack.getByKeys("selectPrivateChannel");
+				}
+				return BdApi.Webpack.getModule(
+					module => module && typeof module.selectPrivateChannel === "function",
+					{ searchExports: true }
+				);
+			});
+		},
+		navigation() {
+			// Navigation is especially sensitive to Discord module churn. Cache a
+			// verified hit, but retry a previous miss instead of pinning the browser
+			// fallback for the rest of the client session.
+			if (DiscordAdapter._cache.has("navigation")) return DiscordAdapter._cache.get("navigation");
+			let result = null;
+			try {
+				// Discord's current HistoryUtils export is identified by transitionTo.
+				// Do not require replaceWith: it is not present in every client build.
+				if (typeof BdApi.Webpack.getByKeys === "function") result = BdApi.Webpack.getByKeys("transitionTo");
+				if (result && typeof result.transitionTo !== "function") result = null;
+				if (!result) {
+					result = BdApi.Webpack.getModule(
+						module => module && typeof module.transitionTo === "function",
+						{ searchExports: true }
+					);
+				}
+			} catch (e) {
+				Logger.warn("Adapter lookup threw: navigation", e);
+			}
+			result = result || null;
+			if (result) DiscordAdapter._cache.set("navigation", result);
+			DiscordAdapter._health.navigation = result ? "ok" : "missing";
+			if (!result) Logger.warn("Adapter lookup missing: navigation");
+			return result;
+		},
+		selectedChannelId() {
+			try {
+				const selected = DiscordAdapter.getStore("SelectedChannelStore");
+				return selected && typeof selected.getChannelId === "function" ? selected.getChannelId() : null;
+			} catch (e) {
+				return null;
+			}
+		},
+		jumpToMessageNow(channelId, messageId) {
+			try {
+				const actions = DiscordAdapter.messageActions();
+				if (!actions) return false;
+				const outcome = actions.jumpToMessage({ channelId, messageId, flash: true, jumpType: "INSTANT" });
+				if (outcome && typeof outcome.catch === "function") {
+					outcome.catch(error => Logger.warn("Native jumpToMessage failed", error));
+				}
+				return true;
+			} catch (e) {
+				Logger.warn("Native jumpToMessage threw", e);
+				return false;
+			}
+		},
+		jumpWhenChannelReady(channelId, messageId, attempt) {
+			const tries = Utils.num(attempt, 0);
+			if (DiscordAdapter.selectedChannelId() === channelId) {
+				if (!DiscordAdapter.jumpToMessageNow(channelId, messageId)) {
+					try { BdApi.UI.showToast(t("message_jump_unavailable"), { type: "error" }); } catch (e) { /* ignore */ }
+				}
+				return;
+			}
+			if (tries >= 30) {
+				Logger.warn(`Timed out selecting channel ${channelId} before message jump`);
+				try { BdApi.UI.showToast(t("message_jump_unavailable"), { type: "error" }); } catch (e) { /* ignore */ }
+				return;
+			}
+			setTimeout(() => DiscordAdapter.jumpWhenChannelReady(channelId, messageId, tries + 1), 80);
+		},
+		openMessage(guildId, channelId, messageId) {
+			const path = DiscordAdapter.messagePath(guildId, channelId, messageId);
+			if (!path) return false;
+			if (DiscordAdapter.selectedChannelId() === channelId && DiscordAdapter.jumpToMessageNow(channelId, messageId)) return true;
+			try {
+				if (guildId) {
+					const guildNavigation = DiscordAdapter.guildNavigation();
+					if (guildNavigation && typeof guildNavigation.transitionToGuildSync === "function") {
+						guildNavigation.transitionToGuildSync(guildId, {}, channelId);
+						DiscordAdapter.jumpWhenChannelReady(channelId, messageId, 0);
+						return true;
+					}
+				} else {
+					const channelNavigation = DiscordAdapter.channelNavigation();
+					if (channelNavigation && typeof channelNavigation.selectPrivateChannel === "function") {
+						channelNavigation.selectPrivateChannel(channelId);
+						DiscordAdapter.jumpWhenChannelReady(channelId, messageId, 0);
+						return true;
+					}
+				}
+			} catch (e) {
+				Logger.warn("Native channel selection failed; trying HistoryUtils", e);
+			}
+			try {
+				const navigation = DiscordAdapter.navigation();
+				if (navigation && typeof navigation.transitionTo === "function") {
+					navigation.transitionTo(path);
+					return true;
+				}
+			} catch (e) {
+				Logger.warn("HistoryUtils navigation failed", e);
+			}
+			return false;
+		},
 		currentUserId() {
 			try {
 				const users = DiscordAdapter.getStore("UserStore");
@@ -131,6 +279,10 @@
 			DiscordAdapter.chatButtonsModule();
 			DiscordAdapter.chatButtonChrome();
 			DiscordAdapter.modalSystem();
+			DiscordAdapter.messageActions();
+			DiscordAdapter.guildNavigation();
+			DiscordAdapter.channelNavigation();
+			DiscordAdapter.navigation();
 			DiscordAdapter.getStore("ChannelStore");
 			DiscordAdapter.getStore("SelectedChannelStore");
 			DiscordAdapter.getStore("GuildStore");
@@ -140,4 +292,3 @@
 			return Object.assign({}, DiscordAdapter._health);
 		}
 	};
-

@@ -2,7 +2,7 @@
  * @name DiscordAIMessageCleaner
  * @author ROOT94
  * @authorLink https://github.com/ROOT94-MAX/DiscordAIMessageCleaner
- * @version 0.6.7
+ * @version 0.6.8
  * @description Scan your own message history in any channel / DM / group DM, review it with an AI policy of your choice, and delete flagged messages after manual confirmation. Native BdApi, no library dependency.
  * @source https://github.com/ROOT94-MAX/DiscordAIMessageCleaner
  * @website https://github.com/ROOT94-MAX/DiscordAIMessageCleaner

@@ -13,8 +13,12 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 const assert = require("assert");
+const webcrypto = require("crypto").webcrypto;
 
 const PLUGIN_PATH = process.argv[2] || path.join(__dirname, "..", "DiscordAIMessageCleaner.plugin.js");
+const VERSION_MATCH = fs.readFileSync(PLUGIN_PATH, "utf8").match(/^\s*\*\s*@version\s+(\S+)/m);
+if (!VERSION_MATCH) throw new Error("plugin @version not found");
+const PLUGIN_VERSION_UNDER_TEST = VERSION_MATCH[1];
 
 // ---------------- fake BdApi (enough to load + run services) ----------------
 
@@ -52,7 +56,7 @@ function loadPlugin() {
 	const src = fs.readFileSync(PLUGIN_PATH, "utf8");
 	const marker = "\treturn class DiscordAIMessageCleaner {";
 	if (!src.includes(marker)) throw new Error("plugin shape changed: class marker not found");
-	const exposed = `\tglobalThis.__DAMC__ = { Utils, I18N, t, SettingsStore, DiscordAdapter, ChannelContext, MessageService, SearchService, Normalizer, ReviewBatcher, AIService, DeleteService, ExportService, PluginError };\n${marker}`;
+	const exposed = `\tglobalThis.__DAMC__ = { Utils, I18N, t, SettingsStore, DiscordAdapter, ChannelContext, MessageService, SearchService, Normalizer, ReviewBatcher, AIService, DeleteService, ExportService, UpdateService, PluginError, ScanCache, ReviewSession, renderContentSegments, formatAttachmentSize, MessageRow };\n${marker}`;
 	const patched = src.replace(marker, exposed);
 	const tmp = path.join(os.tmpdir(), `damc-under-test-${process.pid}.js`);
 	fs.writeFileSync(tmp, patched);
@@ -322,6 +326,183 @@ const ctx = { channelId: "200000000000000001", isPrivate: false };
 		assert.deepStrictEqual(noEdit.messages.map(m => m.id).sort(), ["1"], "edited excluded when opted out");
 	});
 
+	await test("normalizes attachment metadata for result-list previews and links", async () => {
+		const normalized = api.Normalizer.normalize({
+			id: "att-1", type: 0, timestamp: new Date().toISOString(), author: { id: "me" }, content: "",
+			attachments: [{ filename: "proof.PNG", proxy_url: "https://cdn.example/proof.PNG", size: 1536, width: 640, height: 480 }]
+		});
+		assert.strictEqual(normalized.attachments[0].url, "https://cdn.example/proof.PNG", "proxy URL is a usable fallback");
+		assert.strictEqual(normalized.attachments[0].size, 1536);
+		assert.strictEqual(normalized.attachments[0].isImage, true, "image extension fallback works without content_type");
+		const edge = api.Normalizer.normalize({
+			id: "att-2", type: 0, timestamp: new Date().toISOString(), author: { id: "me" }, content: "",
+			attachments: [{ filename: "photo.png", url: "https://cdn.example/opaque" }, null]
+		});
+		assert.strictEqual(edge.attachments[0].isImage, true, "filename extension still identifies an opaque image URL");
+		assert.strictEqual(edge.attachments[1].filename, "", "missing names stay empty for the UI locale fallback");
+	});
+
+	await test("builds guild and DM message jump paths", async () => {
+		assert.strictEqual(api.DiscordAdapter.messagePath("g1", "c1", "m1"), "/channels/g1/c1/m1");
+		assert.strictEqual(api.DiscordAdapter.messagePath(null, "dm1", "m2"), "/channels/@me/dm1/m2");
+		assert.strictEqual(api.DiscordAdapter.messagePath("g1", null, "m1"), null);
+	});
+
+	await test("message navigation uses native jumpToMessage with HistoryUtils fallback", async () => {
+		const originalGetByKeys = BdApiStub.Webpack.getByKeys;
+		const originalGetModule = BdApiStub.Webpack.getModule;
+		const originalGetStore = BdApiStub.Webpack.getStore;
+		try {
+			let selectedChannel = "c1";
+			let nativeOptions = null;
+			let navigated = null;
+			let guildTransition = null;
+			let privateSelection = null;
+			const actions = { fetchMessages() {}, jumpToMessage: options => { nativeOptions = options; return Promise.resolve(true); } };
+			BdApiStub.Webpack.getStore = name => name === "SelectedChannelStore" ? { getChannelId: () => selectedChannel } : undefined;
+			BdApiStub.Webpack.getByKeys = (...keys) => {
+				if (keys.includes("jumpToMessage")) return actions;
+				if (keys.includes("transitionToGuildSync")) return {
+					selectGuild() {},
+					transitionToGuildSync: (guildId, options, channelId) => {
+						guildTransition = { guildId, options, channelId };
+						setTimeout(() => { selectedChannel = channelId; }, 20);
+					}
+				};
+				if (keys.includes("selectPrivateChannel")) return {
+					selectChannel() {},
+					selectPrivateChannel: channelId => { privateSelection = channelId; selectedChannel = channelId; }
+				};
+				return undefined;
+			};
+			BdApiStub.Webpack.getModule = () => undefined;
+			api.DiscordAdapter.reset();
+			assert.strictEqual(api.DiscordAdapter.openMessage("g1", "c1", "m1"), true);
+			assert.deepStrictEqual(nativeOptions, { channelId: "c1", messageId: "m1", flash: true, jumpType: "INSTANT" });
+
+			selectedChannel = "source";
+			nativeOptions = null;
+			api.DiscordAdapter.reset();
+			assert.strictEqual(api.DiscordAdapter.openMessage("g1", "c2", "m2"), true, "guild channel selection starts");
+			assert.deepStrictEqual(guildTransition, { guildId: "g1", options: {}, channelId: "c2" });
+			await new Promise(resolve => setTimeout(resolve, 120));
+			assert.deepStrictEqual(nativeOptions, { channelId: "c2", messageId: "m2", flash: true, jumpType: "INSTANT" });
+
+			selectedChannel = "source";
+			nativeOptions = null;
+			api.DiscordAdapter.reset();
+			assert.strictEqual(api.DiscordAdapter.openMessage(null, "dm2", "m3"), true, "private channel selection starts");
+			assert.strictEqual(privateSelection, "dm2");
+			assert.deepStrictEqual(nativeOptions, { channelId: "dm2", messageId: "m3", flash: true, jumpType: "INSTANT" });
+
+			BdApiStub.Webpack.getByKeys = () => undefined;
+			BdApiStub.Webpack.getStore = originalGetStore;
+			api.DiscordAdapter.reset();
+			assert.strictEqual(api.DiscordAdapter.openMessage("g1", "c1", "m1"), false, "missing native actions keep the modal open");
+		} finally {
+			BdApiStub.Webpack.getByKeys = originalGetByKeys;
+			BdApiStub.Webpack.getModule = originalGetModule;
+			BdApiStub.Webpack.getStore = originalGetStore;
+			api.DiscordAdapter.reset();
+		}
+	});
+
+	await test("link rendering trims wrappers but keeps balanced URL brackets", async () => {
+		const hrefs = text => api.renderContentSegments(text)
+			.filter(node => node && typeof node === "object" && node.type === "a")
+			.map(node => node.props.href);
+		assert.deepStrictEqual(hrefs("<https://example.test/a>"), ["https://example.test/a"]);
+		assert.deepStrictEqual(hrefs("[x](https://example.test/a)"), ["https://example.test/a"]);
+		assert.deepStrictEqual(hrefs("https://example.test/a_(b)"), ["https://example.test/a_(b)"]);
+		assert.deepStrictEqual(hrefs("https://example.test/a_(b))."), ["https://example.test/a_(b)"]);
+		assert.deepStrictEqual(hrefs("https://a.test,https://b.test"), ["https://a.test", "https://b.test"]);
+		assert.strictEqual(api.formatAttachmentSize(2 * 1024 * 1024 * 1024), "2.0 GB");
+	});
+
+	await test("animated custom emoji retries GIF as animated WebP and then text", async () => {
+		const token = api.renderContentSegments("<a:party:12345>")[0];
+		assert.strictEqual(token.type, "span");
+		assert.match(token.props.className, /emoji-token/);
+		const imageNode = token.children[0];
+		assert.match(imageNode.props.src, /12345\.gif\?size=48$/);
+		let failedClass = "";
+		const image = { dataset: {}, src: imageNode.props.src, closest: () => ({ classList: { add: value => { failedClass = value; } } }) };
+		imageNode.props.onError({ currentTarget: image });
+		assert.match(image.src, /12345\.webp\?size=48&animated=true$/);
+		imageNode.props.onError({ currentTarget: image });
+		assert.match(image.src, /12345\.png\?size=48$/);
+		imageNode.props.onError({ currentTarget: image });
+		assert.match(failedClass, /emoji-failed$/);
+	});
+
+	await test("image attachments render as direct previews instead of attachment cards", async () => {
+		const tree = api.MessageRow({
+			message: { id: "m-image", channelId: "c1", timestamp: Date.now(), content: "", edited: false,
+				attachments: [{ filename: "image.png", url: "https://cdn.example/image.png", proxyUrl: "", isImage: true, size: 42 }] },
+			selected: false, showChannel: false, guildId: "g1", channelId: "c1", onToggle() {}, onPreview() {}, onJump() { return false; }
+		});
+		const nodes = [];
+		const walk = node => {
+			if (node == null || node === false) return;
+			if (Array.isArray(node)) { node.forEach(walk); return; }
+			if (typeof node !== "object") return;
+			nodes.push(node);
+			(node.children || []).forEach(walk);
+		};
+		walk(tree);
+		const classes = nodes.map(node => String(node.props && node.props.className || ""));
+		assert.ok(classes.some(value => value.includes("image-direct-img")), "direct image is present");
+		assert.ok(!classes.some(value => value.includes("attachment-preview")), "legacy thumbnail-in-card preview is absent");
+		const jump = nodes.find(node => String(node.props && node.props.className || "").includes("message-jump"));
+		assert.strictEqual(jump.type, "button", "message jump is an in-client action button");
+		assert.strictEqual(jump.props.href, undefined, "message jump has no browser URL fallback");
+	});
+
+	await test("scope cache shares guild scans but isolates channel, guild, and DM scans", async () => {
+		const guildA = { guildId: "g1", channelId: "c1", channel: { id: "c1", guild_id: "g1" } };
+		const guildB = { guildId: "g1", channelId: "c2", channel: { id: "c2", guild_id: "g1" } };
+		const otherGuild = { guildId: "g2", channelId: "c3", channel: { id: "c3", guild_id: "g2" } };
+		const dmA = { guildId: null, channelId: "dm1", channel: { id: "dm1" } };
+		const dmB = { guildId: null, channelId: "dm2", channel: { id: "dm2" } };
+		api.ScanCache.clear();
+		api.ScanCache.set(guildA, { messages: [{ id: "m1" }] }, "guild");
+		assert.strictEqual(api.ScanCache.state.scopeKey, "guild:g1");
+		assert.strictEqual(api.ScanCache.state.originChannelId, "c1");
+		assert.ok(api.ScanCache.get(guildB), "guild scan reopens from another channel in the same guild");
+		assert.strictEqual(api.ScanCache.get(otherGuild), null, "guild scan never leaks to another guild");
+		const view = { selectedIds: ["m1"], flagFilter: true, channelFilter: "c2" };
+		assert.strictEqual(api.ScanCache.setView("guild:g1", view), true);
+		view.selectedIds.push("later");
+		assert.deepStrictEqual(api.ScanCache.get(guildB).viewState, { selectedIds: ["m1"], flagFilter: true, channelFilter: "c2" });
+		assert.strictEqual(api.ScanCache.setView("other", view), false);
+
+		api.ReviewSession.start({ scope: "guild", scopeKey: "guild:g1", fetchResult: { messages: [] } });
+		assert.strictEqual(api.ReviewSession.matches(guildB), true, "guild review session follows the guild cache");
+		assert.strictEqual(api.ReviewSession.matches(otherGuild), false);
+		api.ReviewSession.clear();
+
+		api.ScanCache.set(guildA, { messages: [{ id: "m2" }] }, "channel");
+		assert.strictEqual(api.ScanCache.state.scopeKey, "channel:c1");
+		assert.strictEqual(api.ScanCache.get(guildB).scopeKey, "guild:g1", "another channel still sees the guild-wide scan");
+		assert.strictEqual(api.ScanCache.get(guildA).scopeKey, "channel:c1", "the newest exact-channel result wins in its channel");
+		assert.ok(api.ScanCache.getByKey("guild:g1"), "a channel scan does not overwrite the guild cache");
+		assert.strictEqual(api.ScanCache.remove(guildA, "channel"), true);
+		assert.strictEqual(api.ScanCache.get(guildA).scopeKey, "guild:g1", "removing the channel cache reveals the guild cache");
+
+		api.ScanCache.set(dmA, { messages: [{ id: "m3" }] }, "channel");
+		assert.ok(api.ScanCache.get(dmA));
+		assert.strictEqual(api.ScanCache.get(dmB), null, "DM cache stays in its original conversation");
+		const aliasContext = api.ChannelContext.from({ id: "c4", guildId: "g3", type: 0, name: "alias" });
+		assert.strictEqual(aliasContext.guildId, "g3", "camelCase guildId is normalized at the context boundary");
+		api.ScanCache.clear();
+		for (let i = 0; i < 21; i++) {
+			api.ScanCache.set({ guildId: null, channelId: `bounded-${i}`, channel: { id: `bounded-${i}` } }, { messages: [] }, "channel");
+		}
+		assert.strictEqual(api.ScanCache._entries.size, 20, "cache registry is bounded");
+		assert.strictEqual(api.ScanCache.getByKey("channel:bounded-0"), null, "oldest cache entry is evicted first");
+		api.ScanCache.clear();
+	});
+
 	section("ReviewBatcher");
 	await test("batches respect the message-count bound", async () => {
 		const msgs = Array.from({ length: 95 }, (_, i) => ({ id: String(i), timestamp: Date.now(), content: "x", attachments: [] }));
@@ -332,6 +513,17 @@ const ctx = { channelId: "200000000000000001", isPrivate: false };
 	});
 
 	section("AIService.review concurrency");
+	await test("custom-provider model selection preserves the fetched model list", async () => {
+		api.SettingsStore.set("ai.custom", [{
+			id: "custom-model-cache", name: "cache", baseUrl: "http://localhost:1234/v1",
+			apiKey: "", model: "model-a", models: ["model-a", "model-b"]
+		}]);
+		api.AIService.setProviderField("custom-model-cache", "model", "model-b");
+		const record = api.AIService.providerRecord("custom-model-cache");
+		assert.strictEqual(record.model, "model-b");
+		assert.deepStrictEqual(record.models, ["model-a", "model-b"]);
+	});
+
 	await test("runs batches in parallel up to review.concurrency, collects everything", async () => {
 		// Make the provider look configured.
 		api.SettingsStore.set("ai.providers.openai", { apiKey: "sk-test", baseUrl: "", model: "gpt-test" });
@@ -432,9 +624,13 @@ const ctx = { channelId: "200000000000000001", isPrivate: false };
 		assert.match(txt, /^AI 消息删除前备份/m);
 		assert.match(txt, /proof\.png: https:\/\/example\.test\/proof\.png/);
 		const json = JSON.parse(api.ExportService.buildBackup(exportContext, exportMessages, "json", "en-US"));
-		assert.strictEqual(json.plugin, "DiscordAIMessageCleaner v0.6.7");
+		assert.strictEqual(json.plugin, `DiscordAIMessageCleaner v${PLUGIN_VERSION_UNDER_TEST}`);
 		assert.strictEqual(json.count, 1);
 		assert.strictEqual(json.messages[0].content, "你好 backup");
+		const unnamed = [{ id: "m2", channelId: "c1", timestamp: Date.now(), content: "", edited: false, attachments: [{ filename: "", url: "https://example.test/file" }] }];
+		assert.match(api.ExportService.buildBackup(exportContext, unnamed, "md", "zh-CN"), /\[未命名附件\]\(https:\/\/example\.test\/file\)/);
+		const unnamedJson = JSON.parse(api.ExportService.buildBackup(exportContext, unnamed, "json", "en-US"));
+		assert.strictEqual(unnamedJson.messages[0].attachments[0].filename, "Unnamed attachment");
 	});
 
 	await test("BetterDiscord save dialog writes and verifies the selected file", async () => {
@@ -558,6 +754,123 @@ const ctx = { channelId: "200000000000000001", isPrivate: false };
 		} catch (e) { thrown = e; }
 		assert.ok(thrown && thrown.code === "EXPORT_FAILED", "disk failure is reported");
 		assert.match(thrown.message, /disk blocked/);
+	});
+
+	section("UpdateService");
+	const releaseAssetUrl = version => `https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/releases/download/v${version}/DiscordAIMessageCleaner.plugin.js`;
+	const pluginFixture = version => `/**\n * @name DiscordAIMessageCleaner\n * @version ${version}\n */\nmodule.exports = class DiscordAIMessageCleaner {};\n`;
+	const sha256 = async bytes => {
+		const digest = await webcrypto.subtle.digest("SHA-256", bytes);
+		return Array.from(new Uint8Array(digest)).map(value => value.toString(16).padStart(2, "0")).join("");
+	};
+	const arrayBufferOf = bytes => bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+
+	await test("manual update check classifies available/current/development versions", async () => {
+		const makeRelease = version => ({
+			tag_name: `v${version}`,
+			html_url: `https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/releases/tag/v${version}`,
+			body: "notes",
+			assets: [{ name: api.UpdateService.ASSET_NAME, browser_download_url: releaseAssetUrl(version), digest: `sha256:${"a".repeat(64)}`, size: 123 }]
+		});
+		const run = version => api.UpdateService.check({ fetch: async () => ({ ok: true, status: 200, json: async () => makeRelease(version) }) });
+		assert.strictEqual((await run("0.6.9")).status, "available");
+		assert.strictEqual((await run(PLUGIN_VERSION_UNDER_TEST)).status, "current");
+		assert.strictEqual((await run("0.6.7")).status, "development");
+		assert.strictEqual(api.UpdateService.compareVersions("1.0.0", "1.0.0-beta"), 1);
+	});
+
+	await test("GitHub API 403 falls back to the latest Release page without unsafe install", async () => {
+		let calls = 0;
+		const info = await api.UpdateService.check({
+			fetch: async () => {
+				calls++;
+				if (calls === 1) return { ok: false, status: 403 };
+				return {
+					ok: true,
+					status: 200,
+					url: "https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/releases/tag/v0.6.9",
+					text: async () => ""
+				};
+			}
+		});
+		assert.strictEqual(calls, 2);
+		assert.strictEqual(info.status, "available");
+		assert.strictEqual(info.source, "release-page");
+		assert.strictEqual(info.installable, false, "no digest -> manual Release link only");
+		assert.strictEqual(info.latest, "0.6.9");
+	});
+
+	await test("verified official asset backs up and replaces the plugin", async () => {
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "damc-update-ok-"));
+		const target = path.join(dir, api.UpdateService.ASSET_NAME);
+		const oldSource = pluginFixture(PLUGIN_VERSION_UNDER_TEST);
+		const newSource = pluginFixture("0.6.9");
+		const bytes = new TextEncoder().encode(newSource);
+		const digest = await sha256(bytes);
+		fs.writeFileSync(target, oldSource, "utf8");
+		const info = {
+			status: "available", latest: "0.6.9", releaseUrl: "https://example.test/release",
+			asset: { url: releaseAssetUrl("0.6.9"), digest: `sha256:${digest}`, size: bytes.length }
+		};
+		const result = await api.UpdateService.install(info, {
+			fetch: async () => ({ ok: true, status: 200, arrayBuffer: async () => arrayBufferOf(bytes) }),
+			plugins: { folder: dir }, crypto: webcrypto, TextDecoder
+		});
+		assert.strictEqual(fs.readFileSync(target, "utf8"), newSource);
+		assert.ok(result.backup && fs.existsSync(result.backup), "backup created");
+		assert.strictEqual(fs.readFileSync(result.backup, "utf8"), oldSource);
+		assert.strictEqual(result.digest, digest);
+	});
+
+	await test("digest mismatch leaves the installed plugin untouched", async () => {
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "damc-update-bad-"));
+		const target = path.join(dir, api.UpdateService.ASSET_NAME);
+		const oldSource = pluginFixture(PLUGIN_VERSION_UNDER_TEST);
+		const bytes = new TextEncoder().encode(pluginFixture("0.6.9"));
+		fs.writeFileSync(target, oldSource, "utf8");
+		let thrown = null;
+		try {
+			await api.UpdateService.install({
+				status: "available", latest: "0.6.9",
+				asset: { url: releaseAssetUrl("0.6.9"), digest: `sha256:${"0".repeat(64)}`, size: bytes.length }
+			}, {
+				fetch: async () => ({ ok: true, status: 200, arrayBuffer: async () => arrayBufferOf(bytes) }),
+				plugins: { folder: dir }, crypto: webcrypto, TextDecoder
+			});
+		} catch (e) { thrown = e; }
+		assert.match(String(thrown && thrown.message), /SHA-256 mismatch/);
+		assert.strictEqual(fs.readFileSync(target, "utf8"), oldSource);
+	});
+
+	await test("post-replacement verification failure restores the backup", async () => {
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "damc-update-restore-"));
+		const target = path.join(dir, api.UpdateService.ASSET_NAME);
+		const oldSource = pluginFixture(PLUGIN_VERSION_UNDER_TEST);
+		const newSource = pluginFixture("0.6.9");
+		const bytes = new TextEncoder().encode(newSource);
+		const digest = await sha256(bytes);
+		fs.writeFileSync(target, oldSource, "utf8");
+		const corruptingFs = Object.assign({}, fs, {
+			copyFileSync(source, destination) {
+				if (destination === target && String(source).endsWith(".update.tmp")) {
+					fs.writeFileSync(destination, "corrupt", "utf8");
+					return;
+				}
+				fs.copyFileSync(source, destination);
+			}
+		});
+		let thrown = null;
+		try {
+			await api.UpdateService.install({
+				status: "available", latest: "0.6.9",
+				asset: { url: releaseAssetUrl("0.6.9"), digest: `sha256:${digest}`, size: bytes.length }
+			}, {
+				fetch: async () => ({ ok: true, status: 200, arrayBuffer: async () => arrayBufferOf(bytes) }),
+				fs: corruptingFs, plugins: { folder: dir }, crypto: webcrypto, TextDecoder
+			});
+		} catch (e) { thrown = e; }
+		assert.match(String(thrown && thrown.message), /installed file verification failed/);
+		assert.strictEqual(fs.readFileSync(target, "utf8"), oldSource, "backup restored");
 	});
 
 	console.log(`\n${results.pass} passed, ${results.fail} failed`);

@@ -6,14 +6,14 @@
 
 [![平台](https://img.shields.io/badge/Platform-Discord-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.com)
 [![加载器](https://img.shields.io/badge/Loader-BetterDiscord-4E5D94?style=flat-square)](https://betterdiscord.app)
-[![版本](https://img.shields.io/badge/Version-0.6.7-success?style=flat-square)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner)
+[![版本](https://img.shields.io/badge/Version-0.6.8-success?style=flat-square)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner)
 [![依赖](https://img.shields.io/badge/Dependency-None-brightgreen?style=flat-square)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner)
 [![验证](https://img.shields.io/github/actions/workflow/status/ROOT94-MAX/DiscordAIMessageCleaner/verify.yml?branch=main&style=flat-square&label=verify)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/actions/workflows/verify.yml)
 [![许可证](https://img.shields.io/badge/License-GPL%20v2-blue?style=flat-square)](./LICENSE)
 
 一款 BetterDiscord 插件，用 AI 审查并清理**你自己**在 Discord 里发过的历史消息：按账号搜索、自定义策略审查、备份后确认删除。
 
-**当前版本：v0.6.7** · **运行环境：BetterDiscord（无需第三方库）**
+**当前版本：v0.6.8** · **运行环境：BetterDiscord（无需第三方库）**
 
 [下载稳定版](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/releases/latest/download/DiscordAIMessageCleaner.plugin.js) · [English](README.en.md) · [架构文档](./ARCHITECTURE.md)
 
@@ -34,7 +34,8 @@
 - **按账号搜索：**服务器范围借用 Discord 客户端自身的搜索接口按 `author_id` 过滤，跨频道直接拿到你自己的消息，而非拉全频道再本地筛。
 - **AI 审查：**逐批送任意 OpenAI 兼容模型判定，命中项标注违规类别、严重度与理由并自动勾选；解析失败的批次进重试队列，绝不误标。
 - **后台运行：**审查慢时可最小化为悬浮胶囊，继续聊天，完成后点胶囊回到结果。
-- **结果整理：**「只看命中」过滤、服务器范围按频道下拉筛选、消息内自定义表情与图片缩略图（点击放大），手动增减勾选。
+- **结果整理：**「只看命中」过滤、服务器范围按频道下拉筛选、消息内自定义表情与图片直接预览（点击放大），正文链接与附件可直接打开，手动增减勾选。
+- **跨频道保留结果：**服务器范围扫描按服务器保存在内存缓存中；从结果跳到任意频道后，再点聊天栏插件图标即可继续查看同一批结果和手动选择，无需重新扫描。
 - **可续扫描：**扫描被取消或达到上限时，可从上次位置继续扫描更早的消息，已勾选与已判定的结果全部保留。
 - **安全删除：**二次确认 → 可选 MD / TXT / JSON 导出 → 保存成功后节流删除，进度可暂停 / 取消，结束给出成功 / 跳过 / 失败报告。
 
@@ -86,8 +87,8 @@
 | --- | --- |
 | AI 平台 | 预置 5 家 + 任意自定义平台；Base URL / API Key / 模型；获取模型列表、验证配置 |
 | 审查策略 | 界面语言、审查策略提示词库（内置模板 + 命名自定义）、每批消息数、审查前确认阈值、AI 空闲超时 |
-| 清理行为 | 消息扫描（最大扫描数、是否审查已编辑消息）、删除安全（删除间隔、单次上限、备份模式） |
-| 诊断 | 版本、BetterDiscord 版本、各内部触点健康状态、一键复制诊断信息 |
+| 通用设置 | 插件界面语言、消息扫描（最大扫描数、是否审查已编辑消息）、删除安全（删除间隔、单次上限、备份模式） |
+| 关于与诊断 | 插件简介与版本、GitHub 源码入口、BetterDiscord 版本、各内部触点健康状态、一键复制诊断信息 |
 
 ## 工作原理与固有限制
 
@@ -106,6 +107,19 @@
 - 保存实现对齐总结插件的运行时约束，只使用 BetterDiscord 中可用的 `fs`、`path` 与 `USERPROFILE/HOME`；移除会被插件加载器误解析成相对路径的 `os` / `buffer` 引用。
 - 失败方向保持安全：请求了删除前备份时，取消或所有保存方式均失败都会放弃删除。
 
+## 设置说明图标（v0.6.8）
+
+- 字段级辅助说明收进统一的圆形信息图标；图标紧跟标题文字末尾，保持 5px 间距、视觉居中并轻微上移 1px，不进入整行右侧的输入控件区域。
+- 鼠标悬停与键盘聚焦均显示 Discord 风格 Tooltip；组件缺失时回退到原生 `title` 提示。
+- 策略内容、并发数、确认阈值、已编辑消息、删除间隔和删除上限使用该模式；诊断等组级说明继续直接显示。
+- 模型组合框把当前输入、筛选词和已获取模型缓存分离：选择模型后下拉箭头与完整列表持续可用，重新点箭头会清空筛选并展示全部模型。
+- 模型列表通过 `document.body` Portal 固定定位：自动比较上下可用空间，选择更合适的方向，并按该侧空间限制最大高度、内部滚动；滚动或缩放窗口时重新定位，不受设置面板裁切。
+- 设置页使用统一纵向 Token：Tab→内容 16px、分组 24px/8px、标题行 36px、字段间 16px、标题→控件 4px；移除分割线以及策略编辑器的局部 8/2、24/6 特例。
+- 插件界面语言从“审查策略”移到“通用设置”；“诊断”升级为“关于与诊断”，About 卡片展示插件简介、版本标签和可点击的 GitHub 图标，下方保留运行诊断与复制诊断信息。
+- “内容”字段标题与“当前策略”保持同级：16px、字重 500、正文色、20px 行高；标题行同样为 36px，标题到文本框使用全局统一 4px。“运行诊断”的说明收进标题后的信息图标。
+- 检查更新位于独立“版本与更新”分组，而不是 About 卡片内部。优先查询官方 GitHub API；遇到 403/限流时回退到最新 Release 页面识别版本，此时仅提供手动发布页入口。API 正常且有官方 digest 时才提供确认安装，并执行 URL/SHA-256/插件元数据校验、备份、写入后复验与失败恢复；不后台更新、不降级候选版本。
+- 所有设置项标题共用统一字体 Token：名称、API Base URL、API Key、Model、当前策略、内容、并发审查请求数等均为 16px/500/20px/正文色；提供商标题保持 16px/700，输入内容 15px/400，字段操作按钮 14px。
+
 ## 安全与隐私
 
 - 删除**不可逆**。默认「先审后删 + 人工勾选 + 二次确认」，绝不静默删除；建议首次把备份模式设为「每次询问」，先导出 MD / TXT / JSON 再删。
@@ -119,7 +133,7 @@
 
 ```
 DiscordAIMessageCleaner.plugin.js   构建产物：安装用的插件单文件
-src/                                模块化源码（header / 24 个分区模块 / footer）
+src/                                模块化源码（header / 25 个分区模块 / footer）
 src/sections/                       01-constants … 22-plugin-class，按依赖顺序编号
 tools/build.js                      确定性构建：把 src/ 拼装为插件单文件（零依赖、零转换）
 tools/verify.js                     校验源码与产物逐字节一致、语法、版本号一致
@@ -127,6 +141,7 @@ tools/smoke_test.js                 离线冒烟测试（生命周期 + 设置�
 tools/test_harness.js               离线功能测试（删除队列 / 搜索 / 批处理 / 判定解析等）
 ARCHITECTURE.md                     架构文档（模块地图、数据流、触点清单，随代码同步更新）
 REGRESSION.md                       发版前的人工回归清单（含删除链路的安全走查流程）
+TODO.md                             已确认但暂缓处理的非阻塞架构债务
 SECURITY.md                         支持版本、漏洞私密报告方式与脱敏要求
 PLAN.md                             最初的实现计划（历史文档）
 ```
@@ -143,6 +158,8 @@ node tools/test_harness.js # 功能测试
 ```
 
 修改代码请编辑 `src/sections/` 下的分区模块，然后重新构建；**请勿直接编辑生成的插件文件**（`verify` 会发现并拒绝）。分区间依赖严格单向：后区可用前区，反向禁止；只有 `07-discord-adapter` 允许触碰 Discord 内部模块。CI（GitHub Actions）在每次推送时自动执行以上全部校验。
+
+扫描缓存只存在于当前插件运行期：服务器范围按 `guild:<guildId>` 共享到该服务器的所有频道，频道范围与私信按 `channel:<channelId>` 隔离；最多保留最近 20 个扫描作用域，插件停止或重新加载时统一清空。
 
 `main` 受 GitHub Ruleset 保护。请从非 `main` 分支发起 Pull Request，等待 `verify` 通过后再合并；直接更新、强推和删除 `main` 均被规则拦截。
 

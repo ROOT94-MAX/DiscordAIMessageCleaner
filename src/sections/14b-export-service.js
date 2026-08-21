@@ -23,13 +23,15 @@
 		buildBackup(context, messages, format, lang) {
 			const targetFormat = ExportService.normalizeFormat(format);
 			const exportedAt = new Date();
+			const zh = String(lang || I18N.resolveUiLanguage()).toLowerCase().startsWith("zh");
+			const unnamedAttachment = zh ? "未命名附件" : "Unnamed attachment";
 			const normalized = messages.map(message => ({
 				id: message.id,
 				channelId: message.channelId || context.channelId || null,
 				timestamp: new Date(message.timestamp).toISOString(),
 				content: String(message.content || ""),
 				attachments: (Array.isArray(message.attachments) ? message.attachments : [])
-					.map(att => ({ filename: att.filename || "attachment", url: att.url || "" })),
+					.map(att => ({ filename: att && att.filename || unnamedAttachment, url: att && att.url || "" })),
 				edited: Boolean(message.edited)
 			}));
 			if (targetFormat === "json") {
@@ -43,7 +45,6 @@
 					messages: normalized
 				}, null, 2);
 			}
-			const zh = String(lang || I18N.resolveUiLanguage()).toLowerCase().startsWith("zh");
 			const labels = zh ? {
 				title: "AI 消息删除前备份", exported: "导出时间", guild: "服务器", channel: "频道",
 				count: "消息数", id: "消息 ID", channelId: "频道 ID", edited: "已编辑", attachments: "附件",

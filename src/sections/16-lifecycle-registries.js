@@ -44,6 +44,11 @@
 			}, data);
 			ReviewSession._emit();
 		},
+		matches(context) {
+			if (!ReviewSession.state) return false;
+			const expected = ScanCache.key(context, ReviewSession.state.scope);
+			return Boolean(expected && ReviewSession.state.scopeKey === expected);
+		},
 		update(patch) {
 			if (!ReviewSession.state) return;
 			Object.assign(ReviewSession.state, patch);
@@ -75,15 +80,95 @@
 		}
 	};
 
-	// Last successful scan, kept so an accidental modal close (backdrop click,
-	// Esc) does not throw away a long scan. Overwritten by each new scan.
+	// Recent successful scans, kept in memory so navigation or an accidental
+	// modal close does not throw away a long scan. Guild scans use a guild-wide
+	// identity and can be reopened from every channel in that guild; channel/DM
+	// scans stay isolated. A small LRU-style cap avoids unbounded session memory.
 	const ScanCache = {
-		state: null, // {channelId, fetchResult, scope}
-		set(channelId, fetchResult, scope) { ScanCache.state = { channelId, fetchResult, scope }; },
-		get(channelId) {
-			return ScanCache.state && ScanCache.state.channelId === channelId ? ScanCache.state : null;
+		state: null, // latest entry; retained as a diagnostic/compatibility view
+		_entries: new Map(),
+		MAX_ENTRIES: 20,
+		_revision: 0,
+		key(context, scope) {
+			if (!context) return null;
+			if (scope === "guild" && context.guildId) return `guild:${context.guildId}`;
+			return context.channelId ? `channel:${context.channelId}` : null;
 		},
-		clear() { ScanCache.state = null; }
+		matches(entry, context) {
+			if (!entry || !context) return false;
+			return entry.scopeKey === ScanCache.key(context, entry.scope);
+		},
+		set(context, fetchResult, scope) {
+			const scopeKey = ScanCache.key(context, scope);
+			if (!scopeKey) return null;
+			const previous = ScanCache._entries.get(scopeKey);
+			const entry = {
+				scopeKey,
+				scope,
+				guildId: context.guildId || null,
+				originChannelId: context.channelId || null,
+				originChannel: context.channel || null,
+				fetchResult,
+				viewState: previous ? previous.viewState : null,
+				updatedAt: Date.now(),
+				revision: ++ScanCache._revision
+			};
+			// Reinsert to move the entry to the newest end of Map iteration order.
+			ScanCache._entries.delete(scopeKey);
+			ScanCache._entries.set(scopeKey, entry);
+			while (ScanCache._entries.size > ScanCache.MAX_ENTRIES) {
+				const oldest = ScanCache._entries.keys().next().value;
+				ScanCache._entries.delete(oldest);
+			}
+			ScanCache.state = entry;
+			return entry;
+		},
+		setView(scopeKey, viewState) {
+			const entry = ScanCache._entries.get(scopeKey);
+			if (!entry) return false;
+			const source = viewState || {};
+			entry.viewState = {
+				selectedIds: Array.isArray(source.selectedIds) ? source.selectedIds.slice() : [],
+				flagFilter: Boolean(source.flagFilter),
+				channelFilter: source.channelFilter || null
+			};
+			entry.updatedAt = Date.now();
+			entry.revision = ++ScanCache._revision;
+			ScanCache._entries.delete(scopeKey);
+			ScanCache._entries.set(scopeKey, entry);
+			ScanCache.state = entry;
+			return true;
+		},
+		get(context) {
+			if (!context) return null;
+			const candidates = [];
+			const channelKey = ScanCache.key(context, "channel");
+			const guildKey = ScanCache.key(context, "guild");
+			if (channelKey && ScanCache._entries.has(channelKey)) candidates.push(ScanCache._entries.get(channelKey));
+			if (guildKey && guildKey !== channelKey && ScanCache._entries.has(guildKey)) candidates.push(ScanCache._entries.get(guildKey));
+			if (!candidates.length) return null;
+			return candidates.reduce((latest, entry) => entry.revision > latest.revision ? entry : latest);
+		},
+		getByKey(scopeKey) {
+			return ScanCache._entries.get(scopeKey) || null;
+		},
+		remove(context, scope) {
+			const scopeKey = ScanCache.key(context, scope);
+			if (!scopeKey) return false;
+			const removed = ScanCache._entries.delete(scopeKey);
+			if (ScanCache.state && ScanCache.state.scopeKey === scopeKey) {
+				const remaining = [...ScanCache._entries.values()];
+				ScanCache.state = remaining.length
+					? remaining.reduce((latest, entry) => entry.revision > latest.revision ? entry : latest)
+					: null;
+			}
+			return removed;
+		},
+		clear() {
+			ScanCache._entries.clear();
+			ScanCache.state = null;
+			ScanCache._revision = 0;
+		}
 	};
 
 	// Floating progress pill shown while a minimized review runs. Plain DOM:
@@ -221,4 +306,3 @@
 			if (MiniPill._el) { try { MiniPill._el.remove(); } catch (e) { /* ignore */ } MiniPill._el = null; }
 		}
 	};
-

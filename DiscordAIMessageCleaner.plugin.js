@@ -2,7 +2,7 @@
  * @name DiscordAIMessageCleaner
  * @author ROOT94
  * @authorLink https://github.com/ROOT94-MAX/DiscordAIMessageCleaner
- * @version 0.6.7
+ * @version 0.6.8
  * @description Scan your own message history in any channel / DM / group DM, review it with an AI policy of your choice, and delete flagged messages after manual confirmation. Native BdApi, no library dependency.
  * @source https://github.com/ROOT94-MAX/DiscordAIMessageCleaner
  * @website https://github.com/ROOT94-MAX/DiscordAIMessageCleaner
@@ -14,7 +14,7 @@ module.exports = (() => {
 	// ==================== 01. CONSTANTS ====================
 
 	const PLUGIN_ID = "DiscordAIMessageCleaner";
-	const PLUGIN_VERSION = "0.6.7";
+	const PLUGIN_VERSION = "0.6.8";
 	const CSS_PREFIX = "damc";
 	const DISCORD_EPOCH = 1420070400000n;
 	// Guild: 0 text, 5 announcement, 10/11/12 threads. Private: 1 DM, 3 group DM.
@@ -82,11 +82,11 @@ module.exports = (() => {
 
 	// Broom-over-message icon.
 	const CLEANER_ICON_SVG = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M5 3a3 3 0 0 0-3 3v7a3 3 0 0 0 3 3h1.59l2.7 2.7a1 1 0 0 0 1.7-.7V16H19a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3H5Zm3.1 4.1a1 1 0 0 1 1.4 0L12 9.6l2.5-2.5a1 1 0 1 1 1.4 1.4L13.4 11l2.5 2.5a1 1 0 0 1-1.4 1.4L12 12.4l-2.5 2.5a1 1 0 0 1-1.4-1.4L10.6 11 8.1 8.5a1 1 0 0 1 0-1.4Z"/></svg>`;
-	const CLOSE_ICON_SVG = `<svg width="20" height="20" viewBox="0 0 24 24"><path fill="currentColor" d="M19.3 20.7 12 13.4l-7.3 7.3-1.4-1.4 7.3-7.3-7.3-7.3 1.4-1.4 7.3 7.3 7.3-7.3 1.4 1.4-7.3 7.3 7.3 7.3z"/></svg>`;
-	const CHECK_MARK_SVG = `<svg width="12" height="12" viewBox="0 0 24 24"><path fill="currentColor" d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>`;
-	const DASH_MARK_SVG = `<svg width="12" height="12" viewBox="0 0 24 24"><path fill="currentColor" d="M5 11h14v2H5z"/></svg>`;
-	const HASH_ICON_SVG = `<svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M9.9 3.3 9.2 7H5v2h3.8l-.6 3.5H4v2h3.8L7.1 19h2l.7-4.5h4.3L13.4 19h2l.7-4.5H20v-2h-3.5l.6-3.5H21V7h-3.5l.7-3.7h-2L15.5 7h-4.3l.7-3.7h-2ZM10.8 9h4.3l-.6 3.5h-4.3L10.8 9Z"/></svg>`;
-	const GLOBE_ICON_SVG = `<svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm7.7 9h-3.3a15.9 15.9 0 0 0-1.2-5.4A8 8 0 0 1 19.7 11ZM12 4.1c.9 1.2 1.9 3.3 2.3 6.9H9.7c.4-3.6 1.4-5.7 2.3-6.9ZM4.3 13h3.3c.2 2 .6 3.9 1.2 5.4A8 8 0 0 1 4.3 13Zm3.3-2H4.3a8 8 0 0 1 4.5-5.4A15.9 15.9 0 0 0 7.6 11Zm4.4 8.9c-.9-1.2-1.9-3.3-2.3-6.9h4.6c-.4 3.6-1.4 5.7-2.3 6.9Zm2.7-1.5c.6-1.5 1-3.4 1.2-5.4h3.3a8 8 0 0 1-4.5 5.4Z"/></svg>`;
+	const CLOSE_ICON_SVG = `<svg width="20" height="20" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M480-438 270-228q-9 9-21 9t-21-9q-9-9-9-21t9-21l210-210-210-210q-9-9-9-21t9-21q9-9 21-9t21 9l210 210 210-210q9-9 21-9t21 9q9 9 9 21t-9 21L522-480l210 210q9 9 9 21t-9 21q-9 9-21 9t-21-9L480-438Z"/></svg>`;
+	const CHECK_MARK_SVG = `<svg width="12" height="12" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="m378-332 363-363q9-9 21.5-9t21.5 9q9 9 9 21.5t-9 21.5L399-267q-9 9-21 9t-21-9L175-449q-9-9-8.5-21.5T176-492q9-9 21.5-9t21.5 9l159 160Z"/></svg>`;
+	const DASH_MARK_SVG = `<svg width="12" height="12" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M230-450q-12.75 0-21.37-8.68-8.63-8.67-8.63-21.5 0-12.82 8.63-21.32 8.62-8.5 21.37-8.5h500q12.75 0 21.38 8.68 8.62 8.67 8.62 21.5 0 12.82-8.62 21.32-8.63 8.5-21.38 8.5H230Z"/></svg>`;
+	const HASH_ICON_SVG = `<svg width="16" height="16" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="m338-319-35 137q-2 10-9.5 16t-17.5 6q-14 0-23-11t-5-25l31-123H158q-14 0-23.5-11.5T129-356q2-10 10-16.5t19-6.5h136l51-202H224q-14 0-23.5-11.5T195-618q2-10 10-16.5t19-6.5h136l34-137q2-10 9.5-16t17.5-6q14 0 22.5 10.5T449-765l-30 124h203l34-137q2-10 9.5-16t17.5-6q14 0 22.5 10.5T711-765l-30 124h121q14 0 23.5 11.5T831-604q-2 10-10 16.5t-19 6.5H666l-51 202h121q14 0 23.5 11.5T765-342q-2 10-10 16.5t-19 6.5H600l-35 137q-2 10-9.5 16t-17.5 6q-14 0-23-11t-5-25l31-123H338Zm15-60h203l51-202H404l-51 202Z"/></svg>`;
+	const GLOBE_ICON_SVG = `<svg width="16" height="16" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M323-111.5Q250-143 196-197t-85-127.5Q80-398 80-482t31-156.5Q142-711 196-765t127-84.5Q396-880 480-880t157 30.5Q710-819 764-765t85 126.5Q880-566 880-482t-31 157.5Q818-251 764-197t-127 85.5Q564-80 480-80t-157-31.5ZM480-138q35-36 58.5-82.5T577-331H384q14 60 37.5 108t58.5 85Zm-85-12q-25-38-43-82t-30-99H172q38 71 88 111.5T395-150Zm171-1q72-23 129.5-69T788-331H639q-13 54-30.5 98T566-151ZM152-391h159q-3-27-3.5-48.5T307-482q0-25 1-44.5t4-43.5H152q-7 24-9.5 43t-2.5 45q0 26 2.5 46.5T152-391Zm221 0h215q4-31 5-50.5t1-40.5q0-20-1-38.5t-5-49.5H373q-4 31-5 49.5t-1 38.5q0 21 1 40.5t5 50.5Zm275 0h160q7-24 9.5-44.5T820-482q0-26-2.5-45t-9.5-43H649q3 35 4 53.5t1 34.5q0 22-1.5 41.5T648-391Zm-10-239h150q-33-69-90.5-115T565-810q25 37 42.5 80T638-630Zm-254 0h194q-11-53-37-102.5T480-820q-32 27-54 71t-42 119Zm-212 0h151q11-54 28-96.5t43-82.5q-75 19-131 64t-91 115Z"/></svg>`;
 	// ==================== 02. BOUND API + LOGGER ====================
 
 	const Api = new BdApi(PLUGIN_ID);
@@ -232,7 +232,9 @@ module.exports = (() => {
 			end_label: "结束时间",
 			all_range_note: "「全部」按最大扫描条数（{max} 条）从最新往回扫。",
 			scope_channel: "当前频道",
-			scope_guild: "整个服务器",
+			scan_scope_label: "扫描范围",
+			scan_model_label: "审查模型",
+			scope_guild: "服务器",
 			scope_note_channel: "按你的账号 ID 搜索本频道，只命中你自己的消息。",
 			scope_note_guild: "一次覆盖此服务器所有你可见的频道，只命中你自己的消息。",
 			hero_fetch: "扫描我的消息",
@@ -247,16 +249,22 @@ module.exports = (() => {
 			search_fallback_toast: "搜索不可用（{detail}），已回退为逐页扫描当前频道。",
 			search_guild_failed: "服务器级搜索不可用：{detail}。可切换为「当前频道」用逐页扫描。",
 			// results
-			results_stats: "我的消息 {mine} 条（共扫描 {scanned} 条）",
+			results_stats: "我的消息 {mine} 条 · 共扫描 {scanned} 条",
 			results_capped: "已达扫描上限 {max} 条：仅包含最新部分，可分次处理更早的消息。",
 			results_cancelled: "扫描被取消，以下为已获取的部分结果。",
 			act_resume_scan: "继续扫描更早的消息",
 			select_all: "全选",
 			select_none: "全不选",
+			select_message: "选择这条消息",
 			selected_count: "已选 {n} / {m}",
 			delete_selected: "删除选中",
 			attachment_only: "[仅附件消息：{names}]",
 			attachment_badge: "附件×{n}",
+			attachment_unnamed: "未命名附件",
+			attachment_open: "打开附件：{name}",
+			attachment_preview: "附件预览：{name}",
+			message_jump: "跳转到原消息",
+			message_jump_unavailable: "客户端跳转组件暂不可用，请稍后重试。",
 			edited_badge: "已编辑",
 			// review
 			act_review: "AI 审查",
@@ -267,8 +275,10 @@ module.exports = (() => {
 			review_gate_warn: "本次审查约 {tokens} tokens（粗略估算），超过确认阈值 {threshold}。继续？",
 			continue_anyway: "仍然继续",
 			review_summary: "审查完成：{flagged} 条命中（共 {total} 条），已自动勾选",
+			review_summary_cleared: "命中消息已处理，剩余 {total} 条扫描消息",
 			review_partial: "有 {n} 条消息所在批次审查失败，可重试。",
 			filter_flagged: "只看命中",
+			filter_all: "全部",
 			filter_all: "全部消息",
 			chip_all: "全部频道",
 			filter_channel: "频道筛选",
@@ -285,6 +295,7 @@ module.exports = (() => {
 			cat_other: "其他违规",
 			// delete
 			delete_confirm_title: "确认删除",
+			confirm_irreversible: "此操作不可撤销。",
 			delete_confirm_body: "即将永久删除 {n} 条你自己的消息。此操作不可撤销，删除的消息无法恢复。确定继续？",
 			delete_confirm_over_cap: "选中 {n} 条，超过单次上限 {max} 条，本次将只删除最新的 {max} 条，其余请分次处理。",
 			delete_confirm_ok: "永久删除",
@@ -356,8 +367,8 @@ module.exports = (() => {
 			tab_review: "审查策略",
 			tab_msg: "消息",
 			tab_delete: "删除安全",
-			tab_behavior: "清理行为",
-			tab_diag: "诊断",
+			tab_behavior: "通用设置",
+			tab_diag: "关于与诊断",
 			// settings: groups & language
 			group_language: "语言",
 			group_generation: "生成参数",
@@ -369,15 +380,35 @@ module.exports = (() => {
 			// settings: policy library
 			prompt_active: "当前策略",
 			prompt_builtin: "内置模板",
-			prompt_name: "名称",
 			prompt_content: "内容",
 			prompt_new: "新建策略",
 			prompt_duplicate: "复制为新策略",
 			prompt_unnamed: "未命名策略",
 			prompt_default_name: "策略 {n}",
-			prompt_delete_confirm: "确定删除策略「{name}」？",
+			prompt_delete_confirm: "确定删除策略「{name}」？其提示词内容将一并清除。",
 			prompt_placeholder: "留空使用内置模板",
+			policy_readonly: "只读",
 			// settings: diagnostics
+			group_about: "关于插件",
+			about_description: "用 AI 审查并安全清理你自己发送的历史消息。",
+			about_github: "在 GitHub 查看源代码",
+			about_repo: "GitHub 仓库",
+			about_feedback: "意见反馈",
+			update_badge_install: "更新到 v{version}",
+			update_check: "检查更新",
+			update_checking: "正在检查更新…",
+			update_current: "已是最新稳定版 v{version}",
+			update_available: "发现新版本 v{version}",
+			update_available_manual: "发现新版本 v{version}；GitHub API 受限，请打开发布页手动更新。",
+			update_development: "当前 v{current} 高于最新稳定版 v{latest}（开发候选版本）",
+			update_failed: "检查或更新失败：{detail}",
+			update_view_release: "查看说明",
+			update_install: "下载并安装",
+			update_installing: "正在下载、校验并安装…",
+			update_install_title: "安装更新 v{version}",
+			update_install_body: "将从官方 GitHub Release 下载并校验插件，备份当前 v{current} 后替换。确认继续？",
+			update_installed: "v{version} 已安装并校验，BetterDiscord 将重新加载插件。",
+			group_diagnostics: "运行诊断",
 			set_diag_note: "Discord 更新导致功能异常时，先看这里。",
 			diag_entry: "输入框按钮入口",
 			diag_copy: "复制诊断信息",
@@ -392,31 +423,33 @@ module.exports = (() => {
 			provider_set_active: "设为当前",
 			provider_active_badge: "当前使用",
 			provider_add: "添加平台",
-			provider_name: "名称",
 			provider_unnamed: "未命名平台",
 			provider_delete: "删除",
 			provider_delete_confirm: "确定删除「{name}」？其配置将被清除。",
+			provider_rename: "重命名平台",
 			provider_intro_title: "连接一个 AI 平台",
 			provider_intro_body: "选择左侧平台，填入密钥，点击“设为当前”。本地 Ollama / LM Studio 无需密钥。",
 			combo_no_match: "无匹配",
 			key_placeholder_local: "本地服务通常无需密钥",
 			aria_toggle_key: "显示/隐藏 API 密钥",
 			aria_open_models: "展开模型列表",
-			set_base_url: "API Base URL",
-			set_api_key: "API Key",
-			set_model: "Model",
+			set_base_url: "API 地址",
+			set_api_key: "API 密钥",
+			set_model: "模型",
+			provider_status_models: "已获取 {count} 个可用模型",
+			provider_status_ready: "已配置，尚未获取模型",
+			provider_status_unset: "尚未配置",
 			btn_validate: "验证配置",
 			btn_fetch_models: "获取模型",
 			validating: "正在验证…",
 			fetching_models: "正在获取模型…",
 			validate_ok: "验证通过（{model}）：{preview}",
 			validate_fail: "验证失败：{detail}",
-			models_loaded: "已加载 {count} 个模型，可在 Model 输入框选择。",
+			models_loaded: "已加载 {count} 个模型，可在下拉列表选择。",
 			models_fail: "获取模型失败：{detail}",
 			// settings: review policy
 			set_policy: "审查策略提示词",
 			set_policy_note: "留空使用内置模板。描述哪些内容算违规，AI 只按此判定。可用占位符：{{LANGUAGE}}。",
-			set_policy_reset: "恢复默认",
 			set_concurrency: "并发审查请求数",
 			set_concurrency_note: "同时向 AI 端点发出的批次数。调大明显加速，但本地模型或严格限流的端点建议 1-2。",
 			set_batch_size: "每批消息数",
@@ -468,7 +501,9 @@ module.exports = (() => {
 			end_label: "End time",
 			all_range_note: "\"All\" scans backwards from the newest message up to the cap ({max}).",
 			scope_channel: "This channel",
-			scope_guild: "Whole server",
+			scan_scope_label: "Scan scope",
+			scan_model_label: "Review model",
+			scope_guild: "Server",
 			scope_note_channel: "Searches this channel by your account id; only your own messages are hit.",
 			scope_note_guild: "Covers every channel you can see in this server in one pass; only your own messages are hit.",
 			hero_fetch: "Scan my messages",
@@ -481,16 +516,22 @@ module.exports = (() => {
 			progress_rate_limited: "Rate limited, waiting…",
 			search_fallback_toast: "Search unavailable ({detail}); fell back to paged scanning of this channel.",
 			search_guild_failed: "Guild-wide search unavailable: {detail}. Switch to \"This channel\" for the paged scan.",
-			results_stats: "{mine} of my messages ({scanned} scanned)",
+			results_stats: "{mine} of my messages · {scanned} scanned",
 			results_capped: "Scan cap of {max} reached: only the newest part is included. Run again for older messages.",
 			results_cancelled: "Scan cancelled; partial results below.",
 			act_resume_scan: "Continue scanning older messages",
 			select_all: "Select all",
 			select_none: "Select none",
+			select_message: "Select this message",
 			selected_count: "{n} / {m} selected",
 			delete_selected: "Delete selected",
 			attachment_only: "[attachment-only message: {names}]",
 			attachment_badge: "attachments×{n}",
+			attachment_unnamed: "Unnamed attachment",
+			attachment_open: "Open attachment: {name}",
+			attachment_preview: "Attachment preview: {name}",
+			message_jump: "Jump to original message",
+			message_jump_unavailable: "The in-client navigation component is temporarily unavailable. Try again shortly.",
 			edited_badge: "edited",
 			act_review: "AI Review",
 			act_rereview: "Re-review",
@@ -500,8 +541,10 @@ module.exports = (() => {
 			review_gate_warn: "This review is roughly {tokens} tokens, above the confirmation threshold of {threshold}. Continue?",
 			continue_anyway: "Continue anyway",
 			review_summary: "Review done: {flagged} flagged of {total}, auto-selected",
+			review_summary_cleared: "Flagged messages processed; {total} scanned messages remain",
 			review_partial: "Batches covering {n} messages failed to review. You can retry.",
 			filter_flagged: "Flagged only",
+			filter_all: "All",
 			filter_all: "All messages",
 			chip_all: "All channels",
 			filter_channel: "Channel filter",
@@ -517,6 +560,7 @@ module.exports = (() => {
 			cat_ad: "Spam / ads",
 			cat_other: "Other",
 			delete_confirm_title: "Confirm deletion",
+			confirm_irreversible: "This cannot be undone.",
 			delete_confirm_body: "About to permanently delete {n} of your own messages. This cannot be undone. Continue?",
 			delete_confirm_over_cap: "{n} selected, above the per-run cap of {max}. Only the newest {max} will be deleted this run; handle the rest in another pass.",
 			delete_confirm_ok: "Delete permanently",
@@ -583,8 +627,8 @@ module.exports = (() => {
 			tab_review: "Review Policy",
 			tab_msg: "Messages",
 			tab_delete: "Deletion Safety",
-			tab_behavior: "Cleanup",
-			tab_diag: "Diagnostics",
+			tab_behavior: "General",
+			tab_diag: "About & Diagnostics",
 			group_language: "Language",
 			group_generation: "Generation",
 			group_prompt: "Review policy prompt",
@@ -594,14 +638,34 @@ module.exports = (() => {
 			review_lang_auto: "Follow interface language",
 			prompt_active: "Active policy",
 			prompt_builtin: "Built-in template",
-			prompt_name: "Name",
 			prompt_content: "Content",
 			prompt_new: "New policy",
 			prompt_duplicate: "Duplicate as new policy",
 			prompt_unnamed: "Unnamed policy",
 			prompt_default_name: "Policy {n}",
-			prompt_delete_confirm: "Delete policy \"{name}\"?",
+			prompt_delete_confirm: "Delete policy \"{name}\"? Its prompt text will be removed as well.",
 			prompt_placeholder: "Empty = use the built-in template",
+			policy_readonly: "Read-only",
+			group_about: "About",
+			about_description: "AI-review and safely clean the message history you sent.",
+			about_github: "View source on GitHub",
+			about_repo: "GitHub Repo",
+			about_feedback: "Feedback",
+			update_badge_install: "Update to v{version}",
+			update_check: "Check for Updates",
+			update_checking: "Checking for updates…",
+			update_current: "Latest stable version: v{version}",
+			update_available: "New version available: v{version}",
+			update_available_manual: "New version available: v{version}. GitHub API is limited; open the Release page to update manually.",
+			update_development: "Current v{current} is newer than stable v{latest} (development candidate)",
+			update_failed: "Update check or install failed: {detail}",
+			update_view_release: "Release Notes",
+			update_install: "Download & Install",
+			update_installing: "Downloading, verifying, and installing…",
+			update_install_title: "Install update v{version}",
+			update_install_body: "Download and verify the official GitHub Release asset, back up current v{current}, then replace it. Continue?",
+			update_installed: "v{version} installed and verified. BetterDiscord will reload the plugin.",
+			group_diagnostics: "Runtime Diagnostics",
 			set_diag_note: "Start here when a Discord update breaks something.",
 			diag_entry: "Chat input button entry",
 			diag_copy: "Copy diagnostics",
@@ -615,10 +679,10 @@ module.exports = (() => {
 			provider_set_active: "Set active",
 			provider_active_badge: "Active",
 			provider_add: "Add provider",
-			provider_name: "Name",
 			provider_unnamed: "Unnamed provider",
 			provider_delete: "Delete",
 			provider_delete_confirm: "Delete \"{name}\"? Its configuration will be removed.",
+			provider_rename: "Rename provider",
 			provider_intro_title: "Connect an AI provider",
 			provider_intro_body: "Pick a provider on the left, enter its key, then click \"Set active\". Local Ollama / LM Studio need no key.",
 			combo_no_match: "No match",
@@ -628,17 +692,19 @@ module.exports = (() => {
 			set_base_url: "API Base URL",
 			set_api_key: "API Key",
 			set_model: "Model",
+			provider_status_models: "{count} models available",
+			provider_status_ready: "Configured, models not fetched",
+			provider_status_unset: "Not configured yet",
 			btn_validate: "Validate Config",
 			btn_fetch_models: "Fetch Models",
 			validating: "Validating…",
 			fetching_models: "Fetching models…",
 			validate_ok: "Validation passed ({model}): {preview}",
 			validate_fail: "Validation failed: {detail}",
-			models_loaded: "Loaded {count} models. Pick one in the Model input.",
+			models_loaded: "Loaded {count} models. Pick one in the dropdown.",
 			models_fail: "Failed to fetch models: {detail}",
 			set_policy: "Review policy prompt",
 			set_policy_note: "Empty = built-in template. Describe what counts as a violation; the AI judges only by this. Placeholder: {{LANGUAGE}}.",
-			set_policy_reset: "Reset to default",
 			set_concurrency: "Concurrent review requests",
 			set_concurrency_note: "Batches sent to the AI endpoint in parallel. Higher is much faster; keep 1-2 for local models or strictly rate-limited endpoints.",
 			set_batch_size: "Messages per batch",
@@ -877,6 +943,154 @@ module.exports = (() => {
 				return null;
 			}
 		},
+		messagePath(guildId, channelId, messageId) {
+			if (!channelId || !messageId) return null;
+			return `/channels/${guildId || "@me"}/${channelId}/${messageId}`;
+		},
+		messageActions() {
+			if (DiscordAdapter._cache.has("messageActions")) return DiscordAdapter._cache.get("messageActions");
+			let result = null;
+			try {
+				if (typeof BdApi.Webpack.getByKeys === "function") {
+					result = BdApi.Webpack.getByKeys("fetchMessages", "jumpToMessage")
+						|| BdApi.Webpack.getByKeys("jumpToMessage");
+				}
+				if (!result) {
+					result = BdApi.Webpack.getModule(
+						module => module && typeof module.jumpToMessage === "function",
+						{ searchExports: true }
+					);
+				}
+			} catch (e) {
+				Logger.warn("Adapter lookup threw: messageActions", e);
+			}
+			result = result && typeof result.jumpToMessage === "function" ? result : null;
+			if (result) DiscordAdapter._cache.set("messageActions", result);
+			DiscordAdapter._health.messageActions = result ? "ok" : "missing";
+			if (!result) Logger.warn("Adapter lookup missing: messageActions");
+			return result;
+		},
+		guildNavigation() {
+			return DiscordAdapter._resolve("guildNavigation", () => {
+				if (typeof BdApi.Webpack.getByKeys === "function") {
+					return BdApi.Webpack.getByKeys("selectGuild", "transitionToGuildSync")
+						|| BdApi.Webpack.getByKeys("transitionToGuildSync");
+				}
+				return BdApi.Webpack.getModule(
+					module => module && typeof module.transitionToGuildSync === "function",
+					{ searchExports: true }
+				);
+			});
+		},
+		channelNavigation() {
+			return DiscordAdapter._resolve("channelNavigation", () => {
+				if (typeof BdApi.Webpack.getByKeys === "function") {
+					return BdApi.Webpack.getByKeys("selectChannel", "selectPrivateChannel")
+						|| BdApi.Webpack.getByKeys("selectPrivateChannel");
+				}
+				return BdApi.Webpack.getModule(
+					module => module && typeof module.selectPrivateChannel === "function",
+					{ searchExports: true }
+				);
+			});
+		},
+		navigation() {
+			// Navigation is especially sensitive to Discord module churn. Cache a
+			// verified hit, but retry a previous miss instead of pinning the browser
+			// fallback for the rest of the client session.
+			if (DiscordAdapter._cache.has("navigation")) return DiscordAdapter._cache.get("navigation");
+			let result = null;
+			try {
+				// Discord's current HistoryUtils export is identified by transitionTo.
+				// Do not require replaceWith: it is not present in every client build.
+				if (typeof BdApi.Webpack.getByKeys === "function") result = BdApi.Webpack.getByKeys("transitionTo");
+				if (result && typeof result.transitionTo !== "function") result = null;
+				if (!result) {
+					result = BdApi.Webpack.getModule(
+						module => module && typeof module.transitionTo === "function",
+						{ searchExports: true }
+					);
+				}
+			} catch (e) {
+				Logger.warn("Adapter lookup threw: navigation", e);
+			}
+			result = result || null;
+			if (result) DiscordAdapter._cache.set("navigation", result);
+			DiscordAdapter._health.navigation = result ? "ok" : "missing";
+			if (!result) Logger.warn("Adapter lookup missing: navigation");
+			return result;
+		},
+		selectedChannelId() {
+			try {
+				const selected = DiscordAdapter.getStore("SelectedChannelStore");
+				return selected && typeof selected.getChannelId === "function" ? selected.getChannelId() : null;
+			} catch (e) {
+				return null;
+			}
+		},
+		jumpToMessageNow(channelId, messageId) {
+			try {
+				const actions = DiscordAdapter.messageActions();
+				if (!actions) return false;
+				const outcome = actions.jumpToMessage({ channelId, messageId, flash: true, jumpType: "INSTANT" });
+				if (outcome && typeof outcome.catch === "function") {
+					outcome.catch(error => Logger.warn("Native jumpToMessage failed", error));
+				}
+				return true;
+			} catch (e) {
+				Logger.warn("Native jumpToMessage threw", e);
+				return false;
+			}
+		},
+		jumpWhenChannelReady(channelId, messageId, attempt) {
+			const tries = Utils.num(attempt, 0);
+			if (DiscordAdapter.selectedChannelId() === channelId) {
+				if (!DiscordAdapter.jumpToMessageNow(channelId, messageId)) {
+					try { BdApi.UI.showToast(t("message_jump_unavailable"), { type: "error" }); } catch (e) { /* ignore */ }
+				}
+				return;
+			}
+			if (tries >= 30) {
+				Logger.warn(`Timed out selecting channel ${channelId} before message jump`);
+				try { BdApi.UI.showToast(t("message_jump_unavailable"), { type: "error" }); } catch (e) { /* ignore */ }
+				return;
+			}
+			setTimeout(() => DiscordAdapter.jumpWhenChannelReady(channelId, messageId, tries + 1), 80);
+		},
+		openMessage(guildId, channelId, messageId) {
+			const path = DiscordAdapter.messagePath(guildId, channelId, messageId);
+			if (!path) return false;
+			if (DiscordAdapter.selectedChannelId() === channelId && DiscordAdapter.jumpToMessageNow(channelId, messageId)) return true;
+			try {
+				if (guildId) {
+					const guildNavigation = DiscordAdapter.guildNavigation();
+					if (guildNavigation && typeof guildNavigation.transitionToGuildSync === "function") {
+						guildNavigation.transitionToGuildSync(guildId, {}, channelId);
+						DiscordAdapter.jumpWhenChannelReady(channelId, messageId, 0);
+						return true;
+					}
+				} else {
+					const channelNavigation = DiscordAdapter.channelNavigation();
+					if (channelNavigation && typeof channelNavigation.selectPrivateChannel === "function") {
+						channelNavigation.selectPrivateChannel(channelId);
+						DiscordAdapter.jumpWhenChannelReady(channelId, messageId, 0);
+						return true;
+					}
+				}
+			} catch (e) {
+				Logger.warn("Native channel selection failed; trying HistoryUtils", e);
+			}
+			try {
+				const navigation = DiscordAdapter.navigation();
+				if (navigation && typeof navigation.transitionTo === "function") {
+					navigation.transitionTo(path);
+					return true;
+				}
+			} catch (e) {
+				Logger.warn("HistoryUtils navigation failed", e);
+			}
+			return false;
+		},
 		currentUserId() {
 			try {
 				const users = DiscordAdapter.getStore("UserStore");
@@ -904,6 +1118,10 @@ module.exports = (() => {
 			DiscordAdapter.chatButtonsModule();
 			DiscordAdapter.chatButtonChrome();
 			DiscordAdapter.modalSystem();
+			DiscordAdapter.messageActions();
+			DiscordAdapter.guildNavigation();
+			DiscordAdapter.channelNavigation();
+			DiscordAdapter.navigation();
 			DiscordAdapter.getStore("ChannelStore");
 			DiscordAdapter.getStore("SelectedChannelStore");
 			DiscordAdapter.getStore("GuildStore");
@@ -913,21 +1131,24 @@ module.exports = (() => {
 			return Object.assign({}, DiscordAdapter._health);
 		}
 	};
-
 	// ==================== 08. CHANNEL CONTEXT ====================
 
 	const ChannelContext = {
 		from(channel) {
-			const isGuild = Boolean(channel && channel.guild_id && SUPPORTED_GUILD_TYPES.includes(channel.type));
-			const isPrivate = Boolean(channel && !channel.guild_id && PRIVATE_CHANNEL_TYPES.includes(channel.type));
+			// Discord channel models have historically exposed guild_id, while
+			// some wrappers/fixtures expose guildId. Normalize both at this edge so
+			// guild-scoped cache identity survives channel navigation reliably.
+			const guildId = channel && (channel.guild_id || channel.guildId) || null;
+			const isGuild = Boolean(guildId && SUPPORTED_GUILD_TYPES.includes(channel.type));
+			const isPrivate = Boolean(channel && !guildId && PRIVATE_CHANNEL_TYPES.includes(channel.type));
 			return {
 				supported: isGuild || isPrivate,
 				isPrivate,
 				channelId: channel && channel.id || null,
 				channelName: ChannelContext.label(channel),
 				channelType: channel ? channel.type : null,
-				guildId: channel && channel.guild_id || null,
-				guildName: channel && channel.guild_id ? (DiscordAdapter.getGuildName(channel.guild_id) || channel.guild_id) : null,
+				guildId,
+				guildName: guildId ? (DiscordAdapter.getGuildName(guildId) || guildId) : null,
 				channel: channel || null
 			};
 		},
@@ -944,7 +1165,6 @@ module.exports = (() => {
 			return ChannelContext.from(DiscordAdapter.getCurrentChannel());
 		}
 	};
-
 	// ==================== 09. ERRORS ====================
 
 	const PluginError = class PluginError extends Error {
@@ -1216,6 +1436,7 @@ module.exports = (() => {
 	};
 
 	// ==================== 11. NORMALIZER ====================
+	const IMAGE_ATTACHMENT_EXT_RE = /\.(?:avif|gif|jpe?g|png|webp)(?:\?|$)/i;
 
 	const Normalizer = {
 		normalize(raw) {
@@ -1229,11 +1450,22 @@ module.exports = (() => {
 				// returns messages from many channels, so deletion needs it.
 				channelId: raw.channel_id || null,
 				content: Normalizer.resolveContent(raw),
-				attachments: (raw.attachments || []).map(att => ({
-					filename: att.filename || "attachment",
-					url: att.url || "",
-					isImage: /^image\//.test(att.content_type || "")
-				})),
+				attachments: (raw.attachments || []).map(value => {
+					const att = value || {};
+					const filename = att.filename || att.title || "";
+					const url = att.url || att.proxy_url || "";
+					const contentType = att.content_type || "";
+					return {
+						filename,
+						url,
+						proxyUrl: att.proxy_url || "",
+						contentType,
+						size: Utils.num(att.size, 0),
+						width: Utils.num(att.width, 0),
+						height: Utils.num(att.height, 0),
+						isImage: /^image\//i.test(contentType) || IMAGE_ATTACHMENT_EXT_RE.test(url) || IMAGE_ATTACHMENT_EXT_RE.test(filename)
+					};
+				}),
 				edited: Boolean(raw.edited_timestamp)
 			};
 		},
@@ -1252,7 +1484,6 @@ module.exports = (() => {
 			return text;
 		}
 	};
-
 	// ==================== 12. REVIEW BATCHER ====================
 	// Splits the user's messages into AI review batches bounded by both a
 	// message count and a character budget. Item indexes are positions in the
@@ -1816,13 +2047,15 @@ module.exports = (() => {
 		buildBackup(context, messages, format, lang) {
 			const targetFormat = ExportService.normalizeFormat(format);
 			const exportedAt = new Date();
+			const zh = String(lang || I18N.resolveUiLanguage()).toLowerCase().startsWith("zh");
+			const unnamedAttachment = zh ? "未命名附件" : "Unnamed attachment";
 			const normalized = messages.map(message => ({
 				id: message.id,
 				channelId: message.channelId || context.channelId || null,
 				timestamp: new Date(message.timestamp).toISOString(),
 				content: String(message.content || ""),
 				attachments: (Array.isArray(message.attachments) ? message.attachments : [])
-					.map(att => ({ filename: att.filename || "attachment", url: att.url || "" })),
+					.map(att => ({ filename: att && att.filename || unnamedAttachment, url: att && att.url || "" })),
 				edited: Boolean(message.edited)
 			}));
 			if (targetFormat === "json") {
@@ -1836,7 +2069,6 @@ module.exports = (() => {
 					messages: normalized
 				}, null, 2);
 			}
-			const zh = String(lang || I18N.resolveUiLanguage()).toLowerCase().startsWith("zh");
 			const labels = zh ? {
 				title: "AI 消息删除前备份", exported: "导出时间", guild: "服务器", channel: "频道",
 				count: "消息数", id: "消息 ID", channelId: "频道 ID", edited: "已编辑", attachments: "附件",
@@ -2037,15 +2269,230 @@ module.exports = (() => {
 			throw mkError("EXPORT_FAILED", t("err_export_failed", { detail: Utils.truncate(lastError && lastError.message || "unknown", 120) }));
 		}
 	};
+	// ==================== 14c. UPDATE SERVICE ====================
+	// Manual-only updater: GitHub latest release -> verified official asset ->
+	// backup current plugin -> replace. No background checks and no downgrade.
+
+	const UpdateService = {
+		API_URL: "https://api.github.com/repos/ROOT94-MAX/DiscordAIMessageCleaner/releases/latest",
+		PROJECT_URL: "https://github.com/ROOT94-MAX/DiscordAIMessageCleaner",
+		FALLBACK_URL: "https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/releases/latest",
+		ASSET_NAME: "DiscordAIMessageCleaner.plugin.js",
+		normalizeVersion(value) {
+			return String(value || "").trim().replace(/^v/i, "").split("+")[0];
+		},
+		compareVersions(left, right) {
+			const parse = value => {
+				const normalized = UpdateService.normalizeVersion(value);
+				const parts = normalized.split("-", 2);
+				const nums = parts[0].split(".").map(item => Number(item) || 0);
+				return { nums: [nums[0] || 0, nums[1] || 0, nums[2] || 0], pre: parts[1] || "" };
+			};
+			const a = parse(left);
+			const b = parse(right);
+			for (let i = 0; i < 3; i++) {
+				if (a.nums[i] !== b.nums[i]) return a.nums[i] > b.nums[i] ? 1 : -1;
+			}
+			if (a.pre === b.pre) return 0;
+			if (!a.pre) return 1;
+			if (!b.pre) return -1;
+			return a.pre > b.pre ? 1 : -1;
+		},
+		_runtime(overrides) {
+			return Object.assign({
+				fetch: (url, init) => BdApi.Net.fetch(url, init),
+				fs: require("fs"),
+				path: require("path"),
+				plugins: BdApi.Plugins,
+				crypto: typeof globalThis !== "undefined" ? globalThis.crypto : null,
+				TextDecoder: typeof TextDecoder === "function" ? TextDecoder : null
+			}, overrides || {});
+		},
+		_buildInfo(latest, releaseUrl, body, asset, source) {
+			const comparison = UpdateService.compareVersions(PLUGIN_VERSION, latest);
+			const status = comparison < 0 ? "available" : comparison > 0 ? "development" : "current";
+			const digestOk = /^sha256:[a-f0-9]{64}$/i.test(String(asset && asset.digest || ""));
+			const installable = status === "available" && digestOk && UpdateService._isOfficialAssetUrl(asset && asset.url);
+			return {
+				current: PLUGIN_VERSION,
+				latest,
+				status,
+				installable,
+				source: source || "api",
+				releaseUrl,
+				body: String(body || ""),
+				asset
+			};
+		},
+		async _checkApi(runtime) {
+			const response = await runtime.fetch(UpdateService.API_URL, {
+				method: "GET",
+				headers: {
+					Accept: "application/vnd.github+json",
+					"X-GitHub-Api-Version": "2022-11-28"
+				},
+				timeout: 10000
+			});
+			if (!response || !response.ok) throw new Error(`GitHub HTTP ${response && response.status || "?"}`);
+			const release = await response.json();
+			const latest = UpdateService.normalizeVersion(release && release.tag_name);
+			if (!latest) throw new Error("release tag missing");
+			const assets = Array.isArray(release.assets) ? release.assets : [];
+			const asset = assets.find(item => item && item.name === UpdateService.ASSET_NAME);
+			if (!asset || !asset.browser_download_url) throw new Error("plugin asset missing");
+			return UpdateService._buildInfo(
+				latest,
+				String(release.html_url || `${UpdateService.PROJECT_URL}/releases/tag/v${latest}`),
+				release.body,
+				{
+					url: String(asset.browser_download_url),
+					digest: String(asset.digest || ""),
+					size: Number(asset.size) || 0
+				},
+				"api"
+			);
+		},
+		async _checkFallback(runtime) {
+			const response = await runtime.fetch(UpdateService.FALLBACK_URL, {
+				method: "GET",
+				headers: { Accept: "text/html" },
+				timeout: 15000
+			});
+			if (!response || !response.ok) throw new Error(`GitHub Release HTTP ${response && response.status || "?"}`);
+			const finalUrl = String(response.url || "");
+			let match = finalUrl.match(/\/releases\/tag\/v?([^/?#]+)/i);
+			let html = "";
+			if (!match && typeof response.text === "function") {
+				html = await response.text();
+				match = String(html).match(/\/releases\/tag\/v?([0-9]+\.[0-9]+\.[0-9][^"'/?#<]*)/i);
+			}
+			if (!match) throw new Error("latest Release tag unavailable");
+			const latest = UpdateService.normalizeVersion(match[1]);
+			const releaseUrl = `${UpdateService.PROJECT_URL}/releases/tag/v${latest}`;
+			return UpdateService._buildInfo(latest, releaseUrl, "", {
+				url: `${UpdateService.PROJECT_URL}/releases/latest/download/${UpdateService.ASSET_NAME}`,
+				digest: "",
+				size: 0
+			}, "release-page");
+		},
+		async check(overrides) {
+			const runtime = UpdateService._runtime(overrides);
+			let apiError = null;
+			try { return await UpdateService._checkApi(runtime); }
+			catch (e) { apiError = e; }
+			try { return await UpdateService._checkFallback(runtime); }
+			catch (fallbackError) {
+				throw new Error(`${apiError && apiError.message || apiError}; ${fallbackError && fallbackError.message || fallbackError}`);
+			}
+		},
+		_isOfficialAssetUrl(value) {
+			try {
+				const url = new URL(String(value));
+				return url.protocol === "https:" && url.hostname === "github.com" &&
+					url.pathname.startsWith("/ROOT94-MAX/DiscordAIMessageCleaner/releases/download/") &&
+					url.pathname.endsWith(`/${UpdateService.ASSET_NAME}`);
+			} catch (e) { return false; }
+		},
+		async _sha256(bytes, runtime) {
+			const cryptoApi = runtime.crypto;
+			if (!cryptoApi || !cryptoApi.subtle || typeof cryptoApi.subtle.digest !== "function") {
+				throw new Error("Web Crypto SHA-256 unavailable");
+			}
+			const digest = await cryptoApi.subtle.digest("SHA-256", bytes);
+			return Array.from(new Uint8Array(digest)).map(value => value.toString(16).padStart(2, "0")).join("");
+		},
+		_validateSource(source, expectedVersion) {
+			const name = String(source).match(/^\s*\*\s*@name\s+(\S+)/m);
+			const version = String(source).match(/^\s*\*\s*@version\s+(\S+)/m);
+			if (!name || name[1] !== PLUGIN_ID) throw new Error("plugin name mismatch");
+			if (!version || UpdateService.normalizeVersion(version[1]) !== UpdateService.normalizeVersion(expectedVersion)) {
+				throw new Error("plugin version mismatch");
+			}
+			if (!String(source).includes("module.exports")) throw new Error("plugin export missing");
+		},
+		async _download(info, runtime) {
+			if (!info || info.status !== "available") throw new Error("no newer release selected");
+			if (!UpdateService._isOfficialAssetUrl(info.asset && info.asset.url)) throw new Error("untrusted asset URL");
+			const digestMatch = String(info.asset.digest || "").match(/^sha256:([a-f0-9]{64})$/i);
+			if (!digestMatch) throw new Error("release SHA-256 digest missing");
+			const response = await runtime.fetch(info.asset.url, {
+				method: "GET",
+				headers: { Accept: "application/octet-stream" },
+				timeout: 30000
+			});
+			if (!response || !response.ok) throw new Error(`asset HTTP ${response && response.status || "?"}`);
+			const bytes = new Uint8Array(await response.arrayBuffer());
+			if (info.asset.size > 0 && bytes.length !== info.asset.size) throw new Error("asset size mismatch");
+			const digest = await UpdateService._sha256(bytes, runtime);
+			if (digest.toLowerCase() !== digestMatch[1].toLowerCase()) throw new Error("asset SHA-256 mismatch");
+			if (!runtime.TextDecoder) throw new Error("TextDecoder unavailable");
+			const source = new runtime.TextDecoder("utf-8", { fatal: true }).decode(bytes);
+			UpdateService._validateSource(source, info.latest);
+			return { bytes, source, digest };
+		},
+		async install(info, overrides) {
+			const runtime = UpdateService._runtime(overrides);
+			const downloaded = await UpdateService._download(info, runtime);
+			const folderValue = String(runtime.plugins && runtime.plugins.folder || "").trim();
+			if (!folderValue) throw new Error("plugin folder unavailable");
+			const folder = runtime.path.resolve(folderValue);
+			const target = runtime.path.resolve(folder, UpdateService.ASSET_NAME);
+			if (runtime.path.dirname(target) !== folder) throw new Error("plugin target escaped folder");
+			const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+			const backup = `${target}.v${PLUGIN_VERSION}.${stamp}.bak`;
+			const temp = `${target}.${Date.now()}.update.tmp`;
+			let backedUp = false;
+			let replaced = false;
+			try {
+				if (runtime.fs.existsSync(target)) {
+					runtime.fs.copyFileSync(target, backup);
+					backedUp = true;
+				}
+				runtime.fs.writeFileSync(temp, downloaded.bytes);
+				const tempDigest = await UpdateService._sha256(runtime.fs.readFileSync(temp), runtime);
+				if (tempDigest !== downloaded.digest) throw new Error("temporary file verification failed");
+				runtime.fs.copyFileSync(temp, target);
+				replaced = true;
+				const targetDigest = await UpdateService._sha256(runtime.fs.readFileSync(target), runtime);
+				if (targetDigest !== downloaded.digest) throw new Error("installed file verification failed");
+				try { runtime.fs.unlinkSync(temp); } catch (e) { /* harmless */ }
+				return { version: info.latest, target, backup: backedUp ? backup : "", digest: downloaded.digest };
+			} catch (error) {
+				if (replaced && backedUp) {
+					try { runtime.fs.copyFileSync(backup, target); } catch (restoreError) { /* report original */ }
+				}
+				try { if (runtime.fs.existsSync(temp)) runtime.fs.unlinkSync(temp); } catch (e) { /* ignore */ }
+				throw error;
+			}
+		}
+	};
 	// ==================== 15. STYLES ====================
 
 	const PLUGIN_CSS = `
 		.${CSS_PREFIX}-confirm-wide {
-			width: 640px !important;
+			width: 680px !important;
 			max-width: calc(100vw - 80px) !important;
 		}
 		.${CSS_PREFIX}-confirm-wide > :last-child {
 			display: none !important;
+		}
+		.${CSS_PREFIX}-confirm-delete {
+			width: 440px !important;
+			max-width: calc(100vw - 48px) !important;
+		}
+		.${CSS_PREFIX}-confirm-delete > :last-child {
+			display: none !important;
+		}
+		/* The shell's content padding is zeroed so the plugin owns every inset.
+		   Discord's thin scroller also keeps overflow-y: scroll, permanently
+		   reserving an empty 8px track on the right (left/right insets end up
+		   unequal); auto shows the bar only when content actually overflows. */
+		.${CSS_PREFIX}-confirm-wide > div:not(:first-child):not(:last-child) {
+			padding: 0 !important;
+			margin: 0 !important;
+			overflow-x: hidden !important;
+			overflow-y: auto !important;
+			scrollbar-gutter: auto !important;
 		}
 		.${CSS_PREFIX}-confirm-wide > :first-child,
 		.${CSS_PREFIX}-confirm-wide > :first-child > * {
@@ -2063,9 +2510,6 @@ module.exports = (() => {
 		}
 		.${CSS_PREFIX}-confirm-header .${CSS_PREFIX}-shell-close {
 			margin: -4px 4px -4px auto;
-		}
-		.${CSS_PREFIX}-confirm-wide .${CSS_PREFIX}-modal {
-			padding-bottom: 16px;
 		}
 		.${CSS_PREFIX}-shell-close {
 			display: flex;
@@ -2109,7 +2553,7 @@ module.exports = (() => {
 			--damc-danger: var(--status-danger, #f23f43);
 			--damc-scroll-thumb: var(--scrollbar-auto-thumb, var(--background-modifier-accent, rgba(78, 80, 88, 0.48)));
 		}
-		.${CSS_PREFIX}-ui :is(button, [role="tab"]):focus-visible {
+		.${CSS_PREFIX}-ui :is(button, a, [role="tab"]):focus-visible {
 			outline: none;
 			box-shadow: 0 0 0 2px color-mix(in srgb, var(--damc-brand) 45%, transparent);
 		}
@@ -2135,24 +2579,68 @@ module.exports = (() => {
 		.${CSS_PREFIX}-modal {
 			display: flex;
 			flex-direction: column;
-			gap: 16px;
+			gap: 12px;
+			padding: 4px 16px 16px;
 			color: var(--damc-text, #dbdee1);
 			font-size: 15px;
 			user-select: text;
 		}
 		.${CSS_PREFIX}-context {
-			font-size: 13px;
-			font-weight: 600;
-			color: var(--damc-text-sub, #b5bac1);
+			font-size: 16px;
+			font-weight: 500;
+			line-height: 20px;
+			color: var(--damc-text, #dbdee1);
 			overflow: hidden;
 			text-overflow: ellipsis;
 			white-space: nowrap;
+		}
+		/* Header stack: the stats line rides tight under the channel line. */
+		.${CSS_PREFIX}-context + .${CSS_PREFIX}-stats {
+			margin-top: -8px;
 		}
 		.${CSS_PREFIX}-note {
 			font-size: 13px;
 			line-height: 1.5;
 			color: var(--damc-text-faint, #949ba4);
 			margin: 4px 0 12px;
+		}
+		/* Setup-stage config card: row-form rows (16px label left, control
+		   right), the same scale and zoning as the settings tabs. */
+		.${CSS_PREFIX}-zone {
+			background: var(--damc-surface, #2b2d31);
+			border-radius: 8px;
+		}
+		.${CSS_PREFIX}-zone-pad {
+			padding: 14px;
+		}
+		.${CSS_PREFIX}-zone-row {
+			display: flex;
+			align-items: center;
+			gap: 14px;
+			padding: 12px 14px;
+		}
+		.${CSS_PREFIX}-zone-row + .${CSS_PREFIX}-zone-row {
+			border-top: 1px solid rgba(255, 255, 255, 0.05);
+		}
+		.${CSS_PREFIX}-zone-label {
+			font-size: 16px;
+			font-weight: 500;
+			line-height: 20px;
+			color: var(--damc-text, #dbdee1);
+			display: flex;
+			align-items: center;
+			gap: 5px;
+			flex: 1 1 auto;
+			min-width: 0;
+		}
+		.${CSS_PREFIX}-zone-ctl {
+			flex: 0 0 auto;
+			display: flex;
+			justify-content: flex-end;
+			min-width: 0;
+		}
+		.${CSS_PREFIX}-zone-wide {
+			flex: 1 1 auto;
 		}
 		.${CSS_PREFIX}-banner {
 			padding: 10px 12px;
@@ -2182,12 +2670,11 @@ module.exports = (() => {
 			color: var(--damc-text, #dbdee1);
 		}
 		.${CSS_PREFIX}-presets {
-			display: flex;
+			display: inline-flex;
 			flex-wrap: wrap;
-			gap: 4px;
+			gap: 3px;
 			padding: 3px;
-			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
-			border-radius: 8px;
+			border-radius: 7px;
 			background: var(--damc-sunken, #1e1f22);
 		}
 		.${CSS_PREFIX}-preset {
@@ -2197,9 +2684,9 @@ module.exports = (() => {
 			display: flex;
 			align-items: center;
 			height: 30px;
-			padding: 0 14px;
+			padding: 0 12px;
 			border-radius: 5px;
-			font-size: 14px;
+			font-size: 13.5px;
 			font-weight: 600;
 			cursor: pointer;
 			color: var(--damc-text-faint, #949ba4);
@@ -2230,15 +2717,20 @@ module.exports = (() => {
 			height: 32px;
 			padding: 0 10px;
 			font-size: 16px;
-			border-radius: 4px;
+			border-radius: 6px;
 			border: 1px solid var(--damc-input-border, rgba(78, 80, 88, 0.48));
 			background: var(--damc-input-bg, #1e1f22);
 			color: var(--damc-text, #dbdee1);
 			font-family: inherit;
 			outline: none;
+			transition: border-color 120ms ease, box-shadow 120ms ease;
+		}
+		.${CSS_PREFIX}-input:hover {
+			border-color: color-mix(in srgb, var(--damc-text, #dbdee1) 16%, transparent);
 		}
 		.${CSS_PREFIX}-input:focus {
 			border-color: var(--damc-brand, #5865f2);
+			box-shadow: 0 0 0 3px color-mix(in srgb, var(--damc-brand, #5865f2) 18%, transparent);
 		}
 		.${CSS_PREFIX}-input::-webkit-calendar-picker-indicator {
 			filter: invert(0.65);
@@ -2254,8 +2746,11 @@ module.exports = (() => {
 			flex-wrap: wrap;
 			align-items: center;
 		}
+		/* Footer action row: explicit buttons, right-aligned, on the modal
+		   background (the tinted footer container was rejected in testing). */
 		.${CSS_PREFIX}-actions-footer {
 			justify-content: flex-end;
+			margin-top: 2px;
 		}
 		.${CSS_PREFIX}-btn {
 			height: 32px;
@@ -2279,13 +2774,35 @@ module.exports = (() => {
 			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
 		}
 		.${CSS_PREFIX}-btn.${CSS_PREFIX}-danger {
-			background: var(--damc-danger, #f23f43);
+			/* Host button red; #f23f43 stays a text/status color only. */
+			background: var(--button-danger-background, #da373c);
 		}
-		.${CSS_PREFIX}-hero {
-			display: flex;
+		/* Review-model badge (variant A status pill): non-interactive, footer left. */
+		.${CSS_PREFIX}-model-pill {
+			display: inline-flex;
 			align-items: center;
-			justify-content: flex-end;
-			gap: 10px;
+			gap: 7px;
+			height: 26px;
+			padding: 0 11px;
+			border-radius: 999px;
+			background: color-mix(in srgb, var(--damc-text, #dbdee1) 4%, transparent);
+			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
+			font-size: 12.5px;
+			color: var(--damc-text, #dbdee1);
+			min-width: 0;
+			cursor: default;
+		}
+		.${CSS_PREFIX}-model-pill-dot {
+			width: 6px;
+			height: 6px;
+			border-radius: 50%;
+			background: var(--damc-ok, #23a55a);
+			flex: 0 0 auto;
+		}
+		.${CSS_PREFIX}-model-pill-text {
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
 		}
 		.${CSS_PREFIX}-strip {
 			display: flex;
@@ -2309,6 +2826,12 @@ module.exports = (() => {
 			overflow: hidden;
 			text-overflow: ellipsis;
 			white-space: nowrap;
+		}
+		.${CSS_PREFIX}-strip-pct {
+			font-size: 13px;
+			color: var(--damc-text-faint, #949ba4);
+			font-variant-numeric: tabular-nums;
+			flex: 0 0 auto;
 		}
 		.${CSS_PREFIX}-strip-cancel {
 			border: 0;
@@ -2347,73 +2870,164 @@ module.exports = (() => {
 			100% { margin-left: 0; }
 		}
 		.${CSS_PREFIX}-stats {
-			font-size: 14px;
-			font-weight: 600;
-			color: var(--damc-text-strong, #f2f3f5);
+			font-size: 13px;
+			line-height: 18px;
+			color: var(--damc-text-faint, #949ba4);
 		}
-		.${CSS_PREFIX}-selbar {
+		.${CSS_PREFIX}-stats-warn {
+			color: var(--damc-warn, #f0b232);
+		}
+		/* Review-done status line: green dot + text, no banner box. */
+		.${CSS_PREFIX}-okline {
 			display: flex;
 			align-items: center;
-			gap: 10px;
-		}
-		.${CSS_PREFIX}-selbar .${CSS_PREFIX}-note {
-			flex: 1 1 auto;
-			text-align: right;
-			margin: 0;
-		}
-		.${CSS_PREFIX}-link-btn {
-			border: 0;
-			background: transparent;
-			font: inherit;
+			gap: 6px;
 			font-size: 13px;
 			font-weight: 600;
-			color: var(--damc-text-sub, #b5bac1);
-			cursor: pointer;
-			padding: 2px 6px;
-			border-radius: 4px;
+			color: var(--damc-ok, #23a55a);
 		}
-		.${CSS_PREFIX}-link-btn:hover {
-			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
-			color: var(--damc-text, #dbdee1);
+		.${CSS_PREFIX}-okline-dot {
+			width: 6px;
+			height: 6px;
+			border-radius: 50%;
+			background: currentColor;
+			flex: 0 0 auto;
 		}
-		.${CSS_PREFIX}-list {
+		.${CSS_PREFIX}-okline-warn {
+			color: var(--damc-danger, #f23f43);
+		}
+		/* Wrapper that dims a native disabled button one step further: the
+		   host's own disabled state stays too saturated on dark surfaces. */
+		.${CSS_PREFIX}-btn-dim {
+			display: inline-flex;
+			opacity: 0.55;
+		}
+		/* Result list: no container box. The tool row and the embed-style
+		   message cards sit directly on the modal background — a sunken panel
+		   holding rounded cards read as boxes nested inside boxes. */
+		.${CSS_PREFIX}-panel {
 			display: flex;
 			flex-direction: column;
+			min-height: 0;
+		}
+		.${CSS_PREFIX}-panel-head {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			min-height: 36px;
+			margin-bottom: 8px;
+			flex: 0 0 auto;
+			flex-wrap: wrap;
+		}
+		.${CSS_PREFIX}-panel-spacer {
+			flex: 1 1 auto;
+		}
+		/* Results reuse the settings-page 32px control and 15px label scale. */
+		.${CSS_PREFIX}-results-toolbar .${CSS_PREFIX}-select-trigger {
+			height: 32px;
+			min-width: 0;
+			max-width: 220px;
+			font-size: 15px;
+		}
+		.${CSS_PREFIX}-results-toolbar .${CSS_PREFIX}-check {
+			min-height: 32px;
+			font-size: 15px;
+			font-weight: 500;
+		}
+		.${CSS_PREFIX}-panel-count {
+			font-size: 13px;
+			color: var(--damc-text-faint, #949ba4);
+			font-variant-numeric: tabular-nums;
+			flex: 0 0 auto;
+		}
+		/* One surface container, tight rows inside — the same zone anatomy as
+		   the config card (floating per-message cards read as scattered). */
+		.${CSS_PREFIX}-panel-body {
+			display: flex;
+			flex-direction: column;
+			background: var(--damc-surface, #2b2d31);
+			border: 1px solid color-mix(in srgb, var(--damc-text, #dbdee1) 5%, transparent);
+			border-radius: 8px;
 			/* Shrinks on short windows so the footer stays reachable. */
 			max-height: min(340px, 38vh);
 			overflow-y: auto;
-			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
-			border-radius: 8px;
-			background: var(--damc-sunken, #1e1f22);
 		}
-		.${CSS_PREFIX}-list::-webkit-scrollbar {
+		.${CSS_PREFIX}-panel-body::-webkit-scrollbar {
 			width: 8px;
 		}
-		.${CSS_PREFIX}-list::-webkit-scrollbar-thumb {
+		.${CSS_PREFIX}-panel-body::-webkit-scrollbar-thumb {
 			background: var(--damc-scroll-thumb, rgba(78, 80, 88, 0.48));
 			border-radius: 4px;
 		}
-		.${CSS_PREFIX}-row {
+		/* Day group header: a left-aligned section row inside the list. */
+		.${CSS_PREFIX}-day {
+			padding: 10px 12px 4px;
+			font-size: 12px;
+			font-weight: 700;
+			color: var(--damc-text-faint, #949ba4);
+			flex: 0 0 auto;
+		}
+		.${CSS_PREFIX}-mcard + .${CSS_PREFIX}-day {
+			border-top: 1px solid rgba(255, 255, 255, 0.045);
+			margin-top: 2px;
+		}
+		/* Message row: flat, tight, hairline-separated — a list, not a card. */
+		.${CSS_PREFIX}-mcard {
+			position: relative;
 			display: flex;
 			align-items: flex-start;
 			gap: 10px;
-			padding: 8px 12px;
+			width: 100%;
+			box-sizing: border-box;
+			padding: 9px 12px;
 			border: 0;
-			border-bottom: 1px solid var(--damc-border, rgba(78, 80, 88, 0.32));
 			background: transparent;
 			font: inherit;
 			text-align: left;
 			cursor: pointer;
 			color: var(--damc-text, #dbdee1);
+			flex: 0 0 auto;
 		}
-		.${CSS_PREFIX}-row:last-child {
-			border-bottom: 0;
+		.${CSS_PREFIX}-mcard + .${CSS_PREFIX}-mcard {
+			border-top: 1px solid rgba(255, 255, 255, 0.045);
 		}
-		.${CSS_PREFIX}-row:hover {
+		.${CSS_PREFIX}-mcard:hover {
 			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
 		}
-		.${CSS_PREFIX}-row.${CSS_PREFIX}-row-on {
-			background: var(--damc-selected, rgba(255, 255, 255, 0.09));
+		.${CSS_PREFIX}-mcard-selected,
+		.${CSS_PREFIX}-mcard-selected:hover {
+			background: color-mix(in srgb, var(--damc-brand, #5865f2) 7%, transparent);
+		}
+		/* Selection stays quiet: the checkbox is primary, with only a very low
+		   brand wash on the row to keep the state legible while scanning. */
+		.${CSS_PREFIX}-mcard-flagged::before {
+			content: "";
+			position: absolute;
+			left: 0;
+			top: 6px;
+			bottom: 6px;
+			width: 2px;
+			border-radius: 1px;
+			background: var(--damc-flag, var(--damc-danger, #f23f43));
+		}
+		.${CSS_PREFIX}-mcard-static {
+			cursor: default;
+		}
+		.${CSS_PREFIX}-mcard-static:hover {
+			background: transparent;
+		}
+		.${CSS_PREFIX}-row-select {
+			width: 20px;
+			height: 20px;
+			padding: 0;
+			border: 0;
+			background: transparent;
+			color: inherit;
+			cursor: pointer;
+			flex: 0 0 auto;
+			display: flex;
+			align-items: flex-start;
+			justify-content: flex-start;
 		}
 		.${CSS_PREFIX}-checkbox {
 			width: 18px;
@@ -2421,7 +3035,8 @@ module.exports = (() => {
 			flex: 0 0 auto;
 			margin-top: 1px;
 			border-radius: 4px;
-			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
+			/* Bright enough to read as an affordance on the surface color. */
+			border: 1px solid color-mix(in srgb, var(--damc-text, #dbdee1) 26%, transparent);
 			background: var(--damc-input-bg, #1e1f22);
 			display: inline-flex;
 			align-items: center;
@@ -2429,7 +3044,7 @@ module.exports = (() => {
 			color: var(--damc-on-brand, #fff);
 			transition: background 120ms ease, border-color 120ms ease;
 		}
-		.${CSS_PREFIX}-row:hover .${CSS_PREFIX}-checkbox:not(.${CSS_PREFIX}-checkbox-on) {
+		.${CSS_PREFIX}-mcard:hover .${CSS_PREFIX}-checkbox:not(.${CSS_PREFIX}-checkbox-on) {
 			border-color: var(--damc-icon, #b5bac1);
 		}
 		.${CSS_PREFIX}-checkbox.${CSS_PREFIX}-checkbox-on {
@@ -2441,7 +3056,7 @@ module.exports = (() => {
 			min-width: 0;
 			display: flex;
 			flex-direction: column;
-			gap: 2px;
+			gap: 4px;
 		}
 		.${CSS_PREFIX}-row-meta {
 			display: flex;
@@ -2449,26 +3064,96 @@ module.exports = (() => {
 			gap: 8px;
 			font-size: 12px;
 			color: var(--damc-text-faint, #949ba4);
+			min-height: 17px;
 		}
-		.${CSS_PREFIX}-badge {
+		/* Meta badges stay per-row but must never compete with the content:
+		   one size down, faint text, barely-there fill. */
+		.${CSS_PREFIX}-meta-badge {
 			display: inline-flex;
 			align-items: center;
-			padding: 0 6px;
-			height: 16px;
-			border-radius: 8px;
-			font-size: 11px;
-			font-weight: 600;
-			background: var(--damc-surface, #2b2d31);
-			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
-			color: var(--damc-text-sub, #b5bac1);
+			padding: 0 4px;
+			height: 14px;
+			border-radius: 3px;
+			font-size: 10px;
+			font-weight: 500;
+			line-height: 14px;
+			background: color-mix(in srgb, var(--damc-text, #dbdee1) 3%, transparent);
+			color: var(--damc-text-faint, #949ba4);
+			flex: 0 0 auto;
 		}
+		.${CSS_PREFIX}-channel-badge {
+			opacity: 0.72;
+			font-weight: 400;
+			letter-spacing: 0;
+		}
+		/* Category label: role-color language — dot + colored text, no pill. */
+		.${CSS_PREFIX}-cat {
+			margin-left: auto;
+			flex: 0 0 auto;
+			display: inline-flex;
+			align-items: center;
+			gap: 5px;
+			font-size: 12px;
+			font-weight: 600;
+			color: var(--damc-flag, var(--damc-danger, #f23f43));
+		}
+		.${CSS_PREFIX}-cat::before {
+			content: "";
+			width: 6px;
+			height: 6px;
+			border-radius: 50%;
+			background: currentColor;
+			flex: 0 0 auto;
+		}
+		.${CSS_PREFIX}-mtime {
+			font-variant-numeric: tabular-nums;
+			flex: 0 0 auto;
+		}
+		.${CSS_PREFIX}-message-jump {
+			width: 24px;
+			height: 24px;
+			padding: 0;
+			border: 0;
+			margin-left: auto;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: 4px;
+			background: transparent;
+			font: inherit;
+			color: var(--damc-text-faint, #949ba4);
+			opacity: 0.58;
+			text-decoration: none;
+			cursor: pointer;
+			flex: 0 0 auto;
+			transition: opacity 120ms ease, color 120ms ease, background 120ms ease;
+		}
+		.${CSS_PREFIX}-cat + .${CSS_PREFIX}-message-jump { margin-left: 2px; }
+		.${CSS_PREFIX}-message-jump svg { width: 16px; height: 16px; display: block; }
+		.${CSS_PREFIX}-mcard:hover .${CSS_PREFIX}-message-jump,
+		.${CSS_PREFIX}-message-jump:focus-visible {
+			opacity: 1;
+		}
+		.${CSS_PREFIX}-message-jump:hover {
+			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
+			color: var(--damc-link, #00a8fc);
+		}
+		/* Two-line clamp: the user is judging whether to delete this message,
+		   so a one-line ellipsis hides exactly what they need to read. */
 		.${CSS_PREFIX}-row-text {
 			font-size: 14px;
 			line-height: 1.4;
+			display: -webkit-box;
+			-webkit-line-clamp: 2;
+			-webkit-box-orient: vertical;
 			overflow: hidden;
-			text-overflow: ellipsis;
-			white-space: nowrap;
+			overflow-wrap: anywhere;
 		}
+		.${CSS_PREFIX}-row-link {
+			color: var(--damc-link, #00a8fc);
+			text-decoration: none;
+		}
+		.${CSS_PREFIX}-row-link:hover { text-decoration: underline; }
 		.${CSS_PREFIX}-row-text.${CSS_PREFIX}-faint {
 			color: var(--damc-text-faint, #949ba4);
 			font-style: italic;
@@ -2486,26 +3171,35 @@ module.exports = (() => {
 		}
 		/* settings panel */
 		.${CSS_PREFIX}-set-root {
+			--damc-settings-page-gap: 16px;
+			--damc-settings-section-gap: 24px;
+			--damc-settings-section-title-gap: 8px;
+			--damc-settings-row-height: 36px;
+			--damc-settings-field-gap: 16px;
+			--damc-settings-label-control-gap: 8px;
+			--damc-settings-label-size: 16px;
+			--damc-settings-label-weight: 500;
+			--damc-settings-label-line-height: 20px;
+			--damc-settings-label-color: var(--damc-text, #dbdee1);
+			/* Eyebrow labels above full-width inputs: small, bold, muted, so the
+			   user's own value is the brightest thing in each field. */
+			--damc-field-label-size: 16px;
+			--damc-field-label-weight: 500;
+			--damc-field-label-color: var(--damc-text, #dbdee1);
 			display: flex;
 			flex-direction: column;
 			color: var(--damc-text, #dbdee1);
 			font-size: 15px;
 		}
 		.${CSS_PREFIX}-group-header {
-			font-size: 13px;
+			font-size: 14px;
 			font-weight: 700;
-			letter-spacing: 0.3px;
-			color: var(--damc-text-sub, #b5bac1);
-			margin: 0 0 10px;
+			color: var(--damc-text-faint, #949ba4);
+			margin: var(--damc-settings-section-gap) 0 var(--damc-settings-section-title-gap);
 		}
-		/* Every group after the first reads as a new section: hairline + air. */
-		.${CSS_PREFIX}-group-header:not(:first-child) {
-			margin-top: 24px;
-			padding-top: 16px;
-			border-top: 1px solid var(--damc-border, rgba(78, 80, 88, 0.32));
-		}
+		.${CSS_PREFIX}-group-header:first-child { margin-top: 0; }
 		.${CSS_PREFIX}-set-row {
-			min-height: 40px;
+			min-height: var(--damc-settings-row-height);
 			display: flex;
 			align-items: center;
 			justify-content: space-between;
@@ -2514,9 +3208,48 @@ module.exports = (() => {
 		.${CSS_PREFIX}-set-label {
 			flex: 1 1 auto;
 			min-width: 0;
-			font-size: 16px;
-			font-weight: 500;
-			color: var(--damc-text, #dbdee1);
+			overflow: visible;
+			font-size: var(--damc-settings-label-size);
+			font-weight: var(--damc-settings-label-weight);
+			line-height: var(--damc-settings-label-line-height);
+			color: var(--damc-settings-label-color);
+		}
+		/* Info icon trails the title text inline. It belongs to the label, not
+		   the row's right-side control area. */
+		.${CSS_PREFIX}-set-title {
+			display: inline-flex;
+			align-items: center;
+			gap: 5px;
+			max-width: 100%;
+			line-height: 1.25;
+			vertical-align: middle;
+		}
+		.${CSS_PREFIX}-set-title-text { min-width: 0; }
+		.${CSS_PREFIX}-info-hint {
+			position: static;
+			flex: 0 0 auto;
+			width: 13px;
+			height: 13px;
+			padding: 0;
+			border: 0;
+			border-radius: 50%;
+			background: transparent;
+			color: var(--damc-text-faint, #949ba4);
+			cursor: help;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			line-height: 1;
+			transform: translateY(-1px);
+		}
+		.${CSS_PREFIX}-info-hint svg { width: 13px; height: 13px; display: block; }
+		.${CSS_PREFIX}-info-hint:hover,
+		.${CSS_PREFIX}-info-hint:focus-visible {
+			color: var(--damc-brand, #5865f2);
+			outline: none;
+		}
+		.${CSS_PREFIX}-info-hint:focus-visible {
+			box-shadow: 0 0 0 2px color-mix(in srgb, var(--damc-brand, #5865f2) 38%, transparent);
 		}
 		.${CSS_PREFIX}-num-input {
 			width: 96px;
@@ -2525,27 +3258,28 @@ module.exports = (() => {
 			padding: 0 8px;
 			font-size: 16px;
 			text-align: right;
-			border-radius: 4px;
+			border-radius: 6px;
 			border: 1px solid var(--damc-input-border, rgba(78, 80, 88, 0.48));
 			background: var(--damc-input-bg, #1e1f22);
 			color: var(--damc-text, #dbdee1);
 			font-family: inherit;
 			outline: none;
+			transition: border-color 120ms ease, box-shadow 120ms ease;
 		}
 		.${CSS_PREFIX}-num-input:focus {
 			border-color: var(--damc-brand, #5865f2);
+			box-shadow: 0 0 0 3px color-mix(in srgb, var(--damc-brand, #5865f2) 18%, transparent);
 		}
 		.${CSS_PREFIX}-seg {
-			display: flex;
-			gap: 4px;
+			display: inline-flex;
+			gap: 3px;
 			padding: 3px;
-			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
-			border-radius: 8px;
+			border-radius: 7px;
 			background: var(--damc-sunken, #1e1f22);
 		}
 		.${CSS_PREFIX}-seg-btn {
-			flex: 1 1 0;
-			height: 32px;
+			flex: 0 0 auto;
+			height: 30px;
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -2554,7 +3288,7 @@ module.exports = (() => {
 			background: transparent;
 			border-radius: 5px;
 			font: inherit;
-			font-size: 14px;
+			font-size: 13.5px;
 			font-weight: 600;
 			color: var(--damc-text-faint, #949ba4);
 			cursor: pointer;
@@ -2570,27 +3304,168 @@ module.exports = (() => {
 			color: var(--damc-on-brand, #fff);
 		}
 		.${CSS_PREFIX}-seg-icon { display: flex; }
-		.${CSS_PREFIX}-seg-icon svg { width: 16px; height: 16px; }
+		.${CSS_PREFIX}-seg-icon svg { width: 13px; height: 13px; }
+		/* Flag-filter mini segment: lives in the list panel head band. */
+		.${CSS_PREFIX}-seg-mini {
+			display: inline-flex;
+			gap: 2px;
+			padding: 2px;
+			border-radius: 6px;
+			background: var(--damc-sunken, #1e1f22);
+			flex: 0 0 auto;
+		}
+		.${CSS_PREFIX}-seg-mini-btn {
+			border: 0;
+			background: transparent;
+			font: inherit;
+			display: flex;
+			align-items: center;
+			gap: 4px;
+			height: 24px;
+			padding: 0 10px;
+			border-radius: 4px;
+			font-size: 12.5px;
+			font-weight: 600;
+			color: var(--damc-text-faint, #949ba4);
+			cursor: pointer;
+			transition: background 120ms ease, color 120ms ease;
+		}
+		.${CSS_PREFIX}-seg-mini-btn:hover {
+			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
+			color: var(--damc-text, #dbdee1);
+		}
+		.${CSS_PREFIX}-seg-mini-btn.${CSS_PREFIX}-active,
+		.${CSS_PREFIX}-seg-mini-btn.${CSS_PREFIX}-active:hover {
+			background: var(--damc-brand, #5865f2);
+			color: var(--damc-on-brand, #fff);
+		}
+		.${CSS_PREFIX}-emoji-token {
+			display: inline-flex;
+			align-items: center;
+			vertical-align: -5px;
+			margin: 0 1px;
+			max-width: 100%;
+		}
 		.${CSS_PREFIX}-emoji {
 			width: 20px;
 			height: 20px;
 			object-fit: contain;
-			vertical-align: -5px;
-			margin: 0 1px;
+			display: block;
 		}
-		.${CSS_PREFIX}-row-thumbs {
+		.${CSS_PREFIX}-emoji-fallback {
+			display: none;
+			max-width: 150px;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			font-size: 12px;
+			line-height: 18px;
+			color: var(--damc-text-faint, #949ba4);
+		}
+		.${CSS_PREFIX}-emoji-token.${CSS_PREFIX}-emoji-failed .${CSS_PREFIX}-emoji { display: none; }
+		.${CSS_PREFIX}-emoji-token.${CSS_PREFIX}-emoji-failed .${CSS_PREFIX}-emoji-fallback { display: inline; }
+		.${CSS_PREFIX}-attachment-list {
 			display: flex;
-			gap: 4px;
-			margin-top: 2px;
+			align-items: flex-start;
+			flex-wrap: wrap;
+			gap: 8px;
+			margin-top: 3px;
+			max-width: 520px;
 		}
-		.${CSS_PREFIX}-thumb {
-			width: 40px;
-			height: 40px;
-			object-fit: cover;
-			border-radius: 4px;
-			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
-			background: var(--damc-surface, #2b2d31);
+		.${CSS_PREFIX}-image-direct-wrap {
+			min-width: 0;
+			max-width: 100%;
+			flex: 0 1 auto;
 		}
+		.${CSS_PREFIX}-image-direct {
+			display: block;
+			max-width: 100%;
+			padding: 0;
+			border: 0;
+			border-radius: 8px;
+			overflow: hidden;
+			background: transparent;
+			cursor: zoom-in;
+			line-height: 0;
+		}
+		.${CSS_PREFIX}-image-direct-img {
+			display: block;
+			width: auto;
+			height: auto;
+			max-width: min(320px, 100%);
+			max-height: 220px;
+			object-fit: contain;
+			border-radius: 8px;
+			background: var(--damc-sunken, #1e1f22);
+		}
+		.${CSS_PREFIX}-attachment-file {
+			width: min(260px, 100%);
+			max-width: 320px;
+			flex: 1 1 220px;
+		}
+		.${CSS_PREFIX}-attachment {
+			min-width: 0;
+			min-height: 40px;
+			box-sizing: border-box;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			padding: 5px 7px;
+			border: 1px solid color-mix(in srgb, var(--damc-text, #dbdee1) 8%, transparent);
+			border-radius: 6px;
+			background: color-mix(in srgb, var(--damc-sunken, #1e1f22) 68%, transparent);
+			color: var(--damc-text, #dbdee1);
+			text-decoration: none;
+		}
+		.${CSS_PREFIX}-image-direct-fallback { display: none; }
+		.${CSS_PREFIX}-image-direct-wrap.${CSS_PREFIX}-image-direct-failed .${CSS_PREFIX}-image-direct { display: none; }
+		.${CSS_PREFIX}-image-direct-wrap.${CSS_PREFIX}-image-direct-failed .${CSS_PREFIX}-image-direct-fallback { display: flex; }
+		.${CSS_PREFIX}-attachment-file:hover,
+		.${CSS_PREFIX}-attachment:focus-within {
+			border-color: color-mix(in srgb, var(--damc-link, #00a8fc) 45%, transparent);
+			background: color-mix(in srgb, var(--damc-link, #00a8fc) 6%, var(--damc-sunken, #1e1f22));
+		}
+		.${CSS_PREFIX}-attachment-file-icon {
+			width: 28px;
+			height: 28px;
+			border-radius: 5px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background: color-mix(in srgb, var(--damc-link, #00a8fc) 11%, transparent);
+			color: var(--damc-link, #00a8fc);
+			flex: 0 0 auto;
+		}
+		.${CSS_PREFIX}-attachment-file-icon svg { width: 17px; height: 17px; display: block; }
+		.${CSS_PREFIX}-attachment-copy {
+			min-width: 0;
+			flex: 1 1 auto;
+			display: flex;
+			flex-direction: column;
+			gap: 1px;
+		}
+		.${CSS_PREFIX}-attachment-name {
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+			font-size: 12.5px;
+			font-weight: 500;
+			color: var(--damc-link, #00a8fc);
+		}
+		.${CSS_PREFIX}-attachment-no-link .${CSS_PREFIX}-attachment-name {
+			color: var(--damc-text, #dbdee1);
+		}
+		.${CSS_PREFIX}-attachment-size {
+			font-size: 10.5px;
+			color: var(--damc-text-faint, #949ba4);
+		}
+		.${CSS_PREFIX}-attachment-open {
+			width: 14px;
+			height: 14px;
+			color: var(--damc-text-faint, #949ba4);
+			flex: 0 0 auto;
+		}
+		.${CSS_PREFIX}-attachment-open svg { width: 14px; height: 14px; display: block; }
 		.${CSS_PREFIX}-check {
 			display: flex;
 			align-items: center;
@@ -2617,6 +3492,18 @@ module.exports = (() => {
 			color: var(--damc-text, #dbdee1);
 			text-align: left;
 		}
+		.${CSS_PREFIX}-confirm-actions {
+			display: flex;
+			align-items: center;
+			justify-content: flex-end;
+			gap: 10px;
+			margin-top: 8px;
+		}
+		.${CSS_PREFIX}-confirm-actions .${CSS_PREFIX}-btn {
+			height: 38px;
+			min-width: 88px;
+			padding-inline: 16px;
+		}
 		.${CSS_PREFIX}-backup-choice {
 			align-items: flex-start;
 			font-weight: 500;
@@ -2642,20 +3529,14 @@ module.exports = (() => {
 		.${CSS_PREFIX}-backup-format-label {
 			flex: 0 0 auto;
 		}
-		.${CSS_PREFIX}-backup-format-select {
-			height: 30px;
-			min-width: 150px;
-			padding: 0 28px 0 8px;
-			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
-			border-radius: 4px;
-			background: var(--damc-input-bg, #1e1f22);
-			color: var(--damc-text, #dbdee1);
-			font: inherit;
-			font-size: 13px;
+		/* Emphasized object inside confirm bodies (count, policy name). */
+		.${CSS_PREFIX}-emph {
+			color: var(--damc-text-strong, #f2f3f5);
+			font-weight: 700;
 		}
-		.${CSS_PREFIX}-backup-format-select option {
-			background: var(--damc-surface, #2b2d31);
-			color: var(--damc-text, #dbdee1);
+		.${CSS_PREFIX}-confirm-note {
+			font-size: 12.5px;
+			color: var(--damc-text-faint, #949ba4);
 		}
 		.${CSS_PREFIX}-pill {
 			position: fixed;
@@ -2706,6 +3587,7 @@ module.exports = (() => {
 			justify-content: center;
 			background: rgba(0, 0, 0, 0.85);
 			cursor: zoom-out;
+			outline: none;
 		}
 		.${CSS_PREFIX}-lightbox-img {
 			max-width: 92vw;
@@ -2714,33 +3596,40 @@ module.exports = (() => {
 			box-shadow: var(--damc-shadow, 0 8px 16px rgba(0, 0, 0, 0.24));
 			cursor: zoom-out;
 		}
-		.${CSS_PREFIX}-thumb { cursor: zoom-in; }
-		.${CSS_PREFIX}-hero-context {
-			flex: 1 1 auto;
-			min-width: 0;
-			font-size: 14px;
-			color: var(--damc-text-faint, #949ba4);
-			overflow: hidden;
-			text-overflow: ellipsis;
-			white-space: nowrap;
+		/* Load-more: the list's own tail row (resume-scan). */
+		.${CSS_PREFIX}-lmore {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			gap: 6px;
+			padding: 9px;
+			border: 0;
+			border-top: 1px solid rgba(255, 255, 255, 0.045);
+			background: transparent;
+			font: inherit;
+			font-size: 13px;
+			font-weight: 500;
+			color: var(--damc-icon, #b5bac1);
+			cursor: pointer;
+			flex: 0 0 auto;
 		}
-		.${CSS_PREFIX}-badge.${CSS_PREFIX}-badge-flag {
-			background: color-mix(in srgb, var(--damc-danger, #f23f43) 14%, transparent);
-			border-color: var(--damc-danger, #f23f43);
-			color: var(--damc-danger, #f23f43);
+		.${CSS_PREFIX}-lmore:hover {
+			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
+			color: var(--damc-text, #dbdee1);
 		}
-		.${CSS_PREFIX}-row.${CSS_PREFIX}-row-flagged {
-			box-shadow: inset 3px 0 0 var(--damc-danger, #f23f43);
+		.${CSS_PREFIX}-lmore:disabled {
+			opacity: 0.45;
+			cursor: not-allowed;
+		}
+		.${CSS_PREFIX}-lmore svg {
+			width: 14px;
+			height: 14px;
+			flex: 0 0 auto;
 		}
 		.${CSS_PREFIX}-row-reason {
-			font-size: 12px;
+			font-size: 13px;
 			line-height: 1.4;
-			color: var(--damc-danger, #f23f43);
-			opacity: 0.9;
-		}
-		.${CSS_PREFIX}-link-btn.${CSS_PREFIX}-link-active {
-			background: color-mix(in srgb, var(--damc-danger, #f23f43) 14%, transparent);
-			color: var(--damc-danger, #f23f43);
+			color: var(--damc-text-faint, #949ba4);
 		}
 		/* settings: tabs */
 		.${CSS_PREFIX}-tabbar {
@@ -2776,26 +3665,27 @@ module.exports = (() => {
 		}
 		.${CSS_PREFIX}-tabpage {
 			min-height: 360px;
-			margin-top: 16px;
+			margin-top: var(--damc-settings-page-gap);
 			/* Let self-drawn dropdowns overflow the panel instead of being clipped. */
 			overflow: visible;
 		}
 		/* settings: fields */
-		.${CSS_PREFIX}-f-item { margin-bottom: 16px; }
+		.${CSS_PREFIX}-f-item { margin-bottom: var(--damc-settings-field-gap); }
 		.${CSS_PREFIX}-f-item:last-child { margin-bottom: 0; }
 		.${CSS_PREFIX}-f-label {
-			font-size: 16px;
-			font-weight: 600;
-			color: var(--damc-text-strong, #f2f3f5);
-			margin: 0 0 4px;
+			font-size: var(--damc-field-label-size);
+			font-weight: var(--damc-field-label-weight);
+			line-height: var(--damc-settings-label-line-height);
+			color: var(--damc-field-label-color);
+			margin: 0 0 var(--damc-settings-label-control-gap);
 		}
 		.${CSS_PREFIX}-f-row {
 			display: flex;
 			justify-content: space-between;
 			align-items: center;
-			min-height: 28px;
+			min-height: var(--damc-settings-row-height);
 			gap: 8px;
-			margin: 0 0 4px;
+			margin: 0 0 var(--damc-settings-label-control-gap);
 		}
 		.${CSS_PREFIX}-f-row .${CSS_PREFIX}-f-label { margin: 0; }
 		.${CSS_PREFIX}-f-actions { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -2807,17 +3697,22 @@ module.exports = (() => {
 			font-size: 15px;
 			line-height: 1.45;
 			resize: vertical;
-			border-radius: 4px;
+			border-radius: 6px;
 			border: 1px solid var(--damc-input-border, rgba(78, 80, 88, 0.48));
 			background: var(--damc-input-bg, #1e1f22);
 			color: var(--damc-text, #dbdee1);
 			font-family: inherit;
 			outline: none;
+			transition: border-color 120ms ease, box-shadow 120ms ease;
 			scrollbar-width: thin;
 			scrollbar-color: var(--damc-scroll-thumb) transparent;
 		}
+		.${CSS_PREFIX}-textarea:hover {
+			border-color: color-mix(in srgb, var(--damc-text, #dbdee1) 16%, transparent);
+		}
 		.${CSS_PREFIX}-textarea:focus {
 			border-color: var(--damc-brand, #5865f2);
+			box-shadow: 0 0 0 3px color-mix(in srgb, var(--damc-brand, #5865f2) 18%, transparent);
 		}
 		.${CSS_PREFIX}-textarea::-webkit-scrollbar { width: 8px; }
 		.${CSS_PREFIX}-textarea::-webkit-scrollbar-thumb {
@@ -2830,12 +3725,13 @@ module.exports = (() => {
 			padding: 0 12px;
 			font-size: 15px;
 			font-weight: 500;
-			border-radius: 4px;
+			border-radius: 6px;
 			border: 0;
 			cursor: pointer;
 			display: inline-flex;
 			align-items: center;
 			justify-content: center;
+			gap: 6px;
 			background: var(--damc-brand, #5865f2);
 			color: var(--damc-on-brand, #fff);
 		}
@@ -2883,7 +3779,7 @@ module.exports = (() => {
 			justify-content: center;
 			border: 0;
 			border-left: 1px solid var(--damc-input-border, rgba(78, 80, 88, 0.48));
-			border-radius: 0 3px 3px 0;
+			border-radius: 0 5px 5px 0;
 			background: transparent;
 			color: var(--damc-icon, #b5bac1);
 			cursor: pointer;
@@ -2907,7 +3803,7 @@ module.exports = (() => {
 			justify-content: center;
 			border: 0;
 			border-left: 1px solid var(--damc-input-border, rgba(78, 80, 88, 0.48));
-			border-radius: 0 3px 3px 0;
+			border-radius: 0 5px 5px 0;
 			background: transparent;
 			color: var(--damc-icon, #b5bac1);
 			cursor: pointer;
@@ -2924,7 +3820,7 @@ module.exports = (() => {
 			left: 0;
 			right: 0;
 			background: var(--damc-floating, #1e1f22);
-			border-radius: 4px;
+			border-radius: 8px;
 			padding: 4px;
 			box-shadow: var(--damc-shadow, 0 8px 16px rgba(0, 0, 0, 0.24));
 			z-index: 10;
@@ -2937,6 +3833,15 @@ module.exports = (() => {
 			top: auto;
 			bottom: calc(100% + 4px);
 		}
+		.${CSS_PREFIX}-pop.${CSS_PREFIX}-pop-fixed {
+			position: fixed;
+			top: auto;
+			right: auto;
+			bottom: auto;
+			box-sizing: border-box;
+			z-index: 10050;
+			overscroll-behavior: contain;
+		}
 		.${CSS_PREFIX}-pop::-webkit-scrollbar { width: 8px; }
 		.${CSS_PREFIX}-pop::-webkit-scrollbar-thumb { background: var(--damc-scroll-thumb); border-radius: 4px; }
 		.${CSS_PREFIX}-pop-item {
@@ -2948,7 +3853,7 @@ module.exports = (() => {
 			height: 28px;
 			line-height: 28px;
 			padding: 0 8px;
-			border-radius: 3px;
+			border-radius: 4px;
 			font-size: 15px;
 			display: block;
 			/* Long channel names must truncate, never wrap into neighbors. */
@@ -2978,10 +3883,21 @@ module.exports = (() => {
 		}
 		.${CSS_PREFIX}-status-line.${CSS_PREFIX}-ok { color: var(--damc-ok, #23a55a); }
 		.${CSS_PREFIX}-status-line.${CSS_PREFIX}-fail { color: var(--damc-danger, #f23f43); }
+		.${CSS_PREFIX}-status-line.${CSS_PREFIX}-ok::before,
+		.${CSS_PREFIX}-status-line.${CSS_PREFIX}-fail::before {
+			content: "";
+			display: inline-block;
+			width: 6px;
+			height: 6px;
+			border-radius: 50%;
+			background: currentColor;
+			margin-right: 6px;
+			vertical-align: 2px;
+		}
 		/* settings: provider rail */
 		.${CSS_PREFIX}-prov-grid {
 			display: grid;
-			grid-template-columns: 148px minmax(0, 1fr);
+			grid-template-columns: 160px minmax(0, 1fr);
 			gap: 16px;
 		}
 		.${CSS_PREFIX}-prov-rail { display: flex; flex-direction: column; }
@@ -2994,9 +3910,9 @@ module.exports = (() => {
 		.${CSS_PREFIX}-prov-rows::-webkit-scrollbar { width: 8px; }
 		.${CSS_PREFIX}-prov-rows::-webkit-scrollbar-thumb { background: var(--damc-scroll-thumb); border-radius: 4px; }
 		.${CSS_PREFIX}-prov-row {
-			height: 32px;
+			height: 34px;
 			padding: 0 8px 0 10px;
-			border-radius: 4px;
+			border-radius: 6px;
 			margin-bottom: 2px;
 			display: flex;
 			align-items: center;
@@ -3016,14 +3932,27 @@ module.exports = (() => {
 			color: var(--damc-text-strong, #f2f3f5);
 			font-weight: 600;
 		}
-		.${CSS_PREFIX}-prov-dot {
+		/* Rail rows carry the provider's own mark; a corner dot means "configured". */
+		.${CSS_PREFIX}-prov-ic {
+			position: relative;
 			flex: 0 0 auto;
+			width: 18px;
+			height: 18px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+		.${CSS_PREFIX}-prov-ic svg { width: 16px; height: 16px; display: block; }
+		.${CSS_PREFIX}-prov-ic.${CSS_PREFIX}-prov-ic-custom { color: var(--damc-brand, #5865f2); }
+		.${CSS_PREFIX}-prov-mini {
+			position: absolute;
+			right: -3px;
+			bottom: -2px;
 			width: 6px;
 			height: 6px;
 			border-radius: 50%;
-			background: var(--damc-border, rgba(78, 80, 88, 0.48));
+			background: var(--damc-ok, #23a55a);
 		}
-		.${CSS_PREFIX}-prov-dot.${CSS_PREFIX}-prov-dot-ok { background: var(--damc-ok, #23a55a); }
 		.${CSS_PREFIX}-prov-name {
 			flex: 1 1 auto;
 			min-width: 0;
@@ -3051,23 +3980,144 @@ module.exports = (() => {
 			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
 			color: var(--damc-text, #dbdee1);
 		}
-		.${CSS_PREFIX}-prov-form-head {
-			height: 28px;
-			margin-bottom: 12px;
+		/* provider head card: identity + connection summary before the fields */
+		.${CSS_PREFIX}-prov-card {
 			display: flex;
 			align-items: center;
-			gap: 8px;
+			gap: 10px;
+			padding: 8px 10px;
+			border-radius: 8px;
+			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
+			background: var(--damc-surface, #2b2d31);
+			margin-bottom: var(--damc-settings-field-gap);
 		}
-		.${CSS_PREFIX}-prov-title {
-			flex: 1 1 auto;
-			min-width: 0;
+		.${CSS_PREFIX}-prov-tile {
+			width: 32px;
+			height: 32px;
+			border-radius: 8px;
+			flex: 0 0 auto;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			box-sizing: border-box;
+			background: var(--damc-sunken, #1e1f22);
+			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
+			color: var(--damc-text-strong, #f2f3f5);
+		}
+		.${CSS_PREFIX}-prov-tile.${CSS_PREFIX}-prov-tile-custom { color: var(--damc-brand, #5865f2); }
+		.${CSS_PREFIX}-prov-tile svg { width: 18px; height: 18px; display: block; }
+		.${CSS_PREFIX}-prov-card-copy { flex: 1 1 auto; min-width: 0; }
+		.${CSS_PREFIX}-prov-card-name {
 			font-size: 16px;
-			font-weight: 600;
+			font-weight: 700;
 			color: var(--damc-text-strong, #f2f3f5);
 			overflow: hidden;
 			text-overflow: ellipsis;
 			white-space: nowrap;
 		}
+		/* Inline rename: the card name doubles as the editor for custom providers. */
+		.${CSS_PREFIX}-prov-rename {
+			display: flex;
+			align-items: center;
+			gap: 6px;
+			min-width: 0;
+			max-width: 100%;
+			padding: 0;
+			border: 0;
+			background: transparent;
+			color: inherit;
+			font: inherit;
+			text-align: left;
+			cursor: text;
+		}
+		.${CSS_PREFIX}-prov-rename .${CSS_PREFIX}-prov-card-name { min-width: 0; }
+		.${CSS_PREFIX}-prov-pencil {
+			flex: 0 0 auto;
+			display: inline-flex;
+			color: var(--damc-text-faint, #949ba4);
+		}
+		.${CSS_PREFIX}-prov-pencil svg { width: 12px; height: 12px; display: block; }
+		.${CSS_PREFIX}-prov-rename:hover .${CSS_PREFIX}-prov-pencil,
+		.${CSS_PREFIX}-prov-rename:focus-visible .${CSS_PREFIX}-prov-pencil { color: var(--damc-text, #dbdee1); }
+		.${CSS_PREFIX}-prov-rename:hover .${CSS_PREFIX}-prov-card-name {
+			text-decoration: underline;
+			text-decoration-color: var(--damc-text-faint, #949ba4);
+			text-underline-offset: 3px;
+		}
+		.${CSS_PREFIX}-prov-name-input {
+			width: 100%;
+			min-width: 0;
+			box-sizing: border-box;
+			padding: 0 0 1px;
+			border: 0;
+			border-bottom: 1.5px solid var(--damc-brand, #5865f2);
+			border-radius: 0;
+			background: transparent;
+			color: var(--damc-text-strong, #f2f3f5);
+			font-size: 16px;
+			font-weight: 700;
+			font-family: inherit;
+			outline: none;
+		}
+		.${CSS_PREFIX}-prov-card-sub {
+			margin-top: 1px;
+			font-size: 12px;
+			color: var(--damc-text-faint, #949ba4);
+			display: flex;
+			align-items: center;
+			gap: 5px;
+			min-width: 0;
+		}
+		.${CSS_PREFIX}-prov-card-sub-text {
+			min-width: 0;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+		.${CSS_PREFIX}-prov-card-dot {
+			flex: 0 0 auto;
+			width: 6px;
+			height: 6px;
+			border-radius: 50%;
+			background: var(--damc-border, rgba(78, 80, 88, 0.48));
+		}
+		.${CSS_PREFIX}-prov-card-dot.${CSS_PREFIX}-prov-card-dot-ok { background: var(--damc-ok, #23a55a); }
+		.${CSS_PREFIX}-prov-split {
+			height: 1px;
+			background: var(--damc-border, rgba(78, 80, 88, 0.48));
+			opacity: 0.55;
+			margin: 0 0 var(--damc-settings-field-gap);
+		}
+		.${CSS_PREFIX}-prov-form .${CSS_PREFIX}-input {
+			height: 38px;
+			font-size: 15px;
+			font-weight: 400;
+		}
+		/* model combo with an attached fetch (refresh) button */
+		/* Model row: combo, standalone refresh and validate share one 38px row. */
+		.${CSS_PREFIX}-model-row { display: flex; align-items: stretch; gap: 8px; }
+		.${CSS_PREFIX}-model-row .${CSS_PREFIX}-combo { flex: 1 1 auto; min-width: 0; }
+		.${CSS_PREFIX}-model-row .${CSS_PREFIX}-btn-sm { height: 38px; padding: 0 14px; }
+		.${CSS_PREFIX}-combo-fetch {
+			flex: 0 0 auto;
+			width: 38px;
+			height: 38px;
+			box-sizing: border-box;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border: 1px solid var(--damc-input-border, rgba(78, 80, 88, 0.48));
+			border-radius: 6px;
+			background: var(--damc-input-bg, #1e1f22);
+			color: var(--damc-icon, #b5bac1);
+			cursor: pointer;
+		}
+		.${CSS_PREFIX}-combo-fetch svg { width: 15px; height: 15px; }
+		.${CSS_PREFIX}-combo-fetch:hover {
+			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
+			color: var(--damc-icon-hover, #dbdee1);
+		}
+		.${CSS_PREFIX}-prov-form .${CSS_PREFIX}-btn-sm { font-size: 14px; }
 		.${CSS_PREFIX}-active-badge {
 			flex: 0 0 auto;
 			height: 22px;
@@ -3094,20 +4144,22 @@ module.exports = (() => {
 		.${CSS_PREFIX}-intro-body { font-size: 14px; color: var(--damc-text-faint, #949ba4); margin-top: 2px; line-height: 1.5; }
 		/* settings: select menu */
 		.${CSS_PREFIX}-select-wrap { position: relative; flex: 0 0 auto; }
+		/* Same control family as the model combo: text zone + hairline chevron cell. */
 		.${CSS_PREFIX}-select-trigger {
 			width: 200px;
 			height: 32px;
-			padding: 0 8px 0 10px;
+			padding: 0 0 0 10px;
 			box-sizing: border-box;
 			display: flex;
 			align-items: center;
 			gap: 8px;
-			border-radius: 4px;
+			border-radius: 6px;
 			border: 1px solid var(--damc-input-border, rgba(78, 80, 88, 0.48));
 			background: var(--damc-input-bg, #1e1f22);
 			color: var(--damc-text, #dbdee1);
-			font-size: 16px;
+			font-size: 15px;
 			cursor: pointer;
+			overflow: hidden;
 		}
 		.${CSS_PREFIX}-select-trigger:hover { background: var(--damc-hover, rgba(255, 255, 255, 0.06)); }
 		.${CSS_PREFIX}-select-trigger.${CSS_PREFIX}-open { border-color: var(--damc-brand, #5865f2); }
@@ -3119,9 +4171,18 @@ module.exports = (() => {
 			white-space: nowrap;
 			text-align: left;
 		}
-		.${CSS_PREFIX}-sel-arrow { display: flex; color: var(--damc-icon, #b5bac1); transition: transform 120ms ease; }
-		.${CSS_PREFIX}-sel-arrow svg { width: 16px; height: 16px; }
-		.${CSS_PREFIX}-select-trigger.${CSS_PREFIX}-open .${CSS_PREFIX}-sel-arrow { transform: rotate(180deg); }
+		.${CSS_PREFIX}-sel-arrow {
+			align-self: stretch;
+			width: 26px;
+			flex: 0 0 auto;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border-left: 1px solid var(--damc-input-border, rgba(78, 80, 88, 0.48));
+			color: var(--damc-icon, #b5bac1);
+		}
+		.${CSS_PREFIX}-sel-arrow svg { width: 16px; height: 16px; transition: transform 120ms ease; }
+		.${CSS_PREFIX}-select-trigger.${CSS_PREFIX}-open .${CSS_PREFIX}-sel-arrow svg { transform: rotate(180deg); }
 		/* settings: switch */
 		.${CSS_PREFIX}-switch {
 			position: relative;
@@ -3154,30 +4215,309 @@ module.exports = (() => {
 			background: var(--damc-on-brand, #fff);
 			transform: translateX(16px);
 		}
-		/* settings: prompt editor + diagnostics */
-		.${CSS_PREFIX}-prompt-editor { margin-top: 12px; margin-bottom: 4px; }
-		.${CSS_PREFIX}-diag-version {
-			font-size: 13px;
-			color: var(--damc-text-faint, #949ba4);
-			margin-bottom: 8px;
-		}
-		.${CSS_PREFIX}-diag-card {
+		/* settings: policy card + diagnostics */
+		/* The policy editor is an object card: head = identity + icon actions,
+		   body = the prompt text. Builtin reads as a document (surface bg),
+		   custom reads as editable (input bg + focus ring on the card). */
+		.${CSS_PREFIX}-policy-card {
+			position: relative;
+			margin-top: 8px;
 			background: var(--damc-surface, #2b2d31);
+			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
 			border-radius: 8px;
-			padding: 8px 12px;
+			overflow: hidden;
 		}
-		.${CSS_PREFIX}-diag-row {
-			height: 22px;
+		/* Replaces the native textarea resize grip (hidden below) with a quiet
+		   diagonal-stripe corner; the native drag hit-area still does the work. */
+		.${CSS_PREFIX}-policy-card::after {
+			content: "";
+			position: absolute;
+			right: 5px;
+			bottom: 5px;
+			width: 9px;
+			height: 9px;
+			pointer-events: none;
+			color: var(--damc-text-faint, #949ba4);
+			background: repeating-linear-gradient(135deg, transparent, transparent 2px, currentColor 2px, currentColor 3.5px);
+			clip-path: polygon(100% 0, 100% 100%, 0 100%);
+			opacity: 0.65;
+		}
+		.${CSS_PREFIX}-policy-head {
 			display: flex;
 			align-items: center;
+			gap: 8px;
+			padding: 7px 11px;
+			background: color-mix(in srgb, var(--damc-text, #dbdee1) 3%, transparent);
+			border-bottom: 1px solid color-mix(in srgb, var(--damc-text, #dbdee1) 7%, transparent);
+		}
+		.${CSS_PREFIX}-policy-title {
+			flex: 1 1 auto;
+			min-width: 0;
+			display: flex;
+			align-items: center;
+			gap: 6px;
+		}
+		/* Read-only badge in Discord's idle-amber: a semantic "locked" state
+		   that stands off the head strip without shouting. */
+		.${CSS_PREFIX}-policy-lock {
+			flex: 0 0 auto;
+			display: inline-flex;
+			align-items: center;
+			gap: 4px;
+			height: 18px;
+			padding: 0 8px;
+			border-radius: 9px;
+			font-size: 11px;
+			font-weight: 600;
+			color: var(--damc-warn, #f0b232);
+			background: color-mix(in srgb, var(--damc-warn, #f0b232) 13%, transparent);
+		}
+		.${CSS_PREFIX}-policy-lock-ic { display: inline-flex; }
+		.${CSS_PREFIX}-policy-lock-ic svg { width: 10px; height: 10px; display: block; }
+		.${CSS_PREFIX}-policy-actions {
+			flex: 0 0 auto;
+			display: flex;
+			align-items: center;
+			gap: 2px;
+		}
+		.${CSS_PREFIX}-policy-body {
+			display: block;
+			width: 100%;
+			box-sizing: border-box;
+			min-height: 150px;
+			padding: 10px 12px;
+			border: 0;
+			/* Full input-dark body: the content zone clearly separates from the
+			   head strip; read-only is carried by text tone + the lock badge. */
+			background: var(--damc-input-bg, #1e1f22);
+			color: var(--damc-text-sub, #b5bac1);
+			font-size: 14px;
+			line-height: 1.55;
+			font-family: inherit;
+			resize: vertical;
+			outline: none;
+			scrollbar-width: thin;
+			scrollbar-color: var(--damc-scroll-thumb) transparent;
+		}
+		.${CSS_PREFIX}-policy-body::-webkit-resizer { background: transparent; }
+		.${CSS_PREFIX}-policy-body::-webkit-scrollbar { width: 8px; }
+		.${CSS_PREFIX}-policy-body::-webkit-scrollbar-thumb { background: var(--damc-scroll-thumb); border-radius: 4px; }
+		.${CSS_PREFIX}-policy-editable .${CSS_PREFIX}-policy-body {
+			background: var(--damc-input-bg, #1e1f22);
+			color: var(--damc-text, #dbdee1);
+		}
+		.${CSS_PREFIX}-policy-editable:focus-within {
+			border-color: var(--damc-brand, #5865f2);
+			box-shadow: 0 0 0 3px color-mix(in srgb, var(--damc-brand, #5865f2) 18%, transparent);
+		}
+		/* about card (brand mist): identity row / hairline / action badges */
+		.${CSS_PREFIX}-about-card {
+			padding: 14px 16px;
+			border-radius: 8px;
+			background: color-mix(in srgb, var(--damc-brand, #5865f2) 6%, var(--damc-surface, #2b2d31));
+		}
+		.${CSS_PREFIX}-about-id {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+		}
+		.${CSS_PREFIX}-about-split {
+			height: 1px;
+			background: color-mix(in srgb, var(--damc-text, #dbdee1) 8%, transparent);
+			margin: 12px 0;
+		}
+		.${CSS_PREFIX}-about-icon {
+			width: 36px;
+			height: 36px;
+			flex: 0 0 auto;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: 8px;
+			background: color-mix(in srgb, var(--damc-brand, #5865f2) 18%, transparent);
+			color: var(--damc-brand, #5865f2);
+		}
+		.${CSS_PREFIX}-about-icon svg { width: 22px; height: 22px; }
+		.${CSS_PREFIX}-about-copy { flex: 1 1 auto; min-width: 0; }
+		.${CSS_PREFIX}-about-name {
+			font-size: 16px;
+			font-weight: 700;
+			color: var(--damc-text-strong, #f2f3f5);
+		}
+		.${CSS_PREFIX}-about-description {
+			margin-top: 2px;
+			font-size: 13px;
+			line-height: 1.4;
+			color: var(--damc-text-faint, #949ba4);
+		}
+		.${CSS_PREFIX}-about-version {
+			flex: 0 0 auto;
+			height: 22px;
+			padding: 0 8px;
+			display: inline-flex;
+			align-items: center;
+			border-radius: 11px;
+			background: color-mix(in srgb, var(--damc-brand, #5865f2) 15%, transparent);
+			color: var(--damc-brand, #5865f2);
+			font-size: 12px;
+			font-weight: 700;
+		}
+		/* pill badges: GitHub repo / check updates / feedback */
+		.${CSS_PREFIX}-about-badges {
+			display: flex;
+			align-items: center;
+			flex-wrap: wrap;
+			gap: 8px;
+		}
+		.${CSS_PREFIX}-badge {
+			height: 26px;
+			padding: 0 11px;
+			box-sizing: border-box;
+			border-radius: 13px;
+			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
+			background: color-mix(in srgb, var(--damc-brand, #5865f2) 9%, var(--damc-surface, #2b2d31));
+			color: var(--damc-text, #dbdee1);
+			font-family: inherit;
+			font-size: 12px;
+			font-weight: 600;
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			white-space: nowrap;
+			cursor: pointer;
+			text-decoration: none;
+			transition: border-color 120ms ease, color 120ms ease;
+		}
+		.${CSS_PREFIX}-badge-ic { display: flex; }
+		.${CSS_PREFIX}-badge-ic svg {
+			width: 14px;
+			height: 14px;
+			display: block;
+			color: var(--damc-icon, #b5bac1);
+		}
+		.${CSS_PREFIX}-badge:hover {
+			border-color: color-mix(in srgb, var(--damc-brand, #5865f2) 55%, transparent);
+			color: var(--damc-text-strong, #f2f3f5);
+		}
+		.${CSS_PREFIX}-badge:hover .${CSS_PREFIX}-badge-ic svg {
+			color: color-mix(in srgb, var(--damc-brand, #5865f2) 50%, var(--damc-text-strong, #f2f3f5));
+		}
+		.${CSS_PREFIX}-badge:focus-visible {
+			outline: none;
+			box-shadow: 0 0 0 2px color-mix(in srgb, var(--damc-brand, #5865f2) 38%, transparent);
+		}
+		.${CSS_PREFIX}-badge:disabled { opacity: 0.55; cursor: default; }
+		.${CSS_PREFIX}-badge.${CSS_PREFIX}-badge-brand {
+			background: var(--damc-brand, #5865f2);
+			border-color: transparent;
+			color: var(--damc-on-brand, #fff);
+		}
+		.${CSS_PREFIX}-badge.${CSS_PREFIX}-badge-brand .${CSS_PREFIX}-badge-ic svg { color: var(--damc-on-brand, #fff); }
+		.${CSS_PREFIX}-update-status {
+			margin-top: 10px;
+			font-size: 12.5px;
+			line-height: 1.4;
+			color: var(--damc-text-faint, #949ba4);
+		}
+		.${CSS_PREFIX}-update-status.${CSS_PREFIX}-ok { color: var(--damc-ok, #23a55a); }
+		.${CSS_PREFIX}-update-status.${CSS_PREFIX}-fail { color: var(--damc-danger, #f23f43); }
+		.${CSS_PREFIX}-update-links { margin-top: 6px; }
+		.${CSS_PREFIX}-update-link {
+			font-size: 12.5px;
+			color: var(--damc-brand, #5865f2);
+			text-decoration: none;
+		}
+		.${CSS_PREFIX}-update-link:hover { text-decoration: underline; }
+		.${CSS_PREFIX}-diag-card {
+			background: var(--damc-surface, #2b2d31);
+			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
+			border-radius: 8px;
+			padding: 2px 12px;
+		}
+		.${CSS_PREFIX}-diag-row {
+			min-height: 30px;
+			display: flex;
+			align-items: center;
+			gap: 12px;
+		}
+		.${CSS_PREFIX}-diag-row + .${CSS_PREFIX}-diag-row {
+			border-top: 1px solid color-mix(in srgb, var(--damc-text, #dbdee1) 5%, transparent);
 		}
 		.${CSS_PREFIX}-diag-key {
 			flex: 1 1 auto;
+			min-width: 0;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
 			font-family: var(--font-code, Consolas, "Courier New", monospace);
 			font-size: 14px;
 			color: var(--damc-text, #dbdee1);
 		}
-		.${CSS_PREFIX}-diag-val { font-size: 14px; font-weight: 600; }
+		.${CSS_PREFIX}-diag-val {
+			flex: 0 0 auto;
+			font-size: 14px;
+			font-weight: 600;
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+		}
+		.${CSS_PREFIX}-diag-dot {
+			flex: 0 0 auto;
+			width: 6px;
+			height: 6px;
+			border-radius: 50%;
+			background: currentColor;
+		}
+		.${CSS_PREFIX}-btn-ic { display: inline-flex; }
+		.${CSS_PREFIX}-btn-ic svg { width: 14px; height: 14px; display: block; }
+		/* consistency: shared hover transition + visible keyboard focus (settings) */
+		.${CSS_PREFIX}-btn-sm,
+		.${CSS_PREFIX}-input,
+		.${CSS_PREFIX}-select-trigger,
+		.${CSS_PREFIX}-combo-fetch,
+		.${CSS_PREFIX}-prov-row,
+		.${CSS_PREFIX}-icon-btn,
+		.${CSS_PREFIX}-prov-rename,
+		.${CSS_PREFIX}-about-badges .${CSS_PREFIX}-badge {
+			transition: background 120ms ease, color 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+		}
+		.${CSS_PREFIX}-btn-sm:focus-visible,
+		.${CSS_PREFIX}-icon-btn:focus-visible,
+		.${CSS_PREFIX}-select-trigger:focus-visible,
+		.${CSS_PREFIX}-combo-fetch:focus-visible,
+		.${CSS_PREFIX}-switch:focus-visible,
+		.${CSS_PREFIX}-tab:focus-visible,
+		.${CSS_PREFIX}-prov-row:focus-visible,
+		.${CSS_PREFIX}-prov-rename:focus-visible,
+		.${CSS_PREFIX}-combo-chevron:focus-visible,
+		.${CSS_PREFIX}-input-eye:focus-visible,
+		.${CSS_PREFIX}-about-badges .${CSS_PREFIX}-badge:focus-visible {
+			outline: none;
+			box-shadow: 0 0 0 2px color-mix(in srgb, var(--damc-brand, #5865f2) 42%, transparent);
+		}
+		@media (max-width: 560px) {
+			.${CSS_PREFIX}-confirm-wide {
+				max-width: calc(100vw - 24px) !important;
+			}
+			.${CSS_PREFIX}-modal { padding-inline: 12px; }
+			.${CSS_PREFIX}-zone-row {
+				align-items: stretch;
+				flex-direction: column;
+				gap: 8px;
+			}
+			.${CSS_PREFIX}-zone-ctl {
+				width: 100%;
+				justify-content: flex-start;
+			}
+			.${CSS_PREFIX}-range-grid {
+				grid-template-columns: minmax(0, 1fr);
+			}
+			.${CSS_PREFIX}-attachment-list { flex-direction: column; }
+			.${CSS_PREFIX}-attachment-file { width: 100%; max-width: 100%; }
+			.${CSS_PREFIX}-panel-head .${CSS_PREFIX}-select-trigger {
+				max-width: min(220px, calc(100vw - 72px));
+			}
+		}
 	`;
 	// ==================== 16. LIFECYCLE REGISTRIES ====================
 
@@ -3225,6 +4565,11 @@ module.exports = (() => {
 			}, data);
 			ReviewSession._emit();
 		},
+		matches(context) {
+			if (!ReviewSession.state) return false;
+			const expected = ScanCache.key(context, ReviewSession.state.scope);
+			return Boolean(expected && ReviewSession.state.scopeKey === expected);
+		},
 		update(patch) {
 			if (!ReviewSession.state) return;
 			Object.assign(ReviewSession.state, patch);
@@ -3256,15 +4601,95 @@ module.exports = (() => {
 		}
 	};
 
-	// Last successful scan, kept so an accidental modal close (backdrop click,
-	// Esc) does not throw away a long scan. Overwritten by each new scan.
+	// Recent successful scans, kept in memory so navigation or an accidental
+	// modal close does not throw away a long scan. Guild scans use a guild-wide
+	// identity and can be reopened from every channel in that guild; channel/DM
+	// scans stay isolated. A small LRU-style cap avoids unbounded session memory.
 	const ScanCache = {
-		state: null, // {channelId, fetchResult, scope}
-		set(channelId, fetchResult, scope) { ScanCache.state = { channelId, fetchResult, scope }; },
-		get(channelId) {
-			return ScanCache.state && ScanCache.state.channelId === channelId ? ScanCache.state : null;
+		state: null, // latest entry; retained as a diagnostic/compatibility view
+		_entries: new Map(),
+		MAX_ENTRIES: 20,
+		_revision: 0,
+		key(context, scope) {
+			if (!context) return null;
+			if (scope === "guild" && context.guildId) return `guild:${context.guildId}`;
+			return context.channelId ? `channel:${context.channelId}` : null;
 		},
-		clear() { ScanCache.state = null; }
+		matches(entry, context) {
+			if (!entry || !context) return false;
+			return entry.scopeKey === ScanCache.key(context, entry.scope);
+		},
+		set(context, fetchResult, scope) {
+			const scopeKey = ScanCache.key(context, scope);
+			if (!scopeKey) return null;
+			const previous = ScanCache._entries.get(scopeKey);
+			const entry = {
+				scopeKey,
+				scope,
+				guildId: context.guildId || null,
+				originChannelId: context.channelId || null,
+				originChannel: context.channel || null,
+				fetchResult,
+				viewState: previous ? previous.viewState : null,
+				updatedAt: Date.now(),
+				revision: ++ScanCache._revision
+			};
+			// Reinsert to move the entry to the newest end of Map iteration order.
+			ScanCache._entries.delete(scopeKey);
+			ScanCache._entries.set(scopeKey, entry);
+			while (ScanCache._entries.size > ScanCache.MAX_ENTRIES) {
+				const oldest = ScanCache._entries.keys().next().value;
+				ScanCache._entries.delete(oldest);
+			}
+			ScanCache.state = entry;
+			return entry;
+		},
+		setView(scopeKey, viewState) {
+			const entry = ScanCache._entries.get(scopeKey);
+			if (!entry) return false;
+			const source = viewState || {};
+			entry.viewState = {
+				selectedIds: Array.isArray(source.selectedIds) ? source.selectedIds.slice() : [],
+				flagFilter: Boolean(source.flagFilter),
+				channelFilter: source.channelFilter || null
+			};
+			entry.updatedAt = Date.now();
+			entry.revision = ++ScanCache._revision;
+			ScanCache._entries.delete(scopeKey);
+			ScanCache._entries.set(scopeKey, entry);
+			ScanCache.state = entry;
+			return true;
+		},
+		get(context) {
+			if (!context) return null;
+			const candidates = [];
+			const channelKey = ScanCache.key(context, "channel");
+			const guildKey = ScanCache.key(context, "guild");
+			if (channelKey && ScanCache._entries.has(channelKey)) candidates.push(ScanCache._entries.get(channelKey));
+			if (guildKey && guildKey !== channelKey && ScanCache._entries.has(guildKey)) candidates.push(ScanCache._entries.get(guildKey));
+			if (!candidates.length) return null;
+			return candidates.reduce((latest, entry) => entry.revision > latest.revision ? entry : latest);
+		},
+		getByKey(scopeKey) {
+			return ScanCache._entries.get(scopeKey) || null;
+		},
+		remove(context, scope) {
+			const scopeKey = ScanCache.key(context, scope);
+			if (!scopeKey) return false;
+			const removed = ScanCache._entries.delete(scopeKey);
+			if (ScanCache.state && ScanCache.state.scopeKey === scopeKey) {
+				const remaining = [...ScanCache._entries.values()];
+				ScanCache.state = remaining.length
+					? remaining.reduce((latest, entry) => entry.revision > latest.revision ? entry : latest)
+					: null;
+			}
+			return removed;
+		},
+		clear() {
+			ScanCache._entries.clear();
+			ScanCache.state = null;
+			ScanCache._revision = 0;
+		}
 	};
 
 	// Floating progress pill shown while a minimized review runs. Plain DOM:
@@ -3402,7 +4827,6 @@ module.exports = (() => {
 			if (MiniPill._el) { try { MiniPill._el.remove(); } catch (e) { /* ignore */ } MiniPill._el = null; }
 		}
 	};
-
 	// ==================== 17. UI: REACT HELPERS ====================
 
 	const h = React.createElement;
@@ -3414,6 +4838,15 @@ module.exports = (() => {
 		style: { display: "flex", alignItems: "center", justifyContent: "center" },
 		dangerouslySetInnerHTML: { __html: CLEANER_ICON_SVG }
 	});
+
+	// t() with one emphasized parameter rendered as a <b>, regardless of where
+	// the placeholder sits in the translated sentence.
+	const tEmph = (key, params, emphKey) => {
+		const marker = String.fromCharCode(1);
+		const wrapped = Object.assign({}, params, { [emphKey]: `${marker}${params[emphKey]}${marker}` });
+		return t(key, wrapped).split(marker).map((part, index) =>
+			index === 1 ? h("b", { key: "emph", className: `${CSS_PREFIX}-emph` }, part) : part);
+	};
 
 	// Native Discord button when available so themes restyle it; falls back to
 	// the plugin's own CSS button.
@@ -3428,7 +4861,10 @@ module.exports = (() => {
 			if (tone === "brand" || nativeColor !== undefined) {
 				const btnProps = { onClick: props.onClick, disabled: Boolean(props.disabled) };
 				if (nativeColor !== undefined) btnProps.color = nativeColor;
-				return h(NativeButton, btnProps, props.children);
+				const nativeBtn = h(NativeButton, btnProps, props.children);
+				// The host's disabled state stays too saturated on dark
+				// surfaces; dim it one step further so it cannot read as live.
+				return props.disabled ? h("span", { className: `${CSS_PREFIX}-btn-dim` }, nativeBtn) : nativeBtn;
 			}
 		}
 		const toneClass = tone === "secondary" ? ` ${CSS_PREFIX}-secondary` : tone === "danger" ? ` ${CSS_PREFIX}-danger` : "";
@@ -3449,6 +4885,9 @@ module.exports = (() => {
 		h("div", { className: `${CSS_PREFIX}-strip-head` },
 			h("span", { className: `${CSS_PREFIX}-strip-label` }, props.label),
 			props.text ? h("span", { className: `${CSS_PREFIX}-strip-text` }, props.text) : null,
+			props.ratio !== null && props.ratio !== undefined
+				? h("span", { className: `${CSS_PREFIX}-strip-pct` }, `${Math.round(Utils.clamp(props.ratio, 0, 1) * 100)}%`)
+				: null,
 			props.onCancel ? h("button", { type: "button", className: `${CSS_PREFIX}-strip-cancel`, onClick: props.onCancel }, t("act_cancel")) : null
 		),
 		h("div", { className: `${CSS_PREFIX}-progress-track` },
@@ -3462,7 +4901,13 @@ module.exports = (() => {
 	// ==================== 18. UI: CHAT BUTTON ====================
 
 	const CleanerChatButton = props => {
-		const onClick = () => { if (PluginInstance) PluginInstance.openCleaner(props.channel); };
+		const onClick = () => {
+			// Resolve at click time: Discord may reuse the composer toolbar while a
+			// native cross-channel jump is settling, leaving the rendered prop stale.
+			const current = ChannelContext.current();
+			const channel = current.supported ? current.channel : props.channel;
+			if (PluginInstance) PluginInstance.openCleaner(channel);
+		};
 		const chrome = DiscordAdapter.chatButtonChrome();
 		const inner = chrome
 			? h(chrome, null, h(Icon))
@@ -3478,13 +4923,94 @@ module.exports = (() => {
 		}
 		return h("div", { onClick, style: { display: "flex", alignSelf: "center" }, title: t("tooltip_supported") }, inner);
 	};
-
 	// ==================== 19. UI: CLEANER MODAL ====================
 
 	const UnsupportedContent = () => h("div", { className: `${CSS_PREFIX}-note` }, t("unsupported_hint"));
 
+	// Category hues follow Discord's own status/role palette; the hue drives a
+	// flagged card's left bar and its role-style colored category label.
+	const CATEGORY_COLORS = {
+		abuse: "#f23f43",
+		nsfw: "#eb459e",
+		privacy: "#f57c22",
+		politics: "#f0b232",
+		ad: "#26a5ff",
+		other: "#b5bac1"
+	};
+
+	// Material Symbols Rounded "history" (load-more / resume-scan row).
+	const HISTORY_ICON_SVG = `<svg width="14" height="14" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M477-120q-142 0-243.5-95.5T121-451q-1-12 7.5-21t21.5-9q12 0 20.5 8.5T181-451q11 115 95 193t201 78q127 0 215-89t88-216q0-124-89-209.5T477-780q-68 0-127.5 31T246-667h75q13 0 21.5 8.5T351-637q0 13-8.5 21.5T321-607H172q-13 0-21.5-8.5T142-637v-148q0-13 8.5-21.5T172-815q13 0 21.5 8.5T202-785v76q52-61 123.5-96T477-840q75 0 141 28t115.5 76.5Q783-687 811.5-622T840-482q0 75-28.5 141t-78 115Q684-177 618-148.5T477-120Zm34-374 115 113q9 9 9 21.5t-9 21.5q-9 9-21 9t-21-9L460-460q-5-5-7-10.5t-2-11.5v-171q0-13 8.5-21.5T481-683q13 0 21.5 8.5T511-653v159Z"/></svg>`;
+	const FILE_ICON_SVG = `<svg viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M320-120q-33 0-56.5-23.5T240-200v-560q0-33 23.5-56.5T320-840h280l120 120v520q0 33-23.5 56.5T640-120H320Zm240-560v-100H320q-8 0-14 6t-6 14v560q0 8 6 14t14 6h320q8 0 14-6t6-14v-480H560Z"/></svg>`;
+	const OPEN_ICON_SVG = `<svg viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h240v60H200q-8 0-14 6t-6 14v560q0 8 6 14t14 6h560q8 0 14-6t6-14v-240h60v240q0 33-23.5 56.5T760-120H200Zm194-232-42-42 386-386H540v-60h300v300h-60v-198L394-352Z"/></svg>`;
+	const JUMP_ICON_SVG = `<svg viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M480-160v-60h280q8 0 14-6t6-14v-480q0-8-6-14t-14-6H480v-60h280q33 0 56.5 23.5T840-720v480q0 33-23.5 56.5T760-160H480Zm-80-160-42-43 87-87H120v-60h325l-87-87 42-43 160 160-160 160Z"/></svg>`;
+
 	// Custom emoji tags render as the real emoji image from Discord's CDN.
 	const EMOJI_TAG_RE = /<(a?):(\w+):(\d{5,})>/g;
+	const emojiSources = (id, animated) => animated
+		? [
+			`https://cdn.discordapp.com/emojis/${id}.gif?size=48`,
+			`https://cdn.discordapp.com/emojis/${id}.webp?size=48&animated=true`,
+			`https://cdn.discordapp.com/emojis/${id}.png?size=48`
+		]
+		: [
+			`https://cdn.discordapp.com/emojis/${id}.webp?size=48`,
+			`https://cdn.discordapp.com/emojis/${id}.png?size=48`
+		];
+	const URL_RE = /https?:\/\/(?:(?![,，]https?:\/\/)[^\s<>])+/gi;
+	const TRAILING_URL_PUNCTUATION_RE = /[.,!?;:'"。，！？；：、]+$/;
+	const splitLinkTarget = value => {
+		let url = String(value || "");
+		let suffix = "";
+		const punctuation = url.match(TRAILING_URL_PUNCTUATION_RE);
+		if (punctuation) {
+			suffix = punctuation[0];
+			url = url.slice(0, -suffix.length);
+		}
+		// Keep balanced brackets that genuinely belong to a URL, but detach an
+		// unmatched closer contributed by surrounding prose/Markdown.
+		let changed = true;
+		while (changed) {
+			changed = false;
+			for (const pair of [["(", ")"], ["[", "]"], ["{", "}"]]) {
+				while (url.endsWith(pair[1])) {
+					const opens = url.split(pair[0]).length - 1;
+					const closes = url.split(pair[1]).length - 1;
+					if (closes <= opens) break;
+					url = url.slice(0, -1);
+					suffix = pair[1] + suffix;
+					changed = true;
+				}
+			}
+		}
+		return { url, suffix };
+	};
+	const renderLinkedText = (text, prefix) => {
+		const out = [];
+		const source = String(text || "");
+		let last = 0;
+		let index = 0;
+		let match;
+		URL_RE.lastIndex = 0;
+		while ((match = URL_RE.exec(source))) {
+			const split = splitLinkTarget(match[0]);
+			const url = split.url;
+			if (match.index > last) out.push(source.slice(last, match.index));
+			out.push(h("a", {
+				key: `${prefix}-link-${index++}`,
+				className: `${CSS_PREFIX}-row-link`,
+				href: url,
+				target: "_blank",
+				rel: "noopener noreferrer",
+				title: url,
+				onClick: event => event.stopPropagation()
+			}, url));
+			if (split.suffix) out.push(split.suffix);
+			last = match.index + match[0].length;
+		}
+		if (last < source.length) out.push(source.slice(last));
+		return out;
+	};
+
 	const renderContentSegments = text => {
 		const out = [];
 		let last = 0;
@@ -3493,83 +5019,174 @@ module.exports = (() => {
 		EMOJI_TAG_RE.lastIndex = 0;
 		const source = String(text || "");
 		while ((match = EMOJI_TAG_RE.exec(source))) {
-			if (match.index > last) out.push(source.slice(last, match.index).replace(/\s+/g, " "));
-			out.push(h("img", {
+			if (match.index > last) out.push(...renderLinkedText(source.slice(last, match.index).replace(/\s+/g, " "), `t${key}`));
+			const label = `:${match[2]}:`;
+			const sources = emojiSources(match[3], Boolean(match[1]));
+			out.push(h("span", {
 				key: `e${key++}`,
-				className: `${CSS_PREFIX}-emoji`,
-				src: `https://cdn.discordapp.com/emojis/${match[3]}.${match[1] ? "gif" : "png"}?size=32&quality=lossless`,
-				alt: `:${match[2]}:`,
-				title: `:${match[2]}:`,
-				loading: "lazy",
-				draggable: false
-			}));
+				className: `${CSS_PREFIX}-emoji-token`,
+				role: "img",
+				"aria-label": label,
+				title: label
+			},
+				h("img", {
+					className: `${CSS_PREFIX}-emoji`,
+					src: sources[0],
+					alt: "",
+					"aria-hidden": true,
+					loading: "lazy",
+					draggable: false,
+					onError: event => {
+						const image = event.currentTarget || event.target;
+						const next = Utils.num(image && image.dataset && image.dataset.sourceIndex, 0) + 1;
+						if (image && next < sources.length) {
+							image.dataset.sourceIndex = String(next);
+							image.src = sources[next];
+							return;
+						}
+						try {
+							const token = image && image.closest(`.${CSS_PREFIX}-emoji-token`);
+							if (token) token.classList.add(`${CSS_PREFIX}-emoji-failed`);
+						} catch (e) { /* text fallback remains */ }
+					}
+				}),
+				h("span", { className: `${CSS_PREFIX}-emoji-fallback`, "aria-hidden": true }, label)
+			));
 			last = match.index + match[0].length;
 		}
-		if (last < source.length) out.push(source.slice(last).replace(/\s+/g, " "));
+		if (last < source.length) out.push(...renderLinkedText(source.slice(last).replace(/\s+/g, " "), `t${key}`));
 		return out;
+	};
+
+	const formatAttachmentSize = bytes => {
+		const value = Utils.num(bytes, 0);
+		if (value <= 0) return "";
+		if (value < 1024) return `${value} B`;
+		if (value < 1024 * 1024) return `${Math.round(value / 1024)} KB`;
+		if (value >= 1024 * 1024 * 1024) return `${(value / (1024 * 1024 * 1024)).toFixed(value >= 10 * 1024 * 1024 * 1024 ? 0 : 1)} GB`;
+		return `${(value / (1024 * 1024)).toFixed(value >= 10 * 1024 * 1024 ? 0 : 1)} MB`;
 	};
 
 	const MessageRow = props => {
 		const message = props.message;
 		const verdict = props.verdict || null;
 		const hasText = Boolean(message.content);
+		const attachments = Array.isArray(message.attachments) ? message.attachments : [];
 		const badges = [];
-		if (verdict) {
-			badges.push(h("span", { key: "flag", className: `${CSS_PREFIX}-badge ${CSS_PREFIX}-badge-flag` },
-				`${t(`cat_${verdict.category}`)}${verdict.severity >= 3 ? " !!!" : verdict.severity === 2 ? " !!" : ""}`));
-		}
 		if (props.showChannel && message.channelId) {
-			badges.push(h("span", { key: "chan", className: `${CSS_PREFIX}-badge` },
+			badges.push(h("span", { key: "chan", className: `${CSS_PREFIX}-meta-badge ${CSS_PREFIX}-channel-badge` },
 				`#${DiscordAdapter.getChannelName(message.channelId) || message.channelId}`));
 		}
-		if (message.attachments.length && hasText) {
-			badges.push(h("span", { key: "att", className: `${CSS_PREFIX}-badge` }, t("attachment_badge", { n: message.attachments.length })));
-		}
 		if (message.edited) {
-			badges.push(h("span", { key: "edit", className: `${CSS_PREFIX}-badge` }, t("edited_badge")));
+			badges.push(h("span", { key: "edit", className: `${CSS_PREFIX}-meta-badge` }, t("edited_badge")));
 		}
-		// Up to 3 tiny thumbnails for image attachments; lazy so a long list
-		// only loads what scrolls into view.
-		const thumbs = message.attachments.filter(att => att.isImage && att.url).slice(0, 3);
-		return h("button", {
-			type: "button",
-			role: "checkbox",
-			"aria-checked": props.selected,
-			className: `${CSS_PREFIX}-row${props.selected ? ` ${CSS_PREFIX}-row-on` : ""}${verdict ? ` ${CSS_PREFIX}-row-flagged` : ""}`,
+		// Role-color category label, right-aligned on the meta line; the same
+		// hue paints the card's left bar via --damc-flag.
+		if (verdict) {
+			badges.push(h("span", { key: "cat", className: `${CSS_PREFIX}-cat` },
+				`${t(`cat_${verdict.category}`)}${verdict.severity >= 3 ? " !!!" : verdict.severity === 2 ? " !!" : ""}`));
+		}
+		const channelId = message.channelId || props.channelId;
+		const messagePath = DiscordAdapter.messagePath(props.guildId, channelId, message.id);
+		const attachmentNodes = attachments.map((att, index) => {
+			const name = String(att.filename || t("attachment_unnamed"));
+			const url = /^https?:\/\//i.test(att.url || "") ? att.url : "";
+			const noLinkClass = url ? "" : ` ${CSS_PREFIX}-attachment-no-link`;
+			const previewUrl = att.proxyUrl || url;
+			const size = formatAttachmentSize(att.size);
+			const copy = h("span", { className: `${CSS_PREFIX}-attachment-copy` },
+				h("span", { className: `${CSS_PREFIX}-attachment-name`, title: name }, name),
+				size ? h("span", { className: `${CSS_PREFIX}-attachment-size` }, size) : null
+			);
+			const linkProps = url ? {
+				href: url,
+				target: "_blank",
+				rel: "noopener noreferrer",
+				title: t("attachment_open", { name }),
+				onClick: event => event.stopPropagation()
+			} : {};
+			if (att.isImage && previewUrl) {
+				const fallbackTag = url ? "a" : "span";
+				return h("div", { key: `${message.id}-att-${index}`, className: `${CSS_PREFIX}-image-direct-wrap${noLinkClass}` },
+					h("button", {
+						type: "button",
+						className: `${CSS_PREFIX}-image-direct`,
+						title: name,
+						"aria-label": t("attachment_preview", { name }),
+						onClick: event => {
+							event.stopPropagation();
+							if (props.onPreview) props.onPreview({ url: previewUrl, filename: name });
+						}
+					}, h("img", {
+						className: `${CSS_PREFIX}-image-direct-img`,
+						src: previewUrl,
+						alt: name,
+						loading: "lazy",
+						draggable: false,
+						onError: event => {
+							const image = event.currentTarget || event.target;
+							if (url && previewUrl !== url && image && image.dataset.originalTried !== "true") {
+								image.dataset.originalTried = "true";
+								image.src = url;
+								return;
+							}
+							try {
+								const wrap = image && image.closest(`.${CSS_PREFIX}-image-direct-wrap`);
+								if (wrap) wrap.classList.add(`${CSS_PREFIX}-image-direct-failed`);
+							} catch (e) { /* file fallback remains */ }
+						}
+					})),
+					h(fallbackTag, Object.assign({ className: `${CSS_PREFIX}-attachment ${CSS_PREFIX}-attachment-file ${CSS_PREFIX}-image-direct-fallback${noLinkClass}` }, linkProps),
+						h("span", { className: `${CSS_PREFIX}-attachment-file-icon`, dangerouslySetInnerHTML: { __html: FILE_ICON_SVG } }),
+						copy,
+						url ? h("span", { className: `${CSS_PREFIX}-attachment-open`, dangerouslySetInnerHTML: { __html: OPEN_ICON_SVG } }) : null
+					)
+				);
+			}
+			const tag = url ? "a" : "div";
+			return h(tag, Object.assign({ key: `${message.id}-att-${index}`, className: `${CSS_PREFIX}-attachment ${CSS_PREFIX}-attachment-file${noLinkClass}` }, linkProps),
+				h("span", { className: `${CSS_PREFIX}-attachment-file-icon`, dangerouslySetInnerHTML: { __html: FILE_ICON_SVG } }),
+				copy,
+				url ? h("span", { className: `${CSS_PREFIX}-attachment-open`, dangerouslySetInnerHTML: { __html: OPEN_ICON_SVG } }) : null
+			);
+		});
+		return h("div", {
+			className: `${CSS_PREFIX}-mcard${props.selected ? ` ${CSS_PREFIX}-mcard-selected` : ""}${verdict ? ` ${CSS_PREFIX}-mcard-flagged` : ""}`,
+			style: verdict ? { "--damc-flag": CATEGORY_COLORS[verdict.category] || CATEGORY_COLORS.other } : undefined,
 			onClick: () => props.onToggle(message.id)
 		},
-			h("span", {
-				className: `${CSS_PREFIX}-checkbox${props.selected ? ` ${CSS_PREFIX}-checkbox-on` : ""}`,
-				dangerouslySetInnerHTML: { __html: props.selected ? CHECK_MARK_SVG : "" }
-			}),
+			h("button", {
+				type: "button",
+				role: "checkbox",
+				"aria-checked": props.selected,
+				"aria-label": t("select_message"),
+				className: `${CSS_PREFIX}-row-select`,
+				title: t("select_message"),
+				onClick: event => { event.stopPropagation(); props.onToggle(message.id); }
+			}, h("span", {
+					className: `${CSS_PREFIX}-checkbox${props.selected ? ` ${CSS_PREFIX}-checkbox-on` : ""}`,
+					dangerouslySetInnerHTML: { __html: props.selected ? CHECK_MARK_SVG : "" }
+			})),
 			h("div", { className: `${CSS_PREFIX}-row-body` },
 				h("div", { className: `${CSS_PREFIX}-row-meta` },
-					h("span", null, Utils.formatDateTime(message.timestamp)),
-					badges
+					h("span", { className: `${CSS_PREFIX}-mtime` }, Utils.formatTime(message.timestamp)),
+					badges,
+					messagePath ? h("button", {
+						type: "button",
+						className: `${CSS_PREFIX}-message-jump`,
+						title: t("message_jump"),
+						"aria-label": t("message_jump"),
+						onClick: event => {
+							event.stopPropagation();
+							if (props.onJump) props.onJump(message);
+						},
+						dangerouslySetInnerHTML: { __html: JUMP_ICON_SVG }
+					}) : null
 				),
 				hasText
 					? h("div", { className: `${CSS_PREFIX}-row-text` }, renderContentSegments(message.content))
-					: (thumbs.length
-						? null
-						: h("div", { className: `${CSS_PREFIX}-row-text ${CSS_PREFIX}-faint` },
-							t("attachment_only", { names: Utils.truncate(message.attachments.map(att => att.filename).join(", "), 60) }))),
-				thumbs.length ? h("div", { className: `${CSS_PREFIX}-row-thumbs` },
-					thumbs.map((att, index) => h("img", {
-						key: index,
-						className: `${CSS_PREFIX}-thumb`,
-						src: att.url,
-						alt: att.filename,
-						title: att.filename,
-						loading: "lazy",
-						draggable: false,
-						// Opens the lightbox; must not toggle the row selection.
-						onClick: event => {
-							event.stopPropagation();
-							if (props.onPreview) props.onPreview(att);
-						},
-						onError: event => { try { event.target.style.display = "none"; } catch (e) { /* ignore */ } }
-					}))
-				) : null,
+					: null,
+				attachmentNodes.length ? h("div", { className: `${CSS_PREFIX}-attachment-list` }, attachmentNodes) : null,
 				verdict && verdict.reason ? h("div", { className: `${CSS_PREFIX}-row-reason` }, verdict.reason) : null
 			)
 		);
@@ -3601,21 +5218,24 @@ module.exports = (() => {
 				}),
 				h("span", null, props.label)
 			),
-			on ? h("label", { className: `${CSS_PREFIX}-backup-format` },
+			on ? h("div", { className: `${CSS_PREFIX}-backup-format` },
 				h("span", { className: `${CSS_PREFIX}-backup-format-label` }, t("backup_format_label")),
-				h("select", {
-					className: `${CSS_PREFIX}-backup-format-select`,
-					value: format,
-					onChange: event => {
-						const next = ExportService.normalizeFormat(event.target.value);
-						setFormat(next);
-						props.onFormatChange(next);
-					}
-				},
-					h("option", { value: "md" }, t("backup_format_md")),
-					h("option", { value: "txt" }, t("backup_format_txt")),
-					h("option", { value: "json" }, t("backup_format_json"))
-			)
+				// Three fixed options need no floater: a mini segment shows all
+				// of them at once inside the small confirm modal.
+				h("div", { className: `${CSS_PREFIX}-seg-mini`, role: "radiogroup" },
+					[["md", "backup_format_md"], ["txt", "backup_format_txt"], ["json", "backup_format_json"]].map(entry => h("button", {
+						key: entry[0],
+						type: "button",
+						role: "radio",
+						"aria-checked": format === entry[0],
+						className: `${CSS_PREFIX}-seg-mini-btn${format === entry[0] ? ` ${CSS_PREFIX}-active` : ""}`,
+						onClick: () => {
+							const next = ExportService.normalizeFormat(entry[0]);
+							setFormat(next);
+							props.onFormatChange(next);
+						}
+					}, t(entry[1])))
+				)
 		) : null
 		);
 	};
@@ -3645,6 +5265,7 @@ module.exports = (() => {
 		const [flagFilter, setFlagFilter] = useState(false);
 		const [channelFilter, setChannelFilter] = useState(null); // guild scope: null = all channels
 		const [lightbox, setLightbox] = useState(null);           // {url, name} | null
+		const lightboxRef = useRef(null);
 		const [gateArmed, setGateArmed] = useState(false);
 		// delete state
 		const [deleteProgress, setDeleteProgress] = useState(null);
@@ -3674,10 +5295,19 @@ module.exports = (() => {
 		// The review pipeline writes ONLY into ReviewSession; this component is
 		// a subscribed view. That is what lets a minimized review keep running.
 		useEffect(() => {
+			const restoreView = (viewState, payload) => {
+				if (!viewState || !payload || !Array.isArray(payload.messages)) return false;
+				const known = new Set(payload.messages.map(message => message.id));
+				const selectedIds = Array.isArray(viewState.selectedIds) ? viewState.selectedIds.filter(id => known.has(id)) : [];
+				setSelected(new Set(selectedIds));
+				setFlagFilter(Boolean(viewState.flagFilter));
+				setChannelFilter(viewState.channelFilter || null);
+				return true;
+			};
 			const sync = () => {
 				if (!mountedRef.current) return;
 				const session = ReviewSession.state;
-				if (!session || session.channelId !== ctx.channelId) {
+				if (!session || !ReviewSession.matches(ctx)) {
 					setReviewing(false);
 					setReviewStage(null);
 					return;
@@ -3700,32 +5330,48 @@ module.exports = (() => {
 			};
 			const unsubscribe = ReviewSession.subscribe(sync);
 			// Hydrate from a background session (pill click or manual reopen in
-			// the same channel), or fall back to the last scan so an accidental
+			// the same scan scope), or fall back to the last scan so an accidental
 			// modal close does not lose the results.
 			const session = ReviewSession.state;
-			if (session && session.channelId === ctx.channelId && session.fetchResult) {
+			if (session && ReviewSession.matches(ctx) && session.fetchResult) {
+				const cached = ScanCache.get(ctx);
 				setFetchResult(session.fetchResult);
 				setScope(session.scope || "channel");
 				setStage("results");
 				MiniPill.hide();
+				if (restoreView(session.viewState || (cached && cached.viewState), session.fetchResult) && session.phase === "done") {
+					doneHandledRef.current = true;
+					setReviewDone(true);
+				}
 				sync();
 			} else {
-				const cached = ScanCache.get(ctx.channelId);
+				const cached = ScanCache.get(ctx);
 				if (cached) {
 					setFetchResult(cached.fetchResult);
 					setScope(cached.scope || "channel");
 					setStage("results");
+					restoreView(cached.viewState, cached.fetchResult);
 				}
 			}
 			return unsubscribe;
 		}, []);
 
-		// Escape closes the image lightbox.
+		// Escape closes the image lightbox; focus enters the portalled dialog
+		// while open, then returns to the preview control that launched it.
 		useEffect(() => {
 			if (!lightbox) return undefined;
+			let previous = null;
+			try { previous = document.activeElement; } catch (e) { /* ignore */ }
 			const onKey = event => { if (event.key === "Escape") { event.stopPropagation(); setLightbox(null); } };
 			document.addEventListener("keydown", onKey, true);
-			return () => document.removeEventListener("keydown", onKey, true);
+			const timer = setTimeout(() => {
+				try { if (lightboxRef.current) lightboxRef.current.focus(); } catch (e) { /* ignore */ }
+			}, 0);
+			return () => {
+				clearTimeout(timer);
+				document.removeEventListener("keydown", onKey, true);
+				try { if (previous && typeof previous.focus === "function") previous.focus(); } catch (e) { /* ignore */ }
+			};
 		}, [lightbox]);
 
 		const applyPreset = (key, days) => {
@@ -3770,10 +5416,11 @@ module.exports = (() => {
 				setError({ message: t("err_no_permission") });
 				return;
 			}
-			// A new scan invalidates any (possibly background) review session
-			// and the accidental-close cache.
+			// A new scan invalidates any (possibly background) review session and
+			// replaces only this scan scope. Other guild/channel caches remain
+			// available during the same plugin session.
 			ReviewSession.abortAndClear();
-			ScanCache.clear();
+			ScanCache.remove(ctx, scope);
 			MiniPill.hide();
 			doneHandledRef.current = false;
 			setError(null);
@@ -3848,7 +5495,7 @@ module.exports = (() => {
 				const payload = Object.assign({}, result, { range, options, scope: useSearch ? scope : "channel" });
 				// Cache BEFORE the mount check: a scan whose modal was closed
 				// mid-flight must still leave its partial results recoverable.
-				if (payload.messages.length) ScanCache.set(ctx.channelId, payload, payload.scope);
+				if (payload.messages.length) ScanCache.set(ctx, payload, payload.scope);
 				if (!mountedRef.current) return;
 				setFetchResult(payload);
 				setStage(payload.messages.length ? "results" : "empty");
@@ -3915,7 +5562,7 @@ module.exports = (() => {
 					cancelled: result.cancelled,
 					resumeCursor: result.resumeCursor
 				});
-				if (payload.messages.length) ScanCache.set(ctx.channelId, payload, payload.scope);
+				if (payload.messages.length) ScanCache.set(ctx, payload, payload.scope);
 				if (!mountedRef.current) return;
 				setFetchResult(payload);
 				setStage("results");
@@ -3948,6 +5595,7 @@ module.exports = (() => {
 			}
 			setGateArmed(false);
 			setError(null);
+			setDeleteReport(null);
 			doneHandledRef.current = false;
 			const controller = beginRun();
 			// Everything below writes into ReviewSession, never into React state:
@@ -3959,6 +5607,7 @@ module.exports = (() => {
 				channel: ctx.channel,
 				channelId: ctx.channelId,
 				scope: fetchResult.scope || "channel",
+				scopeKey: ScanCache.key(ctx, fetchResult.scope || "channel"),
 				fetchResult,
 				verdicts: new Map(previousVerdicts)
 			});
@@ -4020,18 +5669,19 @@ module.exports = (() => {
 				messages: fetchResult.messages.filter(message => !removed.has(message.id))
 			}) : null;
 			if (nextPayload) {
-				if (nextPayload.messages.length) ScanCache.set(ctx.channelId, nextPayload, nextPayload.scope);
-				else ScanCache.clear();
+				if (nextPayload.messages.length) ScanCache.set(ctx, nextPayload, nextPayload.scope);
+				else ScanCache.remove(ctx, nextPayload.scope);
 				// The background session is what hydrates the modal on reopen;
 				// leaving its list untouched would resurrect deleted rows.
 				const session = ReviewSession.state;
-				if (session && session.channelId === ctx.channelId && session.fetchResult) {
+				if (session && ReviewSession.matches(ctx) && session.fetchResult) {
 					ReviewSession.update({ fetchResult: nextPayload });
 				}
 			}
 			for (const id of removed) verdictsRef.current.delete(id);
 			if (!mountedRef.current) return;
 			if (nextPayload) setFetchResult(nextPayload);
+			if (!verdictsRef.current.size) setFlagFilter(false);
 			setSelected(prev => {
 				const next = new Set(prev);
 				for (const id of removed) next.delete(id);
@@ -4100,7 +5750,7 @@ module.exports = (() => {
 				// Guild-wide search results span channels; deletion is per channel.
 				channelId: message.channelId || ctx.channelId,
 				timestamp: message.timestamp,
-				excerpt: Utils.truncate(Utils.stripEmojiTags(message.content || (message.attachments.length ? `[${message.attachments.map(att => att.filename).join(", ")}]` : "")).replace(/\s+/g, " "), 50)
+				excerpt: Utils.truncate(Utils.stripEmojiTags(message.content || (message.attachments.length ? `[${message.attachments.map(att => att.filename || t("attachment_unnamed")).join(", ")}]` : "")).replace(/\s+/g, " "), 50)
 			}));
 		};
 
@@ -4118,10 +5768,27 @@ module.exports = (() => {
 			// "always" is a guarantee the user configured, so it is not togglable here.
 			const locked = mode === "always";
 			const choice = { backup: mode !== "never", format: "md" };
+			let confirmKey = null;
+			let committed = false;
+			const closeConfirm = () => {
+				if (confirmKey == null) return;
+				try {
+					const sys = DiscordAdapter.modalSystem();
+					if (sys) sys.closeModal(confirmKey);
+				} catch (e) { /* the action remains explicit */ }
+				confirmKey = null;
+			};
+			const commitDelete = () => {
+				if (committed) return;
+				committed = true;
+				closeConfirm();
+				if (choice.backup) backupThenDelete(items, choice.format);
+				else executeDelete(items);
+			};
 			const content = h("div", { className: `${CSS_PREFIX}-ui ${CSS_PREFIX}-confirm-body` },
 				overCap ? h("div", { className: `${CSS_PREFIX}-warn` },
 					t("delete_confirm_over_cap", { n: selected.size, max: maxPerRun })) : null,
-				h("div", null, t("delete_confirm_body", { n: items.length })),
+				h("div", null, tEmph("delete_confirm_body", { n: items.length }, "n")),
 					h(BackupChoice, {
 						initial: choice.backup,
 						initialFormat: choice.format,
@@ -4129,17 +5796,19 @@ module.exports = (() => {
 						label: locked ? t("backup_choice_locked") : t("backup_choice_label"),
 						onChange: value => { choice.backup = value; },
 						onFormatChange: value => { choice.format = value; }
-					})
+					}),
+					h("div", { className: `${CSS_PREFIX}-confirm-actions` },
+						h(Btn, { tone: "secondary", onClick: closeConfirm }, t("cancel")),
+						h(Btn, { tone: "danger", onClick: commitDelete }, t("delete_confirm_ok"))
+					)
 			);
 			try {
-				BdApi.UI.showConfirmationModal(t("delete_confirm_title"), content, {
-					danger: true,
-					confirmText: t("delete_confirm_ok"),
-					cancelText: t("cancel"),
-					onConfirm: () => {
-						if (choice.backup) backupThenDelete(items, choice.format);
-						else executeDelete(items);
-					}
+				confirmKey = BdApi.UI.showConfirmationModal(t("delete_confirm_title"), content, {
+					size: `${CSS_PREFIX}-confirm-delete`,
+					confirmText: null,
+					cancelText: null,
+					onCancel: () => { confirmKey = null; },
+					onClose: () => { confirmKey = null; }
 				});
 			} catch (e) {
 				// Never delete without an explicit confirmation: no modal, no run.
@@ -4196,91 +5865,127 @@ module.exports = (() => {
 
 		if (stage === "setup") {
 			if (!aiReady) children.push(h("div", { key: "banner", className: `${CSS_PREFIX}-warn` }, t("banner_no_ai")));
-			if (SearchService.supported(ctx)) {
-				children.push(h("div", { key: "scope", className: `${CSS_PREFIX}-seg`, role: "radiogroup" },
-					[["channel", "scope_channel", HASH_ICON_SVG], ["guild", "scope_guild", GLOBE_ICON_SVG]].map(entry => h("button", {
-						key: entry[0],
-						type: "button",
-						role: "radio",
-						"aria-checked": scope === entry[0],
-						className: `${CSS_PREFIX}-seg-btn${scope === entry[0] ? ` ${CSS_PREFIX}-active` : ""}`,
-						onClick: () => setScope(entry[0])
-					},
-						h("span", { className: `${CSS_PREFIX}-seg-icon`, dangerouslySetInnerHTML: { __html: entry[2] } }),
-						t(entry[1])
-					))
-				));
-				children.push(h("div", { key: "scopenote", className: `${CSS_PREFIX}-note` },
-					t(scope === "guild" ? "scope_note_guild" : "scope_note_channel")));
-			} else {
-				children.push(h("div", { key: "note", className: `${CSS_PREFIX}-note` }, t("range_note")));
-			}
-			children.push(h("div", { key: "presets", className: `${CSS_PREFIX}-presets` },
-				[["1d", 1], ["7d", 7], ["30d", 30], ["all", null]].map(entry => h("button", {
-					key: entry[0],
-					type: "button",
-					className: `${CSS_PREFIX}-preset${preset === entry[0] ? ` ${CSS_PREFIX}-active` : ""}`,
-					"aria-pressed": preset === entry[0],
-					onClick: () => applyPreset(entry[0], entry[1])
-				}, t(`preset_${entry[0]}`))),
-				h("button", {
-					key: "custom",
-					type: "button",
-					className: `${CSS_PREFIX}-preset${preset === "custom" ? ` ${CSS_PREFIX}-active` : ""}`,
-					"aria-pressed": preset === "custom",
-					onClick: () => setPreset("custom")
-				}, t("preset_custom"))
-			));
-			if (preset === "custom") {
-				children.push(h("div", { key: "range", className: `${CSS_PREFIX}-range-grid` },
-					h("div", null,
-						h("div", { className: `${CSS_PREFIX}-field-label` }, t("start_label")),
-						h("input", {
-							type: "datetime-local",
-							className: `${CSS_PREFIX}-input`,
-							value: startVal,
-							onChange: event => setStartVal(event.target.value)
-						})
-					),
-					h("div", null,
-						h("div", { className: `${CSS_PREFIX}-field-label` }, t("end_label")),
-						h("input", {
-							type: "datetime-local",
-							className: `${CSS_PREFIX}-input`,
-							value: endVal,
-							onChange: event => setEndVal(event.target.value)
-						})
+			// Config card: row-form rows (16px label left, control right) in one
+			// zone, the same scale and zoning as the settings tabs. Per-scope
+			// explanations live in the label's info hint.
+			const zoneLabel = (text, hint) => h("span", { className: `${CSS_PREFIX}-zone-label` },
+				h("span", { className: `${CSS_PREFIX}-set-title` },
+					h("span", { className: `${CSS_PREFIX}-set-title-text` }, text),
+					hint ? h(InfoHint, { text: hint }) : null
+				)
+			);
+			const searchSupported = SearchService.supported(ctx);
+			const zoneRows = [];
+			if (searchSupported) {
+				zoneRows.push(h("div", { key: "scope", className: `${CSS_PREFIX}-zone-row` },
+					zoneLabel(t("scan_scope_label"), t(scope === "guild" ? "scope_note_guild" : "scope_note_channel")),
+					h("div", { className: `${CSS_PREFIX}-zone-ctl` },
+						h("div", { className: `${CSS_PREFIX}-seg`, role: "radiogroup", "aria-label": t("scan_scope_label") },
+							[["channel", "scope_channel", HASH_ICON_SVG], ["guild", "scope_guild", GLOBE_ICON_SVG]].map(entry => h("button", {
+								key: entry[0],
+								type: "button",
+								role: "radio",
+								"aria-checked": scope === entry[0],
+								className: `${CSS_PREFIX}-seg-btn${scope === entry[0] ? ` ${CSS_PREFIX}-active` : ""}`,
+								onClick: () => setScope(entry[0])
+							},
+								h("span", { className: `${CSS_PREFIX}-seg-icon`, dangerouslySetInnerHTML: { __html: entry[2] } }),
+								t(entry[1])
+							))
+						)
 					)
 				));
 			}
+			zoneRows.push(h("div", { key: "time", className: `${CSS_PREFIX}-zone-row` },
+				zoneLabel(t("range_title"), searchSupported ? null : t("range_note")),
+				h("div", { className: `${CSS_PREFIX}-zone-ctl` },
+					h("div", { className: `${CSS_PREFIX}-presets`, role: "group", "aria-label": t("range_title") },
+						[["1d", 1], ["7d", 7], ["30d", 30], ["all", null]].map(entry => h("button", {
+							key: entry[0],
+							type: "button",
+							className: `${CSS_PREFIX}-preset${preset === entry[0] ? ` ${CSS_PREFIX}-active` : ""}`,
+							"aria-pressed": preset === entry[0],
+							onClick: () => applyPreset(entry[0], entry[1])
+						}, t(`preset_${entry[0]}`))),
+						h("button", {
+							key: "custom",
+							type: "button",
+							className: `${CSS_PREFIX}-preset${preset === "custom" ? ` ${CSS_PREFIX}-active` : ""}`,
+							"aria-pressed": preset === "custom",
+							onClick: () => setPreset("custom")
+						}, t("preset_custom"))
+					)
+				)
+			));
+			if (preset === "custom") {
+				zoneRows.push(h("div", { key: "range", className: `${CSS_PREFIX}-zone-row` },
+					h("div", { className: `${CSS_PREFIX}-range-grid ${CSS_PREFIX}-zone-wide` },
+						h("div", null,
+							h("label", { className: `${CSS_PREFIX}-field-label`, htmlFor: `${PLUGIN_ID}-range-start` }, t("start_label")),
+							h("input", {
+								id: `${PLUGIN_ID}-range-start`,
+								type: "datetime-local",
+								className: `${CSS_PREFIX}-input`,
+								value: startVal,
+								onChange: event => setStartVal(event.target.value)
+							})
+						),
+						h("div", null,
+							h("label", { className: `${CSS_PREFIX}-field-label`, htmlFor: `${PLUGIN_ID}-range-end` }, t("end_label")),
+							h("input", {
+								id: `${PLUGIN_ID}-range-end`,
+								type: "datetime-local",
+								className: `${CSS_PREFIX}-input`,
+								value: endVal,
+								onChange: event => setEndVal(event.target.value)
+							})
+						)
+					)
+				));
+			}
+			children.push(h("div", { key: "config", className: `${CSS_PREFIX}-zone` }, zoneRows));
 			if (preset === "all") {
 				children.push(h("div", { key: "allnote", className: `${CSS_PREFIX}-note` },
 					t("all_range_note", { max: Utils.num(SettingsStore.get("fetch.maxMessages"), 2000) })));
 			}
-			const heroChildren = [];
+			// Footer action zone: review-model status pill (variant A: the label
+			// lives in the tooltip) on the left, the one primary action right.
+			const footerChildren = [];
 			if (aiReady) {
 				const activeConfig = AIService.config();
 				const contextText = `${AIService.displayName(activeConfig.provider)}${activeConfig.model ? ` · ${activeConfig.model}` : ""}`;
-				heroChildren.push(h("div", { key: "aictx", className: `${CSS_PREFIX}-hero-context`, title: contextText }, contextText));
+				footerChildren.push(h("div", {
+					key: "aictx",
+					className: `${CSS_PREFIX}-model-pill`,
+					style: { marginRight: "auto" },
+					title: `${t("scan_model_label")} · ${contextText}`
+				},
+					h("span", { className: `${CSS_PREFIX}-model-pill-dot` }),
+					h("span", { className: `${CSS_PREFIX}-model-pill-text` }, contextText)
+				));
 			}
-			heroChildren.push(h(Btn, { key: "go", onClick: runScan }, t("hero_fetch")));
-			children.push(h("div", { key: "hero", className: `${CSS_PREFIX}-hero` }, heroChildren));
+			footerChildren.push(h(Btn, { key: "go", onClick: runScan }, t("hero_fetch")));
+			children.push(h("div", { key: "hero", className: `${CSS_PREFIX}-actions ${CSS_PREFIX}-actions-footer` }, footerChildren));
 		}
 
 		if (stage === "fetching" && progress) {
-			children.push(h(ProgressStrip, {
-				key: "fstrip",
-				label: t("phase_fetching"),
-				ratio: progress.ratio,
-				text: progress.rateLimited
-					? t("progress_rate_limited")
-					: progress.indexing
-						? t("progress_indexing")
-						: progress.total !== undefined
-							? t("progress_searching", { count: progress.count, total: progress.total })
-							: t("progress_fetching", { count: progress.count, time: Utils.formatDateTime(progress.oldestTs) }),
-				onCancel: cancelRun
-			}));
+			children.push(h("div", { key: "fzone", className: `${CSS_PREFIX}-zone ${CSS_PREFIX}-zone-pad` },
+				h(ProgressStrip, {
+					key: "fstrip",
+					label: t("phase_fetching"),
+					ratio: progress.ratio,
+					text: progress.rateLimited
+						? t("progress_rate_limited")
+						: progress.indexing
+							? t("progress_indexing")
+							: progress.total !== undefined
+								? t("progress_searching", { count: progress.count, total: progress.total })
+								: t("progress_fetching", { count: progress.count, time: Utils.formatDateTime(progress.oldestTs) })
+				})
+			));
+			children.push(h("div", { key: "ffooter", className: `${CSS_PREFIX}-actions ${CSS_PREFIX}-actions-footer` },
+				h(Btn, { tone: "secondary", onClick: cancelRun }, t("act_cancel"))
+			));
 		}
 
 		if (stage === "results" && fetchResult) {
@@ -4326,10 +6031,8 @@ module.exports = (() => {
 			children.push(h("div", { key: "stats", className: `${CSS_PREFIX}-stats` },
 				// Search totals are approximate and can undercount; never show
 				// "scanned" below the number of own messages actually found.
-				t("results_stats", { mine: total, scanned: Math.max(Utils.num(fetchResult.scanned, 0), total) })));
-			if (fetchResult.cancelled) {
-				children.push(h("div", { key: "cnote", className: `${CSS_PREFIX}-note` }, t("results_cancelled")));
-			}
+				t("results_stats", { mine: total, scanned: Math.max(Utils.num(fetchResult.scanned, 0), total) }),
+				fetchResult.cancelled ? h("span", { className: `${CSS_PREFIX}-stats-warn` }, ` · ${t("results_cancelled")}`) : null));
 			if (fetchResult.capped) {
 				children.push(h("div", { key: "capnote", className: `${CSS_PREFIX}-warn` },
 					t("results_capped", { max: fetchResult.options.maxMessages })));
@@ -4347,20 +6050,22 @@ module.exports = (() => {
 				));
 			}
 			if (reviewing) {
-				children.push(h(ProgressStrip, {
-					key: "rstrip",
-					label: t("phase_reviewing"),
-					ratio: reviewStage ? reviewStage.i / Math.max(1, reviewStage.k) : null,
-					text: reviewStage ? t("progress_review", { i: reviewStage.i, k: reviewStage.k }) : "",
-					onCancel: () => ReviewSession.abortAndClear()
-				}));
-				children.push(h("div", { key: "rmin", className: `${CSS_PREFIX}-actions ${CSS_PREFIX}-actions-footer` },
-					h(Btn, { tone: "secondary", onClick: () => CleanerModal.minimize() }, t("act_minimize"))
+				children.push(h("div", { key: "rzone", className: `${CSS_PREFIX}-zone ${CSS_PREFIX}-zone-pad` },
+					h(ProgressStrip, {
+						key: "rstrip",
+						label: t("phase_reviewing"),
+						ratio: reviewStage ? reviewStage.i / Math.max(1, reviewStage.k) : null,
+						text: reviewStage ? t("progress_review", { i: reviewStage.i, k: reviewStage.k }) : "",
+						onCancel: () => ReviewSession.abortAndClear()
+					})
 				));
 			}
 			if (reviewDone) {
-				children.push(h("div", { key: "rsummary", className: `${CSS_PREFIX}-banner` },
-					t("review_summary", { flagged: flaggedCount, total })));
+				children.push(h("div", { key: "rsummary", className: `${CSS_PREFIX}-okline` },
+					h("span", { className: `${CSS_PREFIX}-okline-dot` }),
+					deleteReport && flaggedCount === 0
+						? t("review_summary_cleared", { total })
+						: t("review_summary", { flagged: flaggedCount, total })));
 			}
 			if (reviewFailed.length > 0 && !reviewing) {
 				children.push(h("div", { key: "rfail", className: `${CSS_PREFIX}-warn` },
@@ -4373,54 +6078,111 @@ module.exports = (() => {
 			// Master tri-state checkbox over the DISPLAYED (possibly filtered) rows.
 			const displayedSelected = displayed.reduce((count, message) => count + (selected.has(message.id) ? 1 : 0), 0);
 			const masterState = displayedSelected === 0 ? "none" : displayedSelected === displayed.length ? "all" : "some";
-			children.push(h("div", { key: "selbar", className: `${CSS_PREFIX}-selbar` },
-				h("button", {
-					type: "button",
-					role: "checkbox",
-					"aria-checked": masterState === "all" ? true : masterState === "none" ? false : "mixed",
-					className: `${CSS_PREFIX}-check`,
-					title: t("select_all"),
-					onClick: () => (masterState === "all" ? selectNone() : selectAll())
-				},
-					h("span", {
-						className: `${CSS_PREFIX}-checkbox${masterState !== "none" ? ` ${CSS_PREFIX}-checkbox-on` : ""}`,
-						dangerouslySetInnerHTML: { __html: masterState === "all" ? CHECK_MARK_SVG : masterState === "some" ? DASH_MARK_SVG : "" }
-					}),
-					t("select_all")
-				),
-				flaggedCount > 0 ? h("button", {
-					type: "button",
-					className: `${CSS_PREFIX}-link-btn${flagFilter ? ` ${CSS_PREFIX}-link-active` : ""}`,
-					"aria-pressed": flagFilter,
-					onClick: () => setFlagFilter(!flagFilter)
-				}, `${t("filter_flagged")} (${flaggedCount})`) : null,
-				// Channel switcher: same SelectMenu component and styling as the
-				// settings panel (chips get unwieldy with many channels).
-				channelOptions && channelOptions.length > 2 ? h(SelectMenu, {
-					ariaLabel: t("filter_channel"),
-					value: effectiveChannelFilter || "",
-					options: channelOptions,
-					onChange: value => setChannelFilter(value || null)
-				}) : null,
-				h("div", { className: `${CSS_PREFIX}-note` }, t("selected_count", { n: selected.size, m: total }))
-			));
-			children.push(h("div", { key: "list", className: `${CSS_PREFIX}-list` },
-				displayed.map(message => h(MessageRow, {
+			// Tool row above, day-grouped rows in the surface container below,
+			// load-more as the tail row. Channel badges follow the SCOPE, not
+			// the result diversity: a cancelled or partial guild scan may have
+			// reached only one channel so far, and resuming can add more.
+			const guildView = fetchResult.scope === "guild";
+			let dayFormat = null;
+			try {
+				dayFormat = new Intl.DateTimeFormat(I18N.resolveUiLanguage(), { year: "numeric", month: "long", day: "numeric" });
+			} catch (e) { /* fall back to ISO dates */ }
+			const listRows = [];
+			let lastDay = null;
+			for (const message of displayed) {
+				const day = dayFormat ? dayFormat.format(new Date(message.timestamp)) : Utils.formatDate(message.timestamp);
+				if (day !== lastDay) {
+					lastDay = day;
+					listRows.push(h("div", { key: `day-${day}`, className: `${CSS_PREFIX}-day` }, day));
+				}
+				listRows.push(h(MessageRow, {
 					key: message.id,
 					message,
 					selected: selected.has(message.id),
 					verdict: verdicts ? verdicts.get(message.id) : null,
-					showChannel: fetchResult.scope === "guild" && effectiveChannelFilter === null,
+					showChannel: guildView && effectiveChannelFilter === null,
+					guildId: ctx.guildId,
+					channelId: ctx.channelId,
 					onPreview: att => setLightbox({ url: att.url, name: att.filename }),
+					onJump: target => {
+						const opened = DiscordAdapter.openMessage(ctx.guildId, target.channelId || ctx.channelId, target.id);
+						if (opened) {
+							const viewState = { selectedIds: [...selected], flagFilter, channelFilter };
+							const scopeKey = ScanCache.key(ctx, fetchResult.scope || "channel");
+							ScanCache.setView(scopeKey, viewState);
+							const session = ReviewSession.state;
+							if (session && session.scopeKey === scopeKey) ReviewSession.update({ viewState });
+							CleanerModal.closePreserving(Boolean(session));
+						} else {
+							try { BdApi.UI.showToast(t("message_jump_unavailable"), { type: "error" }); } catch (e) { /* keep modal open */ }
+						}
+						return opened;
+					},
 					onToggle: toggleSelected
-				}))
-			));
-			// Resume lives bottom-left in the footer: tall result lists scroll,
-			// and the footer is the one row always worth reaching.
+				}));
+			}
 			const canResume = (fetchResult.cancelled || fetchResult.capped) && fetchResult.resumeCursor;
+			if (canResume) {
+				listRows.push(h("button", {
+					key: "lmore",
+					type: "button",
+					className: `${CSS_PREFIX}-lmore`,
+					disabled: reviewing,
+					onClick: resumeScan
+				},
+					h("span", { style: { display: "flex" }, dangerouslySetInnerHTML: { __html: HISTORY_ICON_SVG } }),
+					t("act_resume_scan")
+				));
+			}
+			children.push(h("div", { key: "panel", className: `${CSS_PREFIX}-panel` },
+				h("div", { className: `${CSS_PREFIX}-panel-head ${CSS_PREFIX}-results-toolbar` },
+					h("button", {
+						type: "button",
+						role: "checkbox",
+						"aria-checked": masterState === "all" ? true : masterState === "none" ? false : "mixed",
+						className: `${CSS_PREFIX}-check`,
+						title: t("select_all"),
+						onClick: () => (masterState === "all" ? selectNone() : selectAll())
+					},
+						h("span", {
+							className: `${CSS_PREFIX}-checkbox${masterState !== "none" ? ` ${CSS_PREFIX}-checkbox-on` : ""}`,
+							dangerouslySetInnerHTML: { __html: masterState === "all" ? CHECK_MARK_SVG : masterState === "some" ? DASH_MARK_SVG : "" }
+						}),
+						t("select_all")
+					),
+					// Channel switcher: same SelectMenu component and styling as
+					// the settings panel (chips get unwieldy with many channels).
+					// Present for every guild view so partial scans stay honest.
+					channelOptions && channelOptions.length >= 2 ? h(SelectMenu, {
+						ariaLabel: t("filter_channel"),
+						value: effectiveChannelFilter || "",
+						options: channelOptions,
+						onChange: value => setChannelFilter(value || null)
+					}) : null,
+					h("span", { className: `${CSS_PREFIX}-panel-spacer` }),
+					flaggedCount > 0 ? h("div", { className: `${CSS_PREFIX}-seg-mini`, role: "radiogroup" },
+						h("button", {
+							type: "button",
+							role: "radio",
+							"aria-checked": flagFilter,
+							className: `${CSS_PREFIX}-seg-mini-btn${flagFilter ? ` ${CSS_PREFIX}-active` : ""}`,
+							onClick: () => setFlagFilter(true)
+						}, `${t("filter_flagged")} ${flaggedCount}`),
+						h("button", {
+							type: "button",
+							role: "radio",
+							"aria-checked": !flagFilter,
+							className: `${CSS_PREFIX}-seg-mini-btn${!flagFilter ? ` ${CSS_PREFIX}-active` : ""}`,
+							onClick: () => setFlagFilter(false)
+						}, t("filter_all"))
+					) : null,
+					h("span", { className: `${CSS_PREFIX}-panel-count` }, t("selected_count", { n: selected.size, m: total }))
+				),
+				h("div", { className: `${CSS_PREFIX}-panel-body` }, listRows)
+			));
 			children.push(h("div", { key: "footer", className: `${CSS_PREFIX}-actions ${CSS_PREFIX}-actions-footer` },
-				canResume ? h("div", { style: { marginRight: "auto" } },
-					h(Btn, { tone: "secondary", disabled: reviewing, onClick: resumeScan }, t("act_resume_scan"))
+				reviewing ? h("div", { style: { marginRight: "auto" } },
+					h(Btn, { tone: "secondary", onClick: () => CleanerModal.minimize() }, t("act_minimize"))
 				) : null,
 				h(Btn, { tone: "secondary", disabled: reviewing, onClick: () => setStage("setup") }, t("back")),
 				h(Btn, { disabled: !aiReady || reviewing, onClick: () => runReview(null, false) },
@@ -4431,40 +6193,52 @@ module.exports = (() => {
 		}
 
 		if (stage === "deleting" && deleteProgress) {
-			children.push(h(ProgressStrip, {
-				key: "dstrip",
-				label: t("phase_deleting"),
-				ratio: deleteProgress.total ? deleteProgress.done / deleteProgress.total : null,
-				text: t("progress_deleting", { done: deleteProgress.done, total: deleteProgress.total }),
-				onCancel: cancelRun
-			}));
+			children.push(h("div", { key: "dzone", className: `${CSS_PREFIX}-zone ${CSS_PREFIX}-zone-pad` },
+				h(ProgressStrip, {
+					key: "dstrip",
+					label: t("phase_deleting"),
+					ratio: deleteProgress.total ? deleteProgress.done / deleteProgress.total : null,
+					text: t("progress_deleting", { done: deleteProgress.done, total: deleteProgress.total })
+				})
+			));
 			if (stormPaused) {
 				children.push(h("div", { key: "storm", className: `${CSS_PREFIX}-warn` }, t("delete_paused_storm")));
 			}
 			children.push(h("div", { key: "dactions", className: `${CSS_PREFIX}-actions ${CSS_PREFIX}-actions-footer` },
-				h(Btn, { tone: "secondary", onClick: togglePause }, paused ? t("delete_resume") : t("delete_pause"))
+				h(Btn, { tone: "secondary", onClick: togglePause }, paused ? t("delete_resume") : t("delete_pause")),
+				h(Btn, { tone: "secondary", onClick: cancelRun }, t("act_cancel"))
 			));
 		}
 
 		if (stage === "done" && deleteReport) {
-			children.push(h("div", { key: "dtitle", className: `${CSS_PREFIX}-empty-title` }, t("delete_done_title")));
-			children.push(h("div", { key: "dreport", className: `${CSS_PREFIX}-stats` }, t("delete_report", {
-				deleted: deleteReport.deleted.length,
-				skipped: deleteReport.skipped.length,
-				failed: deleteReport.failed.length
-			})));
+			// Report card: green status line when clean, danger when anything
+			// failed; the numbers ride underneath in the same card.
+			const failedCount = deleteReport.failed.length;
+			children.push(h("div", { key: "dcard", className: `${CSS_PREFIX}-zone ${CSS_PREFIX}-zone-pad` },
+				h("div", { className: `${CSS_PREFIX}-okline${failedCount ? ` ${CSS_PREFIX}-okline-warn` : ""}`, style: { fontSize: "15px" } },
+					h("span", { className: `${CSS_PREFIX}-okline-dot` }),
+					t("delete_done_title")
+				),
+				h("div", { className: `${CSS_PREFIX}-stats`, style: { marginTop: "6px" } }, t("delete_report", {
+					deleted: deleteReport.deleted.length,
+					skipped: deleteReport.skipped.length,
+					failed: failedCount
+				}))
+			));
 			if (deleteReport.cancelled) {
 				children.push(h("div", { key: "dcancel", className: `${CSS_PREFIX}-note` }, t("results_cancelled")));
 			}
 			if (deleteReport.failed.length) {
 				children.push(h("div", { key: "dfailhdr", className: `${CSS_PREFIX}-note` }, t("delete_report_failed")));
-				children.push(h("div", { key: "dfaillist", className: `${CSS_PREFIX}-list`, style: { maxHeight: "160px" } },
-					deleteReport.failed.map(entry => h("div", { key: entry.id, className: `${CSS_PREFIX}-row`, style: { cursor: "default" } },
-						h("div", { className: `${CSS_PREFIX}-row-body` },
-							h("div", { className: `${CSS_PREFIX}-row-meta` }, `${entry.id} · HTTP ${entry.code || "?"}`),
-							entry.detail ? h("div", { className: `${CSS_PREFIX}-row-text ${CSS_PREFIX}-faint` }, entry.detail) : null
-						)
-					))
+				children.push(h("div", { key: "dfaillist", className: `${CSS_PREFIX}-panel` },
+					h("div", { className: `${CSS_PREFIX}-panel-body`, style: { maxHeight: "180px" } },
+						deleteReport.failed.map(entry => h("div", { key: entry.id, className: `${CSS_PREFIX}-mcard ${CSS_PREFIX}-mcard-static` },
+							h("div", { className: `${CSS_PREFIX}-row-body` },
+								h("div", { className: `${CSS_PREFIX}-row-meta` }, `${entry.id} · HTTP ${entry.code || "?"}`),
+								entry.detail ? h("div", { className: `${CSS_PREFIX}-row-text ${CSS_PREFIX}-faint` }, entry.detail) : null
+							)
+						))
+					)
 				));
 			}
 			children.push(h("div", { key: "dfooter", className: `${CSS_PREFIX}-actions ${CSS_PREFIX}-actions-footer` },
@@ -4489,6 +6263,11 @@ module.exports = (() => {
 		if (lightbox) {
 			const overlay = h("div", {
 				className: `${CSS_PREFIX}-lightbox`,
+				ref: lightboxRef,
+				role: "dialog",
+				"aria-modal": true,
+				"aria-label": t("attachment_preview", { name: lightbox.name || t("attachment_unnamed") }),
+				tabIndex: -1,
 				onMouseDown: event => event.stopPropagation(),
 				onMouseUp: event => event.stopPropagation(),
 				onClick: event => { event.stopPropagation(); setLightbox(null); }
@@ -4497,7 +6276,8 @@ module.exports = (() => {
 					className: `${CSS_PREFIX}-lightbox-img`,
 					src: lightbox.url,
 					alt: lightbox.name,
-					title: lightbox.name
+					title: lightbox.name,
+					onError: () => setLightbox(null)
 				})
 			);
 			children.push(ReactDOM && typeof ReactDOM.createPortal === "function"
@@ -4505,7 +6285,7 @@ module.exports = (() => {
 				: h("div", { key: "lightbox" }, overlay));
 		}
 
-		return h("div", { className: `${CSS_PREFIX}-modal ${CSS_PREFIX}-ui` }, children);
+		return h("div", { className: `${CSS_PREFIX}-modal ${CSS_PREFIX}-modal-${stage} ${CSS_PREFIX}-ui` }, children);
 	};
 
 	const CleanerModal = {
@@ -4590,9 +6370,15 @@ module.exports = (() => {
 		// stays raised until the modal's async onClose consumes it in cleanup —
 		// resetting it here (synchronously) would re-enable the abort.
 		minimize() {
+			CleanerModal.closePreserving(true);
+		},
+		// Used by minimize and message navigation: close the shell without
+		// aborting a background review. Navigation may skip the pill when there
+		// is no review session; ScanCache still restores manual selection later.
+		closePreserving(showPill) {
 			CleanerModal._preserveRuns = true;
 			CleanerModal.closeIfOpen();
-			MiniPill.show();
+			if (showPill && ReviewSession.state) MiniPill.show();
 		}
 	};
 	// ==================== 20. CHAT ENTRY (3 ENTRY POINTS) ====================
@@ -4776,16 +6562,71 @@ module.exports = (() => {
 		});
 	};
 
-	const SetRow = props => h("div", { className: `${CSS_PREFIX}-set-row` },
-		h("div", { className: `${CSS_PREFIX}-set-label` }, props.label),
-		props.children
+	const INFO_SVG = `<svg width="13" height="13" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M511-258.03q11-11.03 11-27T510.97-312q-11.03-11-27-11T457-311.97q-11 11.03-11 27T457.03-258q11.03 11 27 11T511-258.03ZM480.27-80q-82.74 0-155.5-31.5Q252-143 197.5-197.5t-86-127.34Q80-397.68 80-480.5t31.5-155.66Q143-709 197.5-763t127.34-85.5Q397.68-880 480.5-880t155.66 31.5Q709-817 763-763t85.5 127Q880-563 880-480.27q0 82.74-31.5 155.5Q817-252 763-197.68q-54 54.31-127 86Q563-80 480.27-80Zm.23-60Q622-140 721-239.5t99-241Q820-622 721.19-721T480-820q-141 0-240.5 98.81T140-480q0 141 99.5 240.5t241 99.5Zm-.5-340Zm2.77-180Q513-660 536-641.5q23 18.5 23 47.2 0 26.3-15.65 45.73Q527.7-529.14 508-512q-23 19-40 42.38-17 23.39-17 52.62 0 11 8.4 17.5T479-393q12 0 19.88-8 7.87-8 10.12-20 3-21 16-38t30.23-30.78Q580-510 596-537q16-27 16-58.61 0-50.39-37.5-83.89T485.55-713Q450-713 417-698t-54 44q-7 10-6.5 21.5t9.47 18.5q11.41 8 23.65 5 12.23-3 20.38-14 12.75-17.9 31.88-27.45Q461-660 482.77-660Z"/></svg>`;
+
+	const InfoHint = props => {
+		const renderIcon = tipProps => {
+			const inherited = tipProps || {};
+			return h("button", Object.assign({}, inherited, {
+				type: "button",
+				className: `${CSS_PREFIX}-info-hint`,
+				"aria-label": props.text,
+				onFocus: event => {
+					if (typeof inherited.onFocus === "function") inherited.onFocus(event);
+					else if (typeof inherited.onMouseEnter === "function") inherited.onMouseEnter(event);
+				},
+				onBlur: event => {
+					if (typeof inherited.onBlur === "function") inherited.onBlur(event);
+					else if (typeof inherited.onMouseLeave === "function") inherited.onMouseLeave(event);
+				},
+				onClick: event => {
+					event.preventDefault();
+					event.stopPropagation();
+				},
+				dangerouslySetInnerHTML: { __html: INFO_SVG }
+			}));
+		};
+		const Tooltip = BdApi.Components && BdApi.Components.Tooltip;
+		if (Tooltip) return h(Tooltip, { text: props.text }, tipProps => renderIcon(tipProps));
+		return renderIcon({ title: props.text });
+	};
+
+	const SettingTitle = props => h("span", { className: `${CSS_PREFIX}-set-title` },
+		h("span", { className: `${CSS_PREFIX}-set-title-text` }, props.label),
+		props.hint ? h(InfoHint, { text: props.hint }) : null
 	);
 
-	const EYE_SVG = `<svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M12 5c-4.9 0-8.9 3.9-10 7 1.1 3.1 5.1 7 10 7s8.9-3.9 10-7c-1.1-3.1-5.1-7-10-7Zm0 11.5A4.5 4.5 0 1 1 16.5 12 4.5 4.5 0 0 1 12 16.5Zm0-7A2.5 2.5 0 1 0 14.5 12 2.5 2.5 0 0 0 12 9.5Z"/></svg>`;
-	const EYE_OFF_SVG = `<svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M12 5c-4.9 0-8.9 3.9-10 7a13.3 13.3 0 0 0 4.3 5.1l-2 2 1.4 1.4 16-16L20.3 3l-2.6 2.6A11.3 11.3 0 0 0 12 5Zm-4.5 7A4.5 4.5 0 0 1 12 7.5c.9 0 1.7.3 2.4.7l-1.5 1.5A2.5 2.5 0 0 0 9.7 13l-1.5 1.5a4.4 4.4 0 0 1-.7-2.5Zm4.5 7c1.5 0 3-.4 4.3-1l-2-2a4.5 4.5 0 0 0 2.1-5.4l3.3-3.3A13.4 13.4 0 0 1 22 12c-1.1 3.1-5.1 7-10 7Z"/></svg>`;
-	const CHECK_CIRCLE_SVG = `<svg width="14" height="14" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm-1.2 14.4-4-4 1.4-1.4 2.6 2.6 5.6-5.6 1.4 1.4Z"/></svg>`;
-	const TRASH_SVG = `<svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4Zm-3 6h12l-.9 11.1a2 2 0 0 1-2 1.9H8.9a2 2 0 0 1-2-1.9Zm5 2v8h2v-8Zm-3.5 0 .5 8h2l-.5-8Zm7 0-.5 8h2l.5-8Z"/></svg>`;
-	const CHEVRON_SVG = `<svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>`;
+	const SetRow = props => h("div", { className: `${CSS_PREFIX}-set-row` },
+		h("div", { className: `${CSS_PREFIX}-set-label` }, h(SettingTitle, { label: props.label, hint: props.hint })),
+		props.children
+	);
+	const GroupHeader = props => h("div", { className: `${CSS_PREFIX}-group-header` },
+		h(SettingTitle, { label: props.label, hint: props.hint })
+	);
+
+	const EYE_SVG = `<svg width="18" height="18" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M600.5-379.62q49.5-49.62 49.5-120.5T600.38-620.5Q550.76-670 479.88-670T359.5-620.38Q310-570.76 310-499.88t49.62 120.38q49.62 49.5 120.5 49.5t120.38-49.62Zm-200-41.12q-32.5-32.73-32.5-79.5 0-46.76 32.74-79.26 32.73-32.5 79.5-32.5 46.76 0 79.26 32.74 32.5 32.73 32.5 79.5 0 46.76-32.74 79.26-32.73 32.5-79.5 32.5-46.76 0-79.26-32.74ZM234.5-276Q124-352 57-470q-4-7.13-6-14.65-2-7.52-2-15.43 0-7.92 2-15.38 2-7.47 6-14.54 67-118 177.5-194T480-800q135 0 245.5 76T903-530q4 7.12 6 14.65 2 7.52 2 15.43 0 7.92-2 15.38-2 7.47-6 14.54-67 118-177.5 194T480-200q-135 0-245.5-76Z"/></svg>`;
+	const EYE_OFF_SVG = `<svg width="18" height="18" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M794-86 648-229q-41 15-83 22t-85 7q-136 0-247-75.5T56-471q-4-7-5.5-14T49-500q0-8 1.5-15t5.5-14q26-46 56-89t70-78L77-801q-9-9-9-21t9-21q9-9 21.5-9t21.5 9l716 716q8 8 8 19.5T836-87q-8 10-20.5 10T794-86ZM480-330q14 0 28.5-2t28.5-8L320-557q-5 14-7.5 28.5T310-500q0 71 49.5 120.5T480-330Zm5-470q135 0 245.5 76T905-528q4 7 5.5 13.5T912-500q0 8-1.5 14.5T905-472q-24 45-53.5 86.5T784-311q-11 10-25 9t-25-12l-93-93q-5-5-6-12.5t2-14.5q7-16 10-32.5t3-33.5q0-71-49.5-120.5T480-670q-17 0-33.5 3T414-657q-7 3-14.5 2t-12.5-6l-59-60q-14-14-10-33.5t23-25.5q35-11 71.5-15.5T485-800Zm72 219q20 20 28.5 46.5T589-480q-1 5-6 7.5t-10-2.5L455-593q-4-4-2.5-9.5t6.5-7.5q26-5 52 2.5t46 26.5Z"/></svg>`;
+	const CHECK_CIRCLE_SVG = `<svg width="14" height="14" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="m421-389-98-98q-9-9-22-9t-23 10q-9 9-9 22t9 22l122 123q9 9 21 9t21-9l239-239q10-10 10-23t-10-23q-10-9-23.5-8.5T635-603L421-389Zm59 309q-82 0-155-31.5t-127.5-86Q143-252 111.5-325T80-480q0-83 31.5-156t86-127Q252-817 325-848.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 82-31.5 155T763-197.5q-54 54.5-127 86T480-80Z"/></svg>`;
+	const TRASH_SVG = `<svg width="16" height="16" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M261-120q-24.75 0-42.37-17.63Q201-155.25 201-180v-570h-11q-12.75 0-21.37-8.68-8.63-8.67-8.63-21.5 0-12.82 8.63-21.32 8.62-8.5 21.37-8.5h158q0-13 8.63-21.5 8.62-8.5 21.37-8.5h204q12.75 0 21.38 8.62Q612-822.75 612-810h158q12.75 0 21.38 8.68 8.62 8.67 8.62 21.5 0 12.82-8.62 21.32-8.63 8.5-21.38 8.5h-11v570q0 24.75-17.62 42.37Q723.75-120 699-120H261Zm157.5-154.63q8.5-8.62 8.5-21.37v-339q0-12.75-8.68-21.38-8.67-8.62-21.5-8.62-12.82 0-21.32 8.62-8.5 8.63-8.5 21.38v339q0 12.75 8.68 21.37 8.67 8.63 21.5 8.63 12.82 0 21.32-8.63Zm166 0q8.5-8.62 8.5-21.37v-339q0-12.75-8.68-21.38-8.67-8.62-21.5-8.62-12.82 0-21.32 8.62-8.5 8.63-8.5 21.38v339q0 12.75 8.68 21.37 8.67 8.63 21.5 8.63 12.82 0 21.32-8.63Z"/></svg>`;
+	const CHEVRON_SVG = `<svg width="16" height="16" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M480-357q-6 0-11-2t-10-7L261-564q-9-9-9-21t9-21q9-9 21.5-9t21.5 9l176 176 176-176q9-9 21-9t21 9q9 9 9 21.5t-9 21.5L501-366q-5 5-10 7t-11 2Z"/></svg>`;
+	const GITHUB_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>`;
+	const LOCK_SVG = `<svg width="10" height="10" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M220-80q-24.75 0-42.37-17.63Q160-115.25 160-140v-434q0-24.75 17.63-42.38Q195.25-634 220-634h70v-96q0-78.85 55.61-134.42Q401.21-920 480.11-920q78.89 0 134.39 55.58Q670-808.85 670-730v96h70q24.75 0 42.38 17.62Q800-598.75 800-574v434q0 24.75-17.62 42.37Q764.75-80 740-80H220Zm314.5-222.03Q557-324.06 557-355q0-30-22.67-54.5t-54.5-24.5q-31.83 0-54.33 24.5t-22.5 55q0 30.5 22.67 52.5t54.5 22q31.83 0 54.33-22.03ZM350-634h260v-96q0-54.17-37.88-92.08-37.88-37.92-92-37.92T388-822.08q-38 37.91-38 92.08v96Z"/></svg>`;
+	const ADD_SVG = `<svg width="16" height="16" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M450-450H230q-12.75 0-21.37-8.68-8.63-8.67-8.63-21.5 0-12.82 8.63-21.32 8.62-8.5 21.37-8.5h220v-220q0-12.75 8.68-21.38 8.67-8.62 21.5-8.62 12.82 0 21.32 8.62 8.5 8.63 8.5 21.38v220h220q12.75 0 21.38 8.68 8.62 8.67 8.62 21.5 0 12.82-8.62 21.32-8.63 8.5-21.38 8.5H510v220q0 12.75-8.68 21.37-8.67 8.63-21.5 8.63-12.82 0-21.32-8.63-8.5-8.62-8.5-21.37v-220Z"/></svg>`;
+	const PROJECT_URL = "https://github.com/ROOT94-MAX/DiscordAIMessageCleaner";
+	const REFRESH_SVG = `<svg width="15" height="15" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M480-160q-133 0-226.5-93.5T160-480q0-133 93.5-226.5T480-800q85 0 149 34.5T740-671v-99q0-13 8.5-21.5T770-800q13 0 21.5 8.5T800-770v194q0 13-8.5 21.5T770-546H576q-13 0-21.5-8.5T546-576q0-13 8.5-21.5T576-606h138q-38-60-97-97t-137-37q-109 0-184.5 75.5T220-480q0 109 75.5 184.5T480-220q75 0 140-39.5T717-366q5-11 16.5-16.5t22.5-.5q12 5 16 16.5t-1 23.5q-39 84-117.5 133.5T480-160Z"/></svg>`;
+	const FEEDBACK_SVG = `<svg width="14" height="14" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M240-240 131-131q-14 14-32.5 6.5T80-152v-668q0-24 18-42t42-18h680q24 0 42 18t18 42v520q0 24-18 42t-42 18H240Z"/></svg>`;
+	const DOWNLOAD_SVG = `<svg width="14" height="14" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M469-327q-5-2-10-7L308-485q-9-9.27-8.5-21.64.5-12.36 9.11-21.36 9.39-9 21.89-9t21.5 9l98 99v-341q0-12.75 8.68-21.38 8.67-8.62 21.5-8.62 12.82 0 21.32 8.62 8.5 8.63 8.5 21.38v341l99-99q8.8-9 20.9-8.5 12.1.5 21.49 9.5 8.61 9 8.61 21.5t-9 21.5L501-334q-5 5-10.13 7-5.14 2-11 2-5.87 0-10.87-2ZM220-160q-24 0-42-18t-18-42v-113q0-12.75 8.68-21.38 8.67-8.62 21.5-8.62 12.82 0 21.32 8.62 8.5 8.63 8.5 21.38v113h520v-113q0-12.75 8.68-21.38 8.67-8.62 21.5-8.62 12.82 0 21.32 8.62 8.5 8.63 8.5 21.38v113q0 24-18 42t-42 18H220Z"/></svg>`;
+	const PENCIL_SVG = `<svg width="12" height="12" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M150-120q-13 0-21.5-8.5T120-150v-73q0-12 5-23.5t13-19.5l557-556q8-8 19-12.5t23-4.5q11 0 22 4.5t20 12.5l44 44q9 9 13 20t4 22q0 11-4.5 22.5T823-694L266-138q-8 8-19.5 13t-23.5 5h-73Zm589-577 40-40-41-41-40 40 41 41Z"/></svg>`;
+	const COPY_SVG = `<svg width="14" height="14" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M300-200q-24 0-42-18t-18-42v-560q0-24 18-42t42-18h440q24 0 42 18t18 42v560q0 24-18 42t-42 18H300ZM180-80q-24 0-42-18t-18-42v-590q0-13 8.5-21.5T150-760q13 0 21.5 8.5T180-730v590h470q13 0 21.5 8.5T680-110q0 13-8.5 21.5T650-80H180Z"/></svg>`;
+	// Preset provider brand marks (Simple Icons, monochrome via currentColor).
+	// Custom providers fall back to the plugin's own CLEANER_ICON_SVG.
+	const PROVIDER_ICON_SVGS = {
+		openai: `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/></svg>`,
+		deepseek: `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#5786FE" d="M23.748 4.651c-.254-.124-.364.113-.512.233-.051.04-.094.09-.137.137-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.155-.708-.311-.955-.65-.172-.24-.219-.509-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.094.172.187.129.323-.082.28-.18.553-.266.833-.055.179-.137.218-.328.14a5.5 5.5 0 0 1-1.737-1.179c-.857-.828-1.631-1.743-2.597-2.46a12 12 0 0 0-.689-.47c-.985-.957.13-1.743.387-1.836.27-.098.094-.433-.778-.428-.872.003-1.67.295-2.687.685a3 3 0 0 1-.465.136 9.6 9.6 0 0 0-2.883-.101c-1.885.21-3.39 1.1-4.497 2.622C.082 8.776-.231 10.854.152 13.02c.403 2.284 1.568 4.175 3.36 5.653 1.857 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.132-.284 4.994-1.86.47.234.962.328 1.78.398.629.058 1.235-.031 1.705-.129.735-.155.684-.836.418-.961-2.155-1.004-1.682-.595-2.112-.926 1.095-1.295 2.768-3.598 3.284-6.733.05-.346.115-.834.108-1.114-.004-.171.035-.238.23-.257a4.2 4.2 0 0 0 1.545-.475c1.397-.763 1.96-2.016 2.093-3.517.02-.23-.004-.467-.247-.588M11.58 18.168c-2.088-1.642-3.101-2.183-3.52-2.16-.39.024-.32.472-.234.763.09.288.207.487.371.74.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.168-1.361-.801-2.5-1.86-3.301-3.306-.775-1.393-1.225-2.888-1.299-4.482-.02-.385.094-.522.477-.592a4.7 4.7 0 0 1 1.53-.038c2.131.311 3.946 1.264 5.467 2.774.868.86 1.525 1.887 2.202 2.89.72 1.066 1.494 2.082 2.48 2.915.348.291.626.513.892.677-.802.09-2.14.109-3.055-.615zm1.001-6.44a.306.306 0 0 1 .415-.287.3.3 0 0 1 .113.074.3.3 0 0 1 .086.214c0 .17-.136.307-.308.307a.303.303 0 0 1-.306-.307m3.11 1.596c-.2.081-.4.151-.591.16a1.25 1.25 0 0 1-.798-.254c-.274-.23-.47-.358-.551-.758a1.7 1.7 0 0 1 .015-.588c.07-.327-.007-.537-.238-.727-.188-.156-.426-.199-.689-.199a.6.6 0 0 1-.254-.078.253.253 0 0 1-.114-.358 1 1 0 0 1 .192-.21c.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.392.451.462.576.685.915.176.264.336.536.446.848.066.194-.02.353-.25.45"/></svg>`,
+		gemini: `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="damcGemGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5684F7"/><stop offset="1" stop-color="#9168C9"/></linearGradient></defs><path fill="url(#damcGemGrad)" d="M11.04 19.32Q12 21.51 12 24q0-2.49.93-4.68.96-2.19 2.58-3.81t3.81-2.55Q21.51 12 24 12q-2.49 0-4.68-.93a12.3 12.3 0 0 1-3.81-2.58 12.3 12.3 0 0 1-2.58-3.81Q12 2.49 12 0q0 2.49-.96 4.68-.93 2.19-2.55 3.81a12.3 12.3 0 0 1-3.81 2.58Q2.49 12 0 12q2.49 0 4.68.96 2.19.93 3.81 2.55t2.55 3.81"/></svg>`,
+		ollama: `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.361 10.26a.894.894 0 0 0-.558.47l-.072.148.001.207c0 .193.004.217.059.353.076.193.152.312.291.448.24.238.51.3.872.205a.86.86 0 0 0 .517-.436.752.752 0 0 0 .08-.498c-.064-.453-.33-.782-.724-.897a1.06 1.06 0 0 0-.466 0zm-9.203.005c-.305.096-.533.32-.65.639a1.187 1.187 0 0 0-.06.52c.057.309.31.59.598.667.362.095.632.033.872-.205.14-.136.215-.255.291-.448.055-.136.059-.16.059-.353l.001-.207-.072-.148a.894.894 0 0 0-.565-.472 1.02 1.02 0 0 0-.474.007Zm4.184 2c-.131.071-.223.25-.195.383.031.143.157.288.353.407.105.063.112.072.117.136.004.038-.01.146-.029.243-.02.094-.036.194-.036.222.002.074.07.195.143.253.064.052.076.054.255.059.164.005.198.001.264-.03.169-.082.212-.234.15-.525-.052-.243-.042-.28.087-.355.137-.08.281-.219.324-.314a.365.365 0 0 0-.175-.48.394.394 0 0 0-.181-.033c-.126 0-.207.03-.355.124l-.085.053-.053-.032c-.219-.13-.259-.145-.391-.143a.396.396 0 0 0-.193.032zm.39-2.195c-.373.036-.475.05-.654.086-.291.06-.68.195-.951.328-.94.46-1.589 1.226-1.787 2.114-.04.176-.045.234-.045.53 0 .294.005.357.043.524.264 1.16 1.332 2.017 2.714 2.173.3.033 1.596.033 1.896 0 1.11-.125 2.064-.727 2.493-1.571.114-.226.169-.372.22-.602.039-.167.044-.23.044-.523 0-.297-.005-.355-.045-.531-.288-1.29-1.539-2.304-3.072-2.497a6.873 6.873 0 0 0-.855-.031zm.645.937a3.283 3.283 0 0 1 1.44.514c.223.148.537.458.671.662.166.251.26.508.303.82.02.143.01.251-.043.482-.08.345-.332.705-.672.957a3.115 3.115 0 0 1-.689.348c-.382.122-.632.144-1.525.138-.582-.006-.686-.01-.853-.042-.57-.107-1.022-.334-1.35-.68-.264-.28-.385-.535-.45-.946-.03-.192.025-.509.137-.776.136-.326.488-.73.836-.963.403-.269.934-.46 1.422-.512.187-.02.586-.02.773-.002zm-5.503-11a1.653 1.653 0 0 0-.683.298C5.617.74 5.173 1.666 4.985 2.819c-.07.436-.119 1.04-.119 1.503 0 .544.064 1.24.155 1.721.02.107.031.202.023.208a8.12 8.12 0 0 1-.187.152 5.324 5.324 0 0 0-.949 1.02 5.49 5.49 0 0 0-.94 2.339 6.625 6.625 0 0 0-.023 1.357c.091.78.325 1.438.727 2.04l.13.195-.037.064c-.269.452-.498 1.105-.605 1.732-.084.496-.095.629-.095 1.294 0 .67.009.803.088 1.266.095.555.288 1.143.503 1.534.071.128.243.393.264.407.007.003-.014.067-.046.141a7.405 7.405 0 0 0-.548 1.873c-.062.417-.071.552-.071.991 0 .56.031.832.148 1.279L3.42 24h1.478l-.05-.091c-.297-.552-.325-1.575-.068-2.597.117-.472.25-.819.498-1.296l.148-.29v-.177c0-.165-.003-.184-.057-.293a.915.915 0 0 0-.194-.25 1.74 1.74 0 0 1-.385-.543c-.424-.92-.506-2.286-.208-3.451.124-.486.329-.918.544-1.154a.787.787 0 0 0 .223-.531c0-.195-.07-.355-.224-.522a3.136 3.136 0 0 1-.817-1.729c-.14-.96.114-2.005.69-2.834.563-.814 1.353-1.336 2.237-1.475.199-.033.57-.028.776.01.226.04.367.028.512-.041.179-.085.268-.19.374-.431.093-.215.165-.333.36-.576.234-.29.46-.489.822-.729.413-.27.884-.467 1.352-.561.17-.035.25-.04.569-.04.319 0 .398.005.569.04a4.07 4.07 0 0 1 1.914.997c.117.109.398.457.488.602.034.057.095.177.132.267.105.241.195.346.374.43.14.068.286.082.503.045.343-.058.607-.053.943.016 1.144.23 2.14 1.173 2.581 2.437.385 1.108.276 2.267-.296 3.153-.097.15-.193.27-.333.419-.301.322-.301.722-.001 1.053.493.539.801 1.866.708 3.036-.062.772-.26 1.463-.533 1.854a2.096 2.096 0 0 1-.224.258.916.916 0 0 0-.194.25c-.054.109-.057.128-.057.293v.178l.148.29c.248.476.38.823.498 1.295.253 1.008.231 2.01-.059 2.581a.845.845 0 0 0-.044.098c0 .006.329.009.732.009h.73l.02-.074.036-.134c.019-.076.057-.3.088-.516.029-.217.029-1.016 0-1.258-.11-.875-.295-1.57-.597-2.226-.032-.074-.053-.138-.046-.141.008-.005.057-.074.108-.152.376-.569.607-1.284.724-2.228.031-.26.031-1.378 0-1.628-.083-.645-.182-1.082-.348-1.525a6.083 6.083 0 0 0-.329-.7l-.038-.064.131-.194c.402-.604.636-1.262.727-2.04a6.625 6.625 0 0 0-.024-1.358 5.512 5.512 0 0 0-.939-2.339 5.325 5.325 0 0 0-.95-1.02 8.097 8.097 0 0 1-.186-.152.692.692 0 0 1 .023-.208c.208-1.087.201-2.443-.017-3.503-.19-.924-.535-1.658-.98-2.082-.354-.338-.716-.482-1.15-.455-.996.059-1.8 1.205-2.116 3.01a6.805 6.805 0 0 0-.097.726c0 .036-.007.066-.015.066a.96.96 0 0 1-.149-.078A4.857 4.857 0 0 0 12 3.03c-.832 0-1.687.243-2.456.698a.958.958 0 0 1-.148.078c-.008 0-.015-.03-.015-.066a6.71 6.71 0 0 0-.097-.725C8.997 1.392 8.337.319 7.46.048a2.096 2.096 0 0 0-.585-.041Zm.293 1.402c.248.197.523.759.682 1.388.03.113.06.244.069.292.007.047.026.152.041.233.067.365.098.76.102 1.24l.002.475-.12.175-.118.178h-.278c-.324 0-.646.041-.954.124l-.238.06c-.033.007-.038-.003-.057-.144a8.438 8.438 0 0 1 .016-2.323c.124-.788.413-1.501.696-1.711.067-.05.079-.049.157.013zm9.825-.012c.17.126.358.46.498.888.28.854.36 2.028.212 3.145-.019.14-.024.151-.057.144l-.238-.06a3.693 3.693 0 0 0-.954-.124h-.278l-.119-.178-.119-.175.002-.474c.004-.669.066-1.19.214-1.772.157-.623.434-1.185.68-1.382.078-.062.09-.063.159-.012z"/></svg>`,
+		lmstudio: `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M14.025 0c3.492 0 5.237 0 6.571.68a6.24 6.24 0 0 1 2.725 2.724C24 4.738 24 6.484 24 9.975v4.05c0 3.492 0 5.237-.68 6.571a6.24 6.24 0 0 1-2.724 2.725c-1.334.679-3.08.679-6.571.679h-4.05c-3.492 0-5.237 0-6.571-.68A6.24 6.24 0 0 1 .68 20.597C0 19.262 0 17.516 0 14.025v-4.05c0-3.492 0-5.237.68-6.571A6.23 6.23 0 0 1 3.404.68C4.738 0 6.484 0 9.975 0zM7.688 16.313a1.313 1.313 0 0 0 0 2.625h11.625a1.313 1.313 0 0 0 0-2.625zm-3-3.75a1.313 1.313 0 0 0 0 2.624h11.625a1.313 1.313 0 0 0 0-2.624zm3-3.75a1.313 1.313 0 0 0 0 2.624h11.625a1.313 1.313 0 0 0 0-2.624zm-3-3.75a1.313 1.313 0 0 0 0 2.625h11.625a1.313 1.313 0 0 0 0-2.625z"/></svg>`
+	};
 
 	const SmallBtn = props => h("button", {
 		type: "button",
@@ -4803,12 +6644,15 @@ module.exports = (() => {
 		dangerouslySetInnerHTML: { __html: props.svg }
 	});
 
-	const Field = props => h("div", { className: `${CSS_PREFIX}-f-item`, style: props.style },
+	const Field = props => h("div", {
+		className: `${CSS_PREFIX}-f-item${props.className ? ` ${props.className}` : ""}`,
+		style: props.style
+	},
 		props.actions
 			? h("div", { className: `${CSS_PREFIX}-f-row` },
-				h("div", { className: `${CSS_PREFIX}-f-label` }, props.label),
+				h("div", { className: `${CSS_PREFIX}-f-label` }, h(SettingTitle, { label: props.label, hint: props.hint })),
 				h("div", { className: `${CSS_PREFIX}-f-actions` }, props.actions))
-			: h("div", { className: `${CSS_PREFIX}-f-label` }, props.label),
+			: h("div", { className: `${CSS_PREFIX}-f-label` }, h(SettingTitle, { label: props.label, hint: props.hint })),
 		props.children
 	);
 
@@ -4816,10 +6660,13 @@ module.exports = (() => {
 	const usePopover = () => {
 		const [open, setOpen] = useState(false);
 		const rootRef = useRef(null);
+		const floatingRef = useRef(null);
 		useEffect(() => {
 			if (!open) return undefined;
 			const onDown = event => {
-				if (rootRef.current && !rootRef.current.contains(event.target)) setOpen(false);
+				const inRoot = rootRef.current && rootRef.current.contains(event.target);
+				const inFloating = floatingRef.current && floatingRef.current.contains(event.target);
+				if (!inRoot && !inFloating) setOpen(false);
 			};
 			const onKey = event => { if (event.key === "Escape") setOpen(false); };
 			document.addEventListener("mousedown", onDown);
@@ -4829,7 +6676,7 @@ module.exports = (() => {
 				document.removeEventListener("keydown", onKey);
 			};
 		}, [open]);
-		return { open, setOpen, rootRef };
+		return { open, setOpen, rootRef, floatingRef };
 	};
 
 	// Self-drawn select (native <select> and datalist render OS-native,
@@ -4850,7 +6697,7 @@ module.exports = (() => {
 				h("span", { className: `${CSS_PREFIX}-select-label` }, current ? current.label : String(props.value)),
 				h("span", { className: `${CSS_PREFIX}-sel-arrow`, dangerouslySetInnerHTML: { __html: CHEVRON_SVG } })
 			),
-			pop.open ? h("div", { className: `${CSS_PREFIX}-pop`, role: "listbox" },
+			pop.open ? h("div", { className: `${CSS_PREFIX}-pop${props.up ? ` ${CSS_PREFIX}-pop-up` : ""}`, role: "listbox" },
 				props.options.map(option => h("button", {
 					key: String(option.value),
 					type: "button",
@@ -4918,50 +6765,112 @@ module.exports = (() => {
 	// untheme-able floater in Electron, so it is banned here).
 	const ModelCombo = props => {
 		const [val, setVal] = useState(String(props.value || ""));
+		const [filter, setFilter] = useState("");
+		const [cachedModels, setCachedModels] = useState(() => Array.isArray(props.models) ? props.models.slice() : []);
+		const [floating, setFloating] = useState(null);
 		const pop = usePopover();
 		useEffect(() => {
-			if (props.openSignal > 0 && props.models.length > 0) pop.setOpen(true);
+			const incoming = Array.isArray(props.models) ? props.models : [];
+			if (incoming.length) setCachedModels(incoming.slice());
+		}, [props.models]);
+		useEffect(() => { setVal(String(props.value || "")); }, [props.value]);
+		const models = props.models.length ? props.models : cachedModels;
+		useEffect(() => {
+			if (props.openSignal > 0 && models.length > 0) {
+				setFilter("");
+				pop.setOpen(true);
+			}
 		}, [props.openSignal]);
-		const query = val.trim().toLowerCase();
-		const list = query ? props.models.filter(model => model.toLowerCase().includes(query)) : props.models;
+		useEffect(() => {
+			if (!pop.open) { setFloating(null); return undefined; }
+			const update = () => {
+				const anchor = pop.rootRef.current;
+				if (!anchor || typeof anchor.getBoundingClientRect !== "function") return;
+				const rect = anchor.getBoundingClientRect();
+				const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+				const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+				const margin = 8;
+				const gap = 4;
+				const below = Math.max(0, viewportHeight - rect.bottom - gap - margin);
+				const above = Math.max(0, rect.top - gap - margin);
+				const openUp = below < 180 && above > below;
+				const available = openUp ? above : below;
+				const maxHeight = Math.max(32, Math.min(280, Math.floor(available)));
+				const width = Math.min(rect.width, Math.max(0, viewportWidth - margin * 2));
+				const left = Utils.clamp(rect.left, margin, Math.max(margin, viewportWidth - margin - width));
+				const style = {
+					left: Math.round(left),
+					width: Math.round(width),
+					maxHeight
+				};
+				if (openUp) style.bottom = Math.round(viewportHeight - rect.top + gap);
+				else style.top = Math.round(rect.bottom + gap);
+				setFloating({ openUp, style });
+			};
+			update();
+			window.addEventListener("resize", update);
+			document.addEventListener("scroll", update, true);
+			return () => {
+				window.removeEventListener("resize", update);
+				document.removeEventListener("scroll", update, true);
+			};
+		}, [pop.open, models.length]);
+		const query = filter.trim().toLowerCase();
+		const list = query ? models.filter(model => model.toLowerCase().includes(query)) : models;
+		const menu = pop.open && models.length && floating ? h("div", {
+			ref: pop.floatingRef,
+			className: `${CSS_PREFIX}-ui ${CSS_PREFIX}-pop ${CSS_PREFIX}-pop-fixed${floating.openUp ? ` ${CSS_PREFIX}-pop-fixed-up` : ""}`,
+			style: floating.style,
+			role: "listbox"
+		},
+			list.length
+				? list.map(model => h("button", {
+					key: model,
+					type: "button",
+					role: "option",
+					title: model,
+					"aria-selected": model === val,
+					className: `${CSS_PREFIX}-pop-item${model === val ? ` ${CSS_PREFIX}-pop-current` : ""}`,
+					onMouseDown: event => {
+						event.preventDefault();
+						setVal(model);
+						setFilter("");
+						props.onCommit(model, models);
+						pop.setOpen(false);
+					}
+				}, model))
+				: h("div", { className: `${CSS_PREFIX}-pop-empty` }, t("combo_no_match"))
+		) : null;
+		const floatingMenu = menu && ReactDOM && typeof ReactDOM.createPortal === "function" && document.body
+			? ReactDOM.createPortal(menu, document.body)
+			: menu;
 		return h("div", { className: `${CSS_PREFIX}-combo`, ref: pop.rootRef },
 			h("input", {
 				className: `${CSS_PREFIX}-input`,
 				type: "text",
 				placeholder: props.placeholder || "",
-				style: props.models.length ? undefined : { paddingRight: "10px" },
+				style: models.length ? undefined : { paddingRight: "10px" },
 				value: val,
 				onChange: event => {
-					setVal(event.target.value);
-					props.onCommit(event.target.value);
-					if (props.models.length) pop.setOpen(true);
+					const next = event.target.value;
+					setVal(next);
+					setFilter(next);
+					props.onCommit(next, models);
+					if (models.length) pop.setOpen(true);
 				}
 			}),
-			props.models.length ? h("button", {
+			models.length ? h("button", {
 				type: "button",
 				className: `${CSS_PREFIX}-combo-chevron${pop.open ? ` ${CSS_PREFIX}-open` : ""}`,
 				"aria-label": t("aria_open_models"),
 				"aria-expanded": pop.open,
-				onClick: () => pop.setOpen(!pop.open),
+				onClick: () => {
+					if (!pop.open) setFilter("");
+					pop.setOpen(!pop.open);
+				},
 				dangerouslySetInnerHTML: { __html: CHEVRON_SVG }
 			}) : null,
-			// Drop UP: the model field is always the last row of the form, so a
-			// downward list gets clipped by the settings modal's bottom edge.
-			pop.open && props.models.length ? h("div", { className: `${CSS_PREFIX}-pop ${CSS_PREFIX}-pop-up`, role: "listbox" },
-				list.length
-					? list.map(model => h("button", {
-						key: model,
-						type: "button",
-						role: "option",
-						title: model,
-						"aria-selected": model === val,
-						className: `${CSS_PREFIX}-pop-item${model === val ? ` ${CSS_PREFIX}-pop-current` : ""}`,
-						// mousedown (not click): usePopover's outside-mousedown
-						// handler can otherwise tear the list down before click.
-						onMouseDown: event => { event.preventDefault(); setVal(model); props.onCommit(model); pop.setOpen(false); }
-					}, model))
-					: h("div", { className: `${CSS_PREFIX}-pop-empty` }, t("combo_no_match"))
-			) : null
+			floatingMenu
 		);
 	};
 
@@ -4976,6 +6885,44 @@ module.exports = (() => {
 		const record = AIService.providerRecord(providerId);
 		if (record.apiKey) return true;
 		return (providerId === "ollama" || providerId === "lmstudio") && Boolean(record.model);
+	};
+
+	// Custom providers rename inline in the head card (no separate name row):
+	// Enter/blur keeps the edit, Escape restores the value from edit start.
+	const InlineName = props => {
+		const [editing, setEditing] = useState(Boolean(props.startEditing));
+		const initialRef = useRef(props.value);
+		if (!editing) {
+			return h("button", {
+				type: "button",
+				className: `${CSS_PREFIX}-prov-rename`,
+				title: t("provider_rename"),
+				"aria-label": t("provider_rename"),
+				onClick: () => { initialRef.current = props.value; setEditing(true); }
+			},
+				h("span", { className: `${CSS_PREFIX}-prov-card-name` }, props.value || t("provider_unnamed")),
+				h("span", { className: `${CSS_PREFIX}-prov-pencil`, dangerouslySetInnerHTML: { __html: PENCIL_SVG } })
+			);
+		}
+		return h("input", {
+			className: `${CSS_PREFIX}-prov-name-input`,
+			type: "text",
+			autoFocus: true,
+			placeholder: t("custom_provider_fallback_name"),
+			defaultValue: props.value,
+			onChange: event => props.onCommit(event.target.value),
+			onKeyDown: event => {
+				if (event.key === "Enter") {
+					event.preventDefault();
+					setEditing(false);
+				} else if (event.key === "Escape") {
+					event.preventDefault();
+					props.onCommit(initialRef.current);
+					setEditing(false);
+				}
+			},
+			onBlur: () => setEditing(false)
+		});
 	};
 
 	const ProviderForm = props => {
@@ -5018,7 +6965,10 @@ module.exports = (() => {
 			try {
 				BdApi.UI.showConfirmationModal(
 					t("provider_delete"),
-					t("provider_delete_confirm", { name: displayName }),
+					h("div", { className: `${CSS_PREFIX}-ui ${CSS_PREFIX}-confirm-body` },
+						h("div", null, tEmph("provider_delete_confirm", { name: displayName }, "name")),
+						h("div", { className: `${CSS_PREFIX}-confirm-note` }, t("confirm_irreversible"))
+					),
 					{
 						danger: true,
 						confirmText: t("provider_delete"),
@@ -5035,22 +6985,34 @@ module.exports = (() => {
 			}
 		};
 
-		return h("div", null,
-			h("div", { className: `${CSS_PREFIX}-prov-form-head` },
-				h("div", { className: `${CSS_PREFIX}-prov-title` }, displayName),
+		// Head card summary: fetched models beat "configured", which beats "unset".
+		const modelsCount = Array.isArray(models) ? models.length : 0;
+		const configured = providerConfiguredDot(id);
+		const summaryKey = modelsCount ? "provider_status_models" : configured ? "provider_status_ready" : "provider_status_unset";
+		return h("div", { className: `${CSS_PREFIX}-prov-form` },
+			h("div", { className: `${CSS_PREFIX}-prov-card` },
+				h("div", {
+					className: `${CSS_PREFIX}-prov-tile${PROVIDER_ICON_SVGS[id] ? "" : ` ${CSS_PREFIX}-prov-tile-custom`}`,
+					dangerouslySetInnerHTML: { __html: PROVIDER_ICON_SVGS[id] || CLEANER_ICON_SVG }
+				}),
+				h("div", { className: `${CSS_PREFIX}-prov-card-copy` },
+					isCustom
+						? h(InlineName, {
+							value: record.name,
+							startEditing: Boolean(props.autoFocusName),
+							onCommit: value => { AIService.setProviderField(id, "name", value); props.onChanged(); }
+						})
+						: h("div", { className: `${CSS_PREFIX}-prov-card-name` }, displayName),
+					h("div", { className: `${CSS_PREFIX}-prov-card-sub` },
+						h("span", { className: `${CSS_PREFIX}-prov-card-dot${(modelsCount || configured) ? ` ${CSS_PREFIX}-prov-card-dot-ok` : ""}` }),
+						h("span", { className: `${CSS_PREFIX}-prov-card-sub-text` }, t(summaryKey, { count: modelsCount }))
+					)
+				),
 				isActive
 					? h("div", { className: `${CSS_PREFIX}-active-badge` }, t("provider_active_badge"))
 					: h(SmallBtn, { onClick: () => { AIService.setActiveProvider(id); props.onChanged(); } }, t("provider_set_active")),
 				isCustom ? h(IconBtn, { danger: true, label: t("provider_delete"), svg: TRASH_SVG, onClick: confirmDelete }) : null
 			),
-			isCustom ? h(Field, { label: t("provider_name") },
-				h(TextField, {
-					value: record.name,
-					placeholder: t("custom_provider_fallback_name"),
-					autoFocus: Boolean(props.autoFocusName),
-					onCommit: value => { AIService.setProviderField(id, "name", value); props.onChanged(); }
-				})
-			) : null,
 			h(Field, { label: t("set_base_url") },
 				h(TextField, {
 					value: record.baseUrl,
@@ -5065,20 +7027,35 @@ module.exports = (() => {
 					onCommit: value => { AIService.setProviderField(id, "apiKey", value); props.onChanged(); }
 				})
 			),
-			h(Field, {
-				label: t("set_model"),
-				actions: [
-					h(SmallBtn, { key: "fetch", secondary: true, onClick: fetchModels }, t("btn_fetch_models")),
-					h(SmallBtn, { key: "validate", secondary: true, onClick: validate }, t("btn_validate"))
-				]
-			},
-				h(ModelCombo, {
-					value: record.model,
-					models,
-					openSignal,
-					placeholder: preset && preset.model ? preset.model : "model-id",
-					onCommit: value => { AIService.setProviderField(id, "model", value); props.onChanged(); }
-				}),
+			h("div", { className: `${CSS_PREFIX}-prov-split` }),
+			h(Field, { label: t("set_model") },
+				// One input-height row: the combo (with its own chevron cell), a
+				// standalone refresh button and validate — separated by gaps, no
+				// fused icon cells and no floating buttons on the label row.
+				h("div", { className: `${CSS_PREFIX}-model-row` },
+					h(ModelCombo, {
+						value: record.model,
+						models,
+						openSignal,
+						placeholder: preset && preset.model ? preset.model : "model-id",
+						onCommit: (value, availableModels) => {
+							AIService.setProviderField(id, "model", value);
+							if (Array.isArray(availableModels) && availableModels.length) {
+								AIService.setProviderField(id, "models", availableModels.slice());
+							}
+							props.onChanged();
+						}
+					}),
+					h("button", {
+						type: "button",
+						className: `${CSS_PREFIX}-combo-fetch`,
+						title: t("btn_fetch_models"),
+						"aria-label": t("btn_fetch_models"),
+						onClick: fetchModels,
+						dangerouslySetInnerHTML: { __html: REFRESH_SVG }
+					}),
+					h(SmallBtn, { secondary: true, onClick: validate }, t("btn_validate"))
+				),
 				h(StatusLine, { text: status.text, tone: status.tone })
 			)
 		);
@@ -5127,7 +7104,13 @@ module.exports = (() => {
 								}
 							}
 						},
-							h("span", { className: `${CSS_PREFIX}-prov-dot${providerConfiguredDot(item.id) ? ` ${CSS_PREFIX}-prov-dot-ok` : ""}` }),
+							h("span", {
+								className: `${CSS_PREFIX}-prov-ic${PROVIDER_ICON_SVGS[item.id] ? "" : ` ${CSS_PREFIX}-prov-ic-custom`}`,
+								dangerouslySetInnerHTML: {
+									__html: (PROVIDER_ICON_SVGS[item.id] || CLEANER_ICON_SVG)
+										+ (providerConfiguredDot(item.id) ? `<span class="${CSS_PREFIX}-prov-mini"></span>` : "")
+								}
+							}),
 							h("span", { className: `${CSS_PREFIX}-prov-name`, title: item.name }, item.name),
 							item.id === activeId ? h("span", {
 								className: `${CSS_PREFIX}-prov-check`,
@@ -5136,7 +7119,10 @@ module.exports = (() => {
 							}) : null
 						))
 					),
-					h("button", { type: "button", className: `${CSS_PREFIX}-prov-add`, onClick: addCustom }, `＋ ${t("provider_add")}`)
+					h("button", { type: "button", className: `${CSS_PREFIX}-prov-add`, onClick: addCustom },
+						h("span", { className: `${CSS_PREFIX}-btn-ic`, dangerouslySetInnerHTML: { __html: ADD_SVG } }),
+						t("provider_add")
+					)
 				),
 				h(ProviderForm, {
 					key: selectedId,
@@ -5170,7 +7156,10 @@ module.exports = (() => {
 			try {
 				BdApi.UI.showConfirmationModal(
 					t("provider_delete"),
-					t("prompt_delete_confirm", { name }),
+					h("div", { className: `${CSS_PREFIX}-ui ${CSS_PREFIX}-confirm-body` },
+						h("div", null, tEmph("prompt_delete_confirm", { name }, "name")),
+						h("div", { className: `${CSS_PREFIX}-confirm-note` }, t("confirm_irreversible"))
+					),
 					{
 						danger: true,
 						confirmText: t("provider_delete"),
@@ -5195,35 +7184,44 @@ module.exports = (() => {
 		};
 		const actions = isBuiltin
 			? [
-				h(SmallBtn, { key: "dup", secondary: true, onClick: duplicateBuiltin }, t("prompt_duplicate")),
-				h(SmallBtn, { key: "new", secondary: true, onClick: newPolicy }, t("prompt_new"))
+				h(IconBtn, { key: "dup", label: t("prompt_duplicate"), svg: COPY_SVG, onClick: duplicateBuiltin }),
+				h(IconBtn, { key: "new", label: t("prompt_new"), svg: ADD_SVG, onClick: newPolicy })
 			]
 			: [
-				h(SmallBtn, { key: "new", secondary: true, onClick: newPolicy }, t("prompt_new")),
+				h(IconBtn, { key: "new", label: t("prompt_new"), svg: ADD_SVG, onClick: newPolicy }),
 				h(IconBtn, { key: "del", danger: true, label: t("provider_delete"), svg: TRASH_SVG, onClick: confirmDelete })
 			];
-		return h("div", { className: `${CSS_PREFIX}-prompt-editor` },
-			!isBuiltin ? h(Field, { label: t("prompt_name") },
-				h(TextField, {
-					value: entry && entry.name || "",
-					placeholder: t("prompt_unnamed"),
-					onCommit: value => { AIService.updatePolicy(activeId, { name: value }); props.onChanged(); }
+		// The editor is an object card: the head carries identity (inline-renamable
+		// name, or the builtin title with a read-only badge) plus icon actions;
+		// the body is the prompt text itself. No separate name/content rows.
+		return h("div", { className: `${CSS_PREFIX}-policy-card${isBuiltin ? "" : ` ${CSS_PREFIX}-policy-editable`}` },
+			h("div", { className: `${CSS_PREFIX}-policy-head` },
+				h("div", { className: `${CSS_PREFIX}-policy-title` },
+					isBuiltin
+						? h("span", { className: `${CSS_PREFIX}-prov-card-name` }, t("prompt_builtin"))
+						: h(InlineName, {
+							value: entry && entry.name || "",
+							onCommit: value => { AIService.updatePolicy(activeId, { name: value }); props.onChanged(); }
+						}),
+					h(InfoHint, { text: t("set_policy_note") }),
+					isBuiltin ? h("span", { className: `${CSS_PREFIX}-policy-lock` },
+						h("span", { className: `${CSS_PREFIX}-policy-lock-ic`, dangerouslySetInnerHTML: { __html: LOCK_SVG } }),
+						t("policy_readonly")
+					) : null
+				),
+				h("div", { className: `${CSS_PREFIX}-policy-actions` }, actions)
+			),
+			h("textarea", {
+				className: `${CSS_PREFIX}-policy-body`,
+				readOnly: isBuiltin,
+				"aria-label": t("prompt_content"),
+				placeholder: isBuiltin ? undefined : t("prompt_placeholder"),
+				value: isBuiltin ? builtinText : text,
+				onChange: isBuiltin ? undefined : (event => {
+					setText(event.target.value);
+					AIService.updatePolicy(activeId, { text: event.target.value });
 				})
-			) : null,
-			h(Field, { label: t("prompt_content"), actions },
-				h("textarea", {
-					className: `${CSS_PREFIX}-textarea`,
-					style: { minHeight: "150px" },
-					readOnly: isBuiltin,
-					placeholder: isBuiltin ? undefined : t("prompt_placeholder"),
-					value: isBuiltin ? builtinText : text,
-					onChange: isBuiltin ? undefined : (event => {
-						setText(event.target.value);
-						AIService.updatePolicy(activeId, { text: event.target.value });
-					})
-				}),
-				h("div", { className: `${CSS_PREFIX}-note`, style: { marginTop: "6px" } }, t("set_policy_note"))
-			)
+			})
 		);
 	};
 
@@ -5231,19 +7229,6 @@ module.exports = (() => {
 		const [, setTick] = useState(0);
 		const bump = () => setTick(value => value + 1);
 		return h("div", null,
-			h("div", { className: `${CSS_PREFIX}-group-header` }, t("group_language")),
-			h(SetRow, { label: t("set_language") },
-				h(SelectMenu, {
-					ariaLabel: t("set_language"),
-					value: String(SettingsStore.get("general.interfaceLanguage") || "system"),
-					options: langOptions(),
-					onChange: value => {
-						SettingsStore.set("general.interfaceLanguage", value || "system");
-						try { BdApi.UI.showToast(t("toast_lang_reopen"), { type: "info" }); } catch (e) { /* ignore */ }
-						bump();
-					}
-				})
-			),
 			h("div", { className: `${CSS_PREFIX}-group-header` }, t("group_prompt")),
 			h(SetRow, { label: t("prompt_active") },
 				h(SelectMenu, {
@@ -5256,7 +7241,7 @@ module.exports = (() => {
 			),
 			h(PolicyEditor, { key: AIService.activePolicyId(), onChanged: bump }),
 			h("div", { className: `${CSS_PREFIX}-group-header` }, t("group_generation")),
-			h(SetRow, { label: t("set_concurrency") },
+			h(SetRow, { label: t("set_concurrency"), hint: t("set_concurrency_note") },
 				h(NumInput, {
 					value: Utils.num(SettingsStore.get("review.concurrency"), 3),
 					min: 1, max: 8, step: 1,
@@ -5264,7 +7249,6 @@ module.exports = (() => {
 					onCommit: value => SettingsStore.set("review.concurrency", Math.round(value))
 				})
 			),
-			h("div", { className: `${CSS_PREFIX}-note` }, t("set_concurrency_note")),
 			h(SetRow, { label: t("set_batch_size") },
 				h(NumInput, {
 					value: Utils.num(SettingsStore.get("review.batchSize"), 40),
@@ -5273,7 +7257,7 @@ module.exports = (() => {
 					onCommit: value => SettingsStore.set("review.batchSize", Math.round(value))
 				})
 			),
-			h(SetRow, { label: t("set_confirm_tokens") },
+			h(SetRow, { label: t("set_confirm_tokens"), hint: t("set_confirm_tokens_note") },
 				h(NumInput, {
 					value: Utils.num(SettingsStore.get("review.confirmAboveTokens"), 32000),
 					min: 0, max: 10000000, step: 1000,
@@ -5281,7 +7265,6 @@ module.exports = (() => {
 					onCommit: value => SettingsStore.set("review.confirmAboveTokens", Math.round(value))
 				})
 			),
-			h("div", { className: `${CSS_PREFIX}-note` }, t("set_confirm_tokens_note")),
 			h(SetRow, { label: t("set_idle_timeout") },
 				h(NumInput, {
 					value: Math.round(Utils.num(SettingsStore.get("ai.aiIdleTimeoutMs"), 60000) / 1000),
@@ -5299,6 +7282,19 @@ module.exports = (() => {
 		const [, setTick] = useState(0);
 		const bump = () => setTick(value => value + 1);
 		return h("div", null,
+			h("div", { className: `${CSS_PREFIX}-group-header` }, t("group_language")),
+			h(SetRow, { label: t("set_language") },
+				h(SelectMenu, {
+					ariaLabel: t("set_language"),
+					value: String(SettingsStore.get("general.interfaceLanguage") || "system"),
+					options: langOptions(),
+					onChange: value => {
+						SettingsStore.set("general.interfaceLanguage", value || "system");
+						try { BdApi.UI.showToast(t("toast_lang_reopen"), { type: "info" }); } catch (e) { /* ignore */ }
+						bump();
+					}
+				})
+			),
 			h("div", { className: `${CSS_PREFIX}-group-header` }, t("group_fetch")),
 			h(SetRow, { label: t("set_max_messages") },
 				h(NumInput, {
@@ -5308,16 +7304,15 @@ module.exports = (() => {
 					onCommit: value => SettingsStore.set("fetch.maxMessages", Math.round(value))
 				})
 			),
-			h(SetRow, { label: t("set_include_edited") },
+			h(SetRow, { label: t("set_include_edited"), hint: t("set_include_edited_note") },
 				h(SwitchC, {
 					value: SettingsStore.get("review.includeEdited") !== false,
 					ariaLabel: t("set_include_edited"),
 					onChange: value => { SettingsStore.set("review.includeEdited", value); bump(); }
 				})
 			),
-			h("div", { className: `${CSS_PREFIX}-note` }, t("set_include_edited_note")),
 			h("div", { className: `${CSS_PREFIX}-group-header` }, t("group_delete")),
-			h(SetRow, { label: t("set_delete_pacing") },
+			h(SetRow, { label: t("set_delete_pacing"), hint: t("set_delete_pacing_note") },
 				h(NumInput, {
 					value: Utils.num(SettingsStore.get("delete.pacingMs"), 1200),
 					min: 300, max: 30000, step: 100,
@@ -5325,8 +7320,7 @@ module.exports = (() => {
 					onCommit: value => SettingsStore.set("delete.pacingMs", Math.round(value))
 				})
 			),
-			h("div", { className: `${CSS_PREFIX}-note` }, t("set_delete_pacing_note")),
-			h(SetRow, { label: t("set_delete_max") },
+			h(SetRow, { label: t("set_delete_max"), hint: t("set_delete_max_note") },
 				h(NumInput, {
 					value: Utils.num(SettingsStore.get("delete.maxPerRun"), 200),
 					min: 1, max: 1000, step: 10,
@@ -5334,7 +7328,6 @@ module.exports = (() => {
 					onCommit: value => SettingsStore.set("delete.maxPerRun", Math.round(value))
 				})
 			),
-			h("div", { className: `${CSS_PREFIX}-note` }, t("set_delete_max_note")),
 			h(SetRow, { label: t("set_backup_mode") },
 				h(SelectMenu, {
 					ariaLabel: t("set_backup_mode"),
@@ -5355,6 +7348,7 @@ module.exports = (() => {
 	const DiagPage = () => {
 		const health = DiscordAdapter.health();
 		const entryKey = ChatEntry.status === "webpack" ? "entry_webpack" : ChatEntry.status === "dom" ? "entry_dom" : "entry_none";
+		const [updateState, setUpdateState] = useState({ phase: "idle", info: null, message: "" });
 		const copyDiag = () => {
 			const payload = {
 				plugin: `${PLUGIN_ID} v${PLUGIN_VERSION}`,
@@ -5367,28 +7361,156 @@ module.exports = (() => {
 				try { BdApi.UI.showToast(t("diag_copied"), { type: "success" }); } catch (e) { /* ignore */ }
 			}
 		};
+		const checkUpdates = async () => {
+			setUpdateState({ phase: "checking", info: null, message: "" });
+			try {
+				const info = await UpdateService.check();
+				setUpdateState({ phase: info.status, info, message: "" });
+			} catch (e) {
+				setUpdateState({ phase: "failed", info: null, message: t("update_failed", { detail: e && e.message || String(e) }) });
+			}
+		};
+		const installUpdate = async info => {
+			setUpdateState({ phase: "installing", info, message: "" });
+			try {
+				const result = await UpdateService.install(info);
+				const message = t("update_installed", { version: result.version });
+				setUpdateState({ phase: "installed", info, message });
+				try { BdApi.UI.showToast(message, { type: "success" }); } catch (e) { /* hot reload may win */ }
+				setTimeout(() => { try { BdApi.Plugins.reload(PLUGIN_ID); } catch (e) { /* file watcher also reloads */ } }, 750);
+			} catch (e) {
+				setUpdateState({ phase: "failed", info, message: t("update_failed", { detail: e && e.message || String(e) }) });
+			}
+		};
+		const confirmInstall = () => {
+			const info = updateState.info;
+			if (!info || info.status !== "available") return;
+			try {
+				BdApi.UI.showConfirmationModal(
+					t("update_install_title", { version: info.latest }),
+					t("update_install_body", { current: PLUGIN_VERSION }),
+					{
+						confirmText: t("update_install"),
+						cancelText: t("cancel"),
+						onConfirm: () => installUpdate(info)
+					}
+				);
+			} catch (e) {
+				try { BdApi.UI.showToast(t("err_confirm_unavailable"), { type: "error" }); } catch (e2) { /* ignore */ }
+			}
+		};
+		const updateText = updateState.message || (updateState.phase === "checking" ? t("update_checking")
+			: updateState.phase === "installing" ? t("update_installing")
+				: updateState.phase === "current" ? t("update_current", { version: updateState.info.latest })
+					: updateState.phase === "available" ? t(updateState.info.installable ? "update_available" : "update_available_manual", {
+						version: updateState.info.latest
+					})
+						: updateState.phase === "development" ? t("update_development", {
+							current: updateState.info.current, latest: updateState.info.latest
+						}) : "");
+		const updateTone = updateState.phase === "failed" ? "fail"
+			: (updateState.phase === "current" || updateState.phase === "installed") ? "ok" : null;
+		// The update badge morphs: neutral "check" pill until a new installable
+		// version is known, then a brand-solid "update to vX" pill.
+		const updateBusy = updateState.phase === "checking" || updateState.phase === "installing";
+		const installReady = updateState.phase === "available" && updateState.info && updateState.info.installable;
+		const installBadge = installReady || updateState.phase === "installing";
+		const updateBadgeLabel = installBadge
+			? t("update_badge_install", { version: updateState.info ? updateState.info.latest : PLUGIN_VERSION })
+			: updateState.phase === "checking" ? t("update_checking") : t("update_check");
 		return h("div", null,
-			h("div", { className: `${CSS_PREFIX}-note`, style: { marginBottom: "8px" } }, t("set_diag_note")),
-			h("div", { className: `${CSS_PREFIX}-diag-version` },
-				`${t("version_label")}: ${PLUGIN_VERSION} | BetterDiscord: ${BdApi.version || "?"}`),
+			h(GroupHeader, { label: t("group_about") }),
+			h("div", { className: `${CSS_PREFIX}-about-card` },
+				h("div", { className: `${CSS_PREFIX}-about-id` },
+					h("div", { className: `${CSS_PREFIX}-about-icon`, dangerouslySetInnerHTML: { __html: CLEANER_ICON_SVG } }),
+					h("div", { className: `${CSS_PREFIX}-about-copy` },
+						h("div", { className: `${CSS_PREFIX}-about-name` }, PLUGIN_ID),
+						h("div", { className: `${CSS_PREFIX}-about-description` }, t("about_description"))
+					),
+					h("span", { className: `${CSS_PREFIX}-about-version` }, `v${PLUGIN_VERSION}`)
+				),
+				h("div", { className: `${CSS_PREFIX}-about-split` }),
+				h("div", { className: `${CSS_PREFIX}-about-badges` },
+					h("a", {
+						className: `${CSS_PREFIX}-badge`,
+						href: PROJECT_URL,
+						target: "_blank",
+						rel: "noopener noreferrer",
+						title: t("about_github")
+					},
+						h("span", { className: `${CSS_PREFIX}-badge-ic`, dangerouslySetInnerHTML: { __html: GITHUB_SVG } }),
+						t("about_repo")
+					),
+					h("button", {
+						type: "button",
+						className: `${CSS_PREFIX}-badge${installBadge ? ` ${CSS_PREFIX}-badge-brand` : ""}`,
+						disabled: updateBusy,
+						onClick: installReady ? confirmInstall : checkUpdates
+					},
+						h("span", { className: `${CSS_PREFIX}-badge-ic`, dangerouslySetInnerHTML: { __html: installBadge ? DOWNLOAD_SVG : REFRESH_SVG } }),
+						updateBadgeLabel
+					),
+					h("a", {
+						className: `${CSS_PREFIX}-badge`,
+						href: `${PROJECT_URL}/issues/new/choose`,
+						target: "_blank",
+						rel: "noopener noreferrer",
+						title: t("about_feedback")
+					},
+						h("span", { className: `${CSS_PREFIX}-badge-ic`, dangerouslySetInnerHTML: { __html: FEEDBACK_SVG } }),
+						t("about_feedback")
+					)
+				),
+				updateText ? h("div", {
+					className: `${CSS_PREFIX}-update-status${updateTone ? ` ${CSS_PREFIX}-${updateTone}` : ""}`,
+					"aria-live": "polite"
+				}, updateText) : null,
+				updateState.info && updateState.info.releaseUrl ? h("div", { className: `${CSS_PREFIX}-update-links` },
+					h("a", {
+						className: `${CSS_PREFIX}-update-link`,
+						href: updateState.info.releaseUrl,
+						target: "_blank",
+						rel: "noopener noreferrer"
+					}, t("update_view_release"))
+				) : null
+			),
+			h(GroupHeader, { label: t("group_diagnostics"), hint: t("set_diag_note") }),
 			h("div", { className: `${CSS_PREFIX}-diag-card` },
+				// Host version leads the table as a neutral row; status rows carry
+				// a color dot so state reads without parsing the text.
+				h("div", { className: `${CSS_PREFIX}-diag-row` },
+					h("span", { className: `${CSS_PREFIX}-diag-key` }, "BetterDiscord"),
+					h("span", {
+						className: `${CSS_PREFIX}-diag-val`,
+						style: { color: "var(--damc-text-faint, #949ba4)", fontWeight: 400 }
+					}, BdApi.version || "?")
+				),
 				h("div", { className: `${CSS_PREFIX}-diag-row` },
 					h("span", { className: `${CSS_PREFIX}-diag-key` }, t("diag_entry")),
 					h("span", {
 						className: `${CSS_PREFIX}-diag-val`,
 						style: { color: ChatEntry.status === "webpack" ? "var(--damc-ok)" : "var(--damc-danger)" }
-					}, t(entryKey))
+					},
+						h("span", { className: `${CSS_PREFIX}-diag-dot` }),
+						t(entryKey)
+					)
 				),
 				Object.keys(health).map(key => h("div", { key, className: `${CSS_PREFIX}-diag-row` },
 					h("span", { className: `${CSS_PREFIX}-diag-key` }, key),
 					h("span", {
 						className: `${CSS_PREFIX}-diag-val`,
 						style: { color: health[key] === "ok" ? "var(--damc-ok)" : "var(--damc-danger)" }
-					}, health[key] === "ok" ? t("diag_ok") : t("diag_missing"))
+					},
+						h("span", { className: `${CSS_PREFIX}-diag-dot` }),
+						health[key] === "ok" ? t("diag_ok") : t("diag_missing")
+					)
 				))
 			),
 			h("div", { style: { marginTop: "12px" } },
-				h(SmallBtn, { secondary: true, onClick: copyDiag }, t("diag_copy"))
+				h(SmallBtn, { secondary: true, onClick: copyDiag },
+					h("span", { className: `${CSS_PREFIX}-btn-ic`, dangerouslySetInnerHTML: { __html: COPY_SVG } }),
+					t("diag_copy")
+				)
 			)
 		);
 	};
@@ -5448,7 +7570,6 @@ module.exports = (() => {
 			return h(SettingsRoot);
 		}
 	};
-
 	// ==================== 22. PLUGIN CLASS ====================
 
 	return class DiscordAIMessageCleaner {
