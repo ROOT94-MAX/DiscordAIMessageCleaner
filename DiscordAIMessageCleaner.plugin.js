@@ -2694,22 +2694,21 @@ module.exports = (() => {
 			background: var(--damc-ok, #23a55a);
 			flex: 0 0 auto;
 		}
-		/* Result list: search-results panel — sunken panel, tool row in the
-		   head band, rounded message cards dug back to the modal base color. */
+		/* Result list: no container box. The tool row and the embed-style
+		   message cards sit directly on the modal background — a sunken panel
+		   holding rounded cards read as boxes nested inside boxes. */
 		.${CSS_PREFIX}-panel {
 			display: flex;
 			flex-direction: column;
-			border-radius: 8px;
-			background: var(--damc-sunken, #1e1f22);
-			overflow: hidden;
+			min-height: 0;
 		}
 		.${CSS_PREFIX}-panel-head {
 			display: flex;
 			align-items: center;
 			gap: 10px;
-			padding: 8px 12px;
-			background: color-mix(in srgb, var(--damc-text, #dbdee1) 4%, var(--damc-sunken, #1e1f22));
-			border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+			padding: 0 0 10px;
+			border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+			margin-bottom: 10px;
 			flex: 0 0 auto;
 		}
 		.${CSS_PREFIX}-panel-spacer {
@@ -2735,7 +2734,6 @@ module.exports = (() => {
 			/* Shrinks on short windows so the footer stays reachable. */
 			max-height: min(340px, 38vh);
 			overflow-y: auto;
-			padding: 0 8px 8px;
 		}
 		.${CSS_PREFIX}-panel-body::-webkit-scrollbar {
 			width: 8px;
@@ -2746,32 +2744,35 @@ module.exports = (() => {
 		}
 		/* Day group header: left-aligned, no through-lines. */
 		.${CSS_PREFIX}-day {
-			padding: 10px 4px 4px;
+			padding: 8px 2px 6px;
 			font-size: 12px;
 			font-weight: 700;
 			color: var(--damc-text-faint, #949ba4);
 			flex: 0 0 auto;
 		}
+		.${CSS_PREFIX}-panel-body > .${CSS_PREFIX}-day:first-child {
+			padding-top: 0;
+		}
+		/* Message card: the host's embed anatomy — surface color on the modal
+		   base, rounded, with the flagged left bar riding the card edge. */
 		.${CSS_PREFIX}-mcard {
 			position: relative;
 			display: flex;
 			align-items: flex-start;
 			gap: 10px;
 			padding: 9px 11px;
+			margin: 0 0 8px;
 			border: 0;
 			border-radius: 8px;
-			background: var(--damc-bg, #313338);
+			background: var(--damc-surface, #2b2d31);
 			font: inherit;
 			text-align: left;
 			cursor: pointer;
 			color: var(--damc-text, #dbdee1);
 			flex: 0 0 auto;
 		}
-		.${CSS_PREFIX}-mcard + .${CSS_PREFIX}-mcard {
-			margin-top: 8px;
-		}
 		.${CSS_PREFIX}-mcard:hover {
-			background: color-mix(in srgb, #fff 5%, var(--damc-bg, #313338));
+			background: color-mix(in srgb, #fff 4%, var(--damc-surface, #2b2d31));
 		}
 		/* Selection is the checkbox's job alone: no card tint (select-all is
 		   the normal case; tinting every row turns the list into patchwork). */
@@ -2789,7 +2790,7 @@ module.exports = (() => {
 			cursor: default;
 		}
 		.${CSS_PREFIX}-mcard-static:hover {
-			background: var(--damc-bg, #313338);
+			background: var(--damc-surface, #2b2d31);
 		}
 		.${CSS_PREFIX}-checkbox {
 			width: 18px;
@@ -3202,7 +3203,6 @@ module.exports = (() => {
 			align-items: center;
 			justify-content: center;
 			gap: 6px;
-			margin-top: 8px;
 			padding: 9px;
 			border: 0;
 			border-radius: 8px;
