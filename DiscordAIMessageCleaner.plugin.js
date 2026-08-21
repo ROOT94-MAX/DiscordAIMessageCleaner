@@ -2725,8 +2725,6 @@ module.exports = (() => {
 			display: flex;
 			align-items: center;
 			gap: 10px;
-			padding: 0 0 10px;
-			border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 			margin-bottom: 10px;
 			flex: 0 0 auto;
 		}
@@ -5384,11 +5382,11 @@ module.exports = (() => {
 			// Master tri-state checkbox over the DISPLAYED (possibly filtered) rows.
 			const displayedSelected = displayed.reduce((count, message) => count + (selected.has(message.id) ? 1 : 0), 0);
 			const masterState = displayedSelected === 0 ? "none" : displayedSelected === displayed.length ? "all" : "some";
-			// Search-results panel: tool row in the head band, day-grouped
-			// message cards in the scrollable body, load-more as the tail row.
-			// Channel badges only earn their space when the results actually
-			// span more than one channel and no channel filter is active.
-			const multiChannel = Boolean(channelOptions && channelOptions.length > 2);
+			// Tool row above, day-grouped rows in the surface container below,
+			// load-more as the tail row. Channel badges follow the SCOPE, not
+			// the result diversity: a cancelled or partial guild scan may have
+			// reached only one channel so far, and resuming can add more.
+			const guildView = fetchResult.scope === "guild";
 			let dayFormat = null;
 			try {
 				dayFormat = new Intl.DateTimeFormat(I18N.resolveUiLanguage(), { year: "numeric", month: "long", day: "numeric" });
@@ -5406,7 +5404,7 @@ module.exports = (() => {
 					message,
 					selected: selected.has(message.id),
 					verdict: verdicts ? verdicts.get(message.id) : null,
-					showChannel: multiChannel && effectiveChannelFilter === null,
+					showChannel: guildView && effectiveChannelFilter === null,
 					onPreview: att => setLightbox({ url: att.url, name: att.filename }),
 					onToggle: toggleSelected
 				}));
@@ -5442,7 +5440,8 @@ module.exports = (() => {
 					),
 					// Channel switcher: same SelectMenu component and styling as
 					// the settings panel (chips get unwieldy with many channels).
-					channelOptions && channelOptions.length > 2 ? h(SelectMenu, {
+					// Present for every guild view so partial scans stay honest.
+					channelOptions && channelOptions.length >= 2 ? h(SelectMenu, {
 						ariaLabel: t("filter_channel"),
 						value: effectiveChannelFilter || "",
 						options: channelOptions,

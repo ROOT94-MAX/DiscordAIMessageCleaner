@@ -437,8 +437,6 @@
 			display: flex;
 			align-items: center;
 			gap: 10px;
-			padding: 0 0 10px;
-			border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 			margin-bottom: 10px;
 			flex: 0 0 auto;
 		}
