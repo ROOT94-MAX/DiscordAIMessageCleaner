@@ -389,7 +389,7 @@
 			}
 		};
 
-		return h("div", null,
+		return h("div", { className: `${CSS_PREFIX}-prov-form` },
 			h("div", { className: `${CSS_PREFIX}-prov-form-head` },
 				h("div", { className: `${CSS_PREFIX}-prov-title` }, displayName),
 				isActive

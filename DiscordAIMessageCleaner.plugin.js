@@ -3344,12 +3344,23 @@ module.exports = (() => {
 			flex: 1 1 auto;
 			min-width: 0;
 			font-size: 16px;
-			font-weight: 600;
+			font-weight: 700;
 			color: var(--damc-text-strong, #f2f3f5);
 			overflow: hidden;
 			text-overflow: ellipsis;
 			white-space: nowrap;
 		}
+		.${CSS_PREFIX}-prov-form .${CSS_PREFIX}-f-label {
+			font-size: 14px;
+			font-weight: 600;
+			line-height: 20px;
+			color: var(--damc-text-sub, #b5bac1);
+		}
+		.${CSS_PREFIX}-prov-form .${CSS_PREFIX}-input {
+			font-size: 15px;
+			font-weight: 400;
+		}
+		.${CSS_PREFIX}-prov-form .${CSS_PREFIX}-btn-sm { font-size: 14px; }
 		.${CSS_PREFIX}-active-badge {
 			flex: 0 0 auto;
 			height: 22px;
@@ -5515,7 +5526,7 @@ module.exports = (() => {
 			}
 		};
 
-		return h("div", null,
+		return h("div", { className: `${CSS_PREFIX}-prov-form` },
 			h("div", { className: `${CSS_PREFIX}-prov-form-head` },
 				h("div", { className: `${CSS_PREFIX}-prov-title` }, displayName),
 				isActive

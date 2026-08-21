@@ -209,6 +209,18 @@ check("manual updater verifies official release assets and keeps a backup", () =
 	if (pluginSource.includes("about-update")) throw new Error("update controls still live inside the About card");
 });
 
+check("AI provider form uses a subordinate field typography scale", () => {
+	for (const needle of [
+		'`${CSS_PREFIX}-prov-form`',
+		'.${CSS_PREFIX}-prov-form .${CSS_PREFIX}-f-label', "font-size: 14px;", "font-weight: 600;",
+		"line-height: 20px;", "color: var(--damc-text-sub, #b5bac1);",
+		'.${CSS_PREFIX}-prov-form .${CSS_PREFIX}-input', "font-size: 15px;", "font-weight: 400;",
+		'.${CSS_PREFIX}-prov-form .${CSS_PREFIX}-btn-sm { font-size: 14px; }'
+	]) {
+		if (!pluginSource.includes(needle)) throw new Error(`provider typography missing: ${needle}`);
+	}
+});
+
 check("observer()/onSwitch() are safe", () => { instance.observer(); instance.onSwitch(); });
 check("stop() cleans up", () => instance.stop());
 check("settings were persisted on stop", () => {
