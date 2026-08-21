@@ -6,14 +6,14 @@
 
 [![平台](https://img.shields.io/badge/Platform-Discord-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.com)
 [![加载器](https://img.shields.io/badge/Loader-BetterDiscord-4E5D94?style=flat-square)](https://betterdiscord.app)
-[![版本](https://img.shields.io/badge/Version-0.6.6-success?style=flat-square)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner)
+[![版本](https://img.shields.io/badge/Version-0.6.7-success?style=flat-square)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner)
 [![依赖](https://img.shields.io/badge/Dependency-None-brightgreen?style=flat-square)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner)
 [![验证](https://img.shields.io/github/actions/workflow/status/ROOT94-MAX/DiscordAIMessageCleaner/verify.yml?branch=main&style=flat-square&label=verify)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/actions/workflows/verify.yml)
 [![许可证](https://img.shields.io/badge/License-GPL%20v2-blue?style=flat-square)](./LICENSE)
 
 一款 BetterDiscord 插件，用 AI 审查并清理**你自己**在 Discord 里发过的历史消息：按账号搜索、自定义策略审查、备份后确认删除。
 
-**当前版本：v0.6.6** · **运行环境：BetterDiscord（无需第三方库）**
+**当前版本：v0.6.7** · **运行环境：BetterDiscord（无需第三方库）**
 
 [下载稳定版](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/releases/latest/download/DiscordAIMessageCleaner.plugin.js) · [English](README.en.md) · [架构文档](./ARCHITECTURE.md)
 
@@ -97,11 +97,12 @@
 - **深度分页上限：**Discord 搜索接口最多回溯约 5000 条，超出会截断并提示，可配合时间范围分次处理。
 - **批量删除是风控敏感操作：**默认单并发、每条间隔 1200ms + 随机抖动，连续触发限流会自动暂停。不建议把间隔调太低。
 
-## 已知问题（v0.6.6）
+## 导出兼容性修复（v0.6.7）
 
-- **导出功能当前不可用**：删除前的 JSON 备份与删除记录导出在部分环境下会整链失败（BD 保存对话框 → Discord 原生保存对话框 → 静默写入 Downloads 三级兜底全部未生效），正在排查，将在后续版本修复。
-- 失败方向是安全的：勾选了「先导出备份」而保存失败或取消时，**删除会直接放弃**，不会出现"没备份成却删了"。
-- 临时绕过：在删除确认弹窗里取消勾选备份（或设置 → 行为 → 备份模式设为「从不」），删除可正常执行；此时没有备份兜底，请控制单次删除量、谨慎操作。
+- 修复 v0.6.6 在部分环境中“保存接口没有返回文件路径，却被误报为成功”的问题。
+- 保存链现在依次尝试 BetterDiscord 保存对话框、Discord 原生保存对话框和 Downloads 回退；只有目标文件真实存在且 UTF-8 字节数一致时才报告成功。
+- 保存对话框使用绝对 Downloads 默认路径并带 JSON 过滤器；兼容 `saveWithDialog2`、旧 `saveWithDialog` 及多种取消字段。
+- 失败方向保持安全：请求了删除前备份时，取消或所有保存方式均失败都会放弃删除。
 
 ## 安全与隐私
 

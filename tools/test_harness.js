@@ -399,6 +399,117 @@ const ctx = { channelId: "200000000000000001", isPrivate: false };
 		assert.ok(thrown && thrown.code === "AI_PARSE", "throws AI_PARSE");
 	});
 
+	section("ExportService.save");
+	const exportDir = label => fs.mkdtempSync(path.join(os.tmpdir(), `damc-export-${label}-`));
+
+	await test("BetterDiscord save dialog writes and verifies the selected file", async () => {
+		const dir = exportDir("bd");
+		const target = path.join(dir, "selected.json");
+		let options = null;
+		const result = await api.ExportService.save("你好 export", "default.json", {
+			downloadsDir: dir,
+			discordNative: null,
+			ui: { openDialog: async value => { options = value; return { canceled: false, filePath: target }; } }
+		});
+		assert.strictEqual(result.saved, true);
+		assert.strictEqual(result.path, target);
+		assert.strictEqual(fs.readFileSync(target, "utf8"), "你好 export");
+		assert.strictEqual(options.defaultPath, path.join(dir, "default.json"), "absolute default path");
+		assert.deepStrictEqual(options.filters, [{ name: "JSON", extensions: ["json"] }]);
+	});
+
+	await test("BetterDiscord dialog cancel returns cancelled without fallback write", async () => {
+		const dir = exportDir("cancel");
+		const result = await api.ExportService.save("data", "cancelled.json", {
+			downloadsDir: dir,
+			discordNative: null,
+			ui: { openDialog: async () => ({ canceled: true }) }
+		});
+		assert.deepStrictEqual(result, { cancelled: true });
+		assert.deepStrictEqual(fs.readdirSync(dir), [], "cancel created no file");
+	});
+
+	await test("pathless BetterDiscord result is treated as cancel without fallback", async () => {
+		const dir = exportDir("pathless");
+		const result = await api.ExportService.save("fallback", "pathless.json", {
+			downloadsDir: dir,
+			discordNative: null,
+			ui: { openDialog: async () => ({ canceled: false }) }
+		});
+		assert.deepStrictEqual(result, { cancelled: true });
+		assert.deepStrictEqual(fs.readdirSync(dir), [], "pathless result created no file");
+	});
+
+	await test("BetterDiscord dialog failure falls through to a verified Downloads write", async () => {
+		const dir = exportDir("dialog-error");
+		const result = await api.ExportService.save("fallback", "dialog-error.json", {
+			downloadsDir: dir,
+			discordNative: null,
+			ui: { openDialog: async () => { throw new Error("dialog IPC unavailable"); } }
+		});
+		assert.strictEqual(result.path, path.join(dir, "dialog-error.json"));
+		assert.strictEqual(fs.readFileSync(result.path, "utf8"), "fallback");
+	});
+
+	await test("Discord saveWithDialog2 success requires a real verified file", async () => {
+		const dir = exportDir("native2");
+		const target = path.join(dir, "native2.json");
+		const result = await api.ExportService.save("native two", "native2.json", {
+			downloadsDir: dir,
+			ui: null,
+			discordNative: { fileManager: {
+				saveWithDialog2: async bytes => {
+					fs.writeFileSync(target, Buffer.from(bytes));
+					return { canceledByUser: false, filePath: target, directory: dir };
+				}
+			} }
+		});
+		assert.strictEqual(result.path, target);
+		assert.strictEqual(fs.readFileSync(target, "utf8"), "native two");
+	});
+
+	await test("legacy saveWithDialog null is treated as cancel, never false success", async () => {
+		const dir = exportDir("native-null");
+		const result = await api.ExportService.save("real fallback", "native-null.json", {
+			downloadsDir: dir,
+			ui: null,
+			discordNative: { fileManager: { saveWithDialog: async () => null } }
+		});
+		assert.deepStrictEqual(result, { cancelled: true });
+		assert.deepStrictEqual(fs.readdirSync(dir), [], "null result created no file");
+	});
+
+	await test("native cancel stops the chain instead of silently writing Downloads", async () => {
+		const dir = exportDir("native-cancel");
+		const result = await api.ExportService.save("data", "native-cancel.json", {
+			downloadsDir: dir,
+			ui: null,
+			discordNative: { fileManager: { saveWithDialog: async () => { throw new Error("Save dialog was canceled by user"); } } }
+		});
+		assert.deepStrictEqual(result, { cancelled: true });
+		assert.deepStrictEqual(fs.readdirSync(dir), [], "cancel created no file");
+	});
+
+	await test("fallback strips path traversal and surfaces a real disk failure", async () => {
+		const dir = exportDir("safe-name");
+		const saved = await api.ExportService.save("safe", "../safe.json", { downloadsDir: dir, ui: null, discordNative: null });
+		assert.strictEqual(saved.path, path.join(dir, "safe.json"));
+		let thrown = null;
+		try {
+			await api.ExportService.save("blocked", "blocked.json", {
+				downloadsDir: dir,
+				ui: null,
+				discordNative: null,
+				fs: {
+					mkdirSync() {},
+					writeFileSync() { throw new Error("disk blocked"); }
+				}
+			});
+		} catch (e) { thrown = e; }
+		assert.ok(thrown && thrown.code === "EXPORT_FAILED", "disk failure is reported");
+		assert.match(thrown.message, /disk blocked/);
+	});
+
 	console.log(`\n${results.pass} passed, ${results.fail} failed`);
 	process.exit(results.fail ? 1 : 0);
 })();

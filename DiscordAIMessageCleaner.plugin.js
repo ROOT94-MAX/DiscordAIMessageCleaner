@@ -2,7 +2,7 @@
  * @name DiscordAIMessageCleaner
  * @author ROOT94
  * @authorLink https://github.com/ROOT94-MAX/DiscordAIMessageCleaner
- * @version 0.6.6
+ * @version 0.6.7
  * @description Scan your own message history in any channel / DM / group DM, review it with an AI policy of your choice, and delete flagged messages after manual confirmation. Native BdApi, no library dependency.
  * @source https://github.com/ROOT94-MAX/DiscordAIMessageCleaner
  * @website https://github.com/ROOT94-MAX/DiscordAIMessageCleaner
@@ -11,11 +11,10 @@
 "use strict";
 
 module.exports = (() => {
-
 	// ==================== 01. CONSTANTS ====================
 
 	const PLUGIN_ID = "DiscordAIMessageCleaner";
-	const PLUGIN_VERSION = "0.6.6";
+	const PLUGIN_VERSION = "0.6.7";
 	const CSS_PREFIX = "damc";
 	const DISCORD_EPOCH = 1420070400000n;
 	// Guild: 0 text, 5 announcement, 10/11/12 threads. Private: 1 DM, 3 group DM.
@@ -88,7 +87,6 @@ module.exports = (() => {
 	const DASH_MARK_SVG = `<svg width="12" height="12" viewBox="0 0 24 24"><path fill="currentColor" d="M5 11h14v2H5z"/></svg>`;
 	const HASH_ICON_SVG = `<svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M9.9 3.3 9.2 7H5v2h3.8l-.6 3.5H4v2h3.8L7.1 19h2l.7-4.5h4.3L13.4 19h2l.7-4.5H20v-2h-3.5l.6-3.5H21V7h-3.5l.7-3.7h-2L15.5 7h-4.3l.7-3.7h-2ZM10.8 9h4.3l-.6 3.5h-4.3L10.8 9Z"/></svg>`;
 	const GLOBE_ICON_SVG = `<svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm7.7 9h-3.3a15.9 15.9 0 0 0-1.2-5.4A8 8 0 0 1 19.7 11ZM12 4.1c.9 1.2 1.9 3.3 2.3 6.9H9.7c.4-3.6 1.4-5.7 2.3-6.9ZM4.3 13h3.3c.2 2 .6 3.9 1.2 5.4A8 8 0 0 1 4.3 13Zm3.3-2H4.3a8 8 0 0 1 4.5-5.4A15.9 15.9 0 0 0 7.6 11Zm4.4 8.9c-.9-1.2-1.9-3.3-2.3-6.9h4.6c-.4 3.6-1.4 5.7-2.3 6.9Zm2.7-1.5c.6-1.5 1-3.4 1.2-5.4h3.3a8 8 0 0 1-4.5 5.4Z"/></svg>`;
-
 	// ==================== 02. BOUND API + LOGGER ====================
 
 	const Api = new BdApi(PLUGIN_ID);
@@ -1789,9 +1787,10 @@ module.exports = (() => {
 	};
 
 	// ==================== 14b. EXPORT SERVICE ====================
-	// Pre-deletion JSON backup and deletion-log export. Save chain mirrors the
-	// sibling summary plugin: BdApi.UI.openDialog -> DiscordNative save dialog
-	// -> silent write into ~/Downloads. Returns {saved, path} or {cancelled}.
+	// Pre-deletion JSON backup and deletion-log export. A tier only counts as
+	// successful after the target file exists with the expected byte length:
+	// BetterDiscord dialog -> DiscordNative dialog -> verified Downloads write.
+	// Returns {saved, path} or {cancelled}.
 
 	const ExportService = {
 		buildFilename(context, suffix, ext) {
@@ -1833,51 +1832,134 @@ module.exports = (() => {
 				failed: report.failed
 			}, null, 2);
 		},
-		async save(content, filename) {
-			let lastError = null;
+		_runtime(overrides) {
+			let discordNative = null;
+			try { discordNative = window.DiscordNative || null; } catch (e) { /* unavailable */ }
+			return Object.assign({
+				fs: require("fs"),
+				path: require("path"),
+				os: require("os"),
+				buffer: require("buffer").Buffer,
+				ui: Api.UI || BdApi.UI || null,
+				discordNative,
+				downloadsDir: ""
+			}, overrides || {});
+		},
+		_downloadsDir(runtime) {
+			if (runtime.downloadsDir) return runtime.path.resolve(String(runtime.downloadsDir));
+			const homes = [];
+			const addHome = value => {
+				const home = String(value || "").trim();
+				if (home && !homes.includes(home)) homes.push(home);
+			};
 			try {
-				if (BdApi.UI && typeof BdApi.UI.openDialog === "function") {
-					const result = await BdApi.UI.openDialog({
+				if (typeof process !== "undefined" && process.env) {
+					addHome(process.env.USERPROFILE);
+					addHome(process.env.HOME);
+				}
+			} catch (e) { /* use os.homedir below */ }
+			try { if (runtime.os && typeof runtime.os.homedir === "function") addHome(runtime.os.homedir()); }
+			catch (e) { /* checked below */ }
+			if (!homes.length) throw new Error("no home directory");
+			for (const home of homes) {
+				const candidate = runtime.path.join(home, "Downloads");
+				try {
+					if (runtime.fs.existsSync(candidate) && runtime.fs.statSync(candidate).isDirectory()) return candidate;
+				} catch (e) { /* try the next home */ }
+			}
+			const target = runtime.path.join(homes[0], "Downloads");
+			runtime.fs.mkdirSync(target, { recursive: true });
+			return target;
+		},
+		_verifySavedFile(runtime, filePath, content) {
+			if (!filePath) throw new Error("save API returned no file path");
+			const target = runtime.path.resolve(String(filePath));
+			const stat = runtime.fs.statSync(target);
+			const expectedBytes = runtime.buffer.byteLength(String(content), "utf8");
+			if (!stat.isFile()) throw new Error("save target is not a file");
+			if (stat.size !== expectedBytes) throw new Error(`saved file size mismatch (${stat.size} != ${expectedBytes})`);
+			return target;
+		},
+		_writeAndVerify(runtime, filePath, content) {
+			const target = runtime.path.resolve(String(filePath));
+			runtime.fs.mkdirSync(runtime.path.dirname(target), { recursive: true });
+			runtime.fs.writeFileSync(target, String(content), "utf8");
+			return ExportService._verifySavedFile(runtime, target, content);
+		},
+		_isCancel(error) {
+			return /cancel(?:led|ed)?/i.test(String(error && error.message || error));
+		},
+		async save(content, filename, overrides) {
+			const runtime = ExportService._runtime(overrides);
+			const safeName = runtime.path.basename(String(filename || "export.json"));
+			if (!safeName) throw mkError("EXPORT_FAILED", t("err_export_failed", { detail: "empty filename" }));
+			let lastError = null;
+			let downloadsDir = "";
+			try { downloadsDir = ExportService._downloadsDir(runtime); }
+			catch (e) { lastError = e; }
+			try {
+				if (runtime.ui && typeof runtime.ui.openDialog === "function") {
+					const extension = runtime.path.extname(safeName).replace(/^\./, "") || "json";
+					const result = await runtime.ui.openDialog({
 						mode: "save",
-						defaultPath: filename,
+						defaultPath: downloadsDir ? runtime.path.join(downloadsDir, safeName) : safeName,
+						filters: [{ name: extension.toUpperCase(), extensions: [extension] }],
 						showOverwriteConfirmation: true
 					});
-					if (result && (result.cancelled || result.canceled)) return { cancelled: true };
+					if (!result || result.cancelled || result.canceled) return { cancelled: true };
 					const filePath = result && (result.filePath || (Array.isArray(result.filePaths) && result.filePaths[0]));
-					if (filePath) {
-						require("fs").writeFileSync(filePath, content, "utf8");
-						return { saved: true, path: filePath };
-					}
-					if (result) return { cancelled: true };
+					if (!filePath) return { cancelled: true };
+					const savedPath = ExportService._writeAndVerify(runtime, filePath, content);
+					return { saved: true, path: savedPath };
 				}
 			} catch (e) {
 				lastError = e;
 				Logger.warn("openDialog save failed, falling back", e);
 			}
 			try {
-				if (window.DiscordNative && DiscordNative.fileManager && typeof DiscordNative.fileManager.saveWithDialog === "function") {
-					const directory = await DiscordNative.fileManager.saveWithDialog(new TextEncoder().encode(content), filename);
-					return { saved: true, path: directory ? require("path").join(directory, filename) : filename };
+				const fileManager = runtime.discordNative && runtime.discordNative.fileManager;
+				if (fileManager) {
+					const bytes = typeof TextEncoder !== "undefined"
+						? new TextEncoder().encode(String(content))
+						: runtime.buffer.from(String(content), "utf8");
+					if (typeof fileManager.saveWithDialog2 === "function") {
+						const result = await fileManager.saveWithDialog2(bytes, safeName, downloadsDir || undefined, true);
+						if (!result || result.canceledByUser || result.cancelled || result.canceled) return { cancelled: true };
+						const filePath = result && (result.filePath || (result.directory && runtime.path.join(result.directory, safeName)));
+						if (!filePath) return { cancelled: true };
+						const savedPath = ExportService._verifySavedFile(runtime, filePath, content);
+						return { saved: true, path: savedPath };
+					}
+					if (typeof fileManager.saveWithDialog === "function") {
+						const result = await fileManager.saveWithDialog(bytes, safeName, downloadsDir || undefined);
+						if (!result) return { cancelled: true };
+						if (result && typeof result === "object" && (result.canceledByUser || result.cancelled || result.canceled)) {
+							return { cancelled: true };
+						}
+						const filePath = typeof result === "string"
+							? runtime.path.join(result, safeName)
+							: result && (result.filePath || (result.directory && runtime.path.join(result.directory, safeName)));
+						if (!filePath) return { cancelled: true };
+						const savedPath = ExportService._verifySavedFile(runtime, filePath, content);
+						return { saved: true, path: savedPath };
+					}
 				}
 			} catch (e) {
-				if (/cancel/i.test(String(e && e.message || e))) return { cancelled: true };
+				if (ExportService._isCancel(e)) return { cancelled: true };
 				lastError = e;
 				Logger.warn("saveWithDialog failed, falling back", e);
 			}
 			try {
-				const nodePath = require("path");
-				const home = (typeof process !== "undefined" && process.env && (process.env.USERPROFILE || process.env.HOME)) || "";
-				if (!home) throw new Error("no home directory");
-				const target = nodePath.join(home, "Downloads", filename);
-				require("fs").writeFileSync(target, content, "utf8");
-				return { saved: true, path: target };
+				if (!downloadsDir) downloadsDir = ExportService._downloadsDir(runtime);
+				const target = runtime.path.join(downloadsDir, safeName);
+				const savedPath = ExportService._writeAndVerify(runtime, target, content);
+				return { saved: true, path: savedPath };
 			} catch (e) {
 				lastError = e;
 			}
 			throw mkError("EXPORT_FAILED", t("err_export_failed", { detail: Utils.truncate(lastError && lastError.message || "unknown", 120) }));
 		}
 	};
-
 	// ==================== 15. STYLES ====================
 
 	const PLUGIN_CSS = `

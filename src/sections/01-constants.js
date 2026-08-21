@@ -1,7 +1,7 @@
 	// ==================== 01. CONSTANTS ====================
 
 	const PLUGIN_ID = "DiscordAIMessageCleaner";
-	const PLUGIN_VERSION = "0.6.6";
+	const PLUGIN_VERSION = "0.6.7";
 	const CSS_PREFIX = "damc";
 	const DISCORD_EPOCH = 1420070400000n;
 	// Guild: 0 text, 5 announcement, 10/11/12 threads. Private: 1 DM, 3 group DM.
@@ -74,4 +74,3 @@
 	const DASH_MARK_SVG = `<svg width="12" height="12" viewBox="0 0 24 24"><path fill="currentColor" d="M5 11h14v2H5z"/></svg>`;
 	const HASH_ICON_SVG = `<svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M9.9 3.3 9.2 7H5v2h3.8l-.6 3.5H4v2h3.8L7.1 19h2l.7-4.5h4.3L13.4 19h2l.7-4.5H20v-2h-3.5l.6-3.5H21V7h-3.5l.7-3.7h-2L15.5 7h-4.3l.7-3.7h-2ZM10.8 9h4.3l-.6 3.5h-4.3L10.8 9Z"/></svg>`;
 	const GLOBE_ICON_SVG = `<svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm7.7 9h-3.3a15.9 15.9 0 0 0-1.2-5.4A8 8 0 0 1 19.7 11ZM12 4.1c.9 1.2 1.9 3.3 2.3 6.9H9.7c.4-3.6 1.4-5.7 2.3-6.9ZM4.3 13h3.3c.2 2 .6 3.9 1.2 5.4A8 8 0 0 1 4.3 13Zm3.3-2H4.3a8 8 0 0 1 4.5-5.4A15.9 15.9 0 0 0 7.6 11Zm4.4 8.9c-.9-1.2-1.9-3.3-2.3-6.9h4.6c-.4 3.6-1.4 5.7-2.3 6.9Zm2.7-1.5c.6-1.5 1-3.4 1.2-5.4h3.3a8 8 0 0 1-4.5 5.4Z"/></svg>`;
-

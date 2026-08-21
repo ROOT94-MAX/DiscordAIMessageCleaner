@@ -6,14 +6,14 @@
 
 [![Platform](https://img.shields.io/badge/Platform-Discord-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.com)
 [![Loader](https://img.shields.io/badge/Loader-BetterDiscord-4E5D94?style=flat-square)](https://betterdiscord.app)
-[![Version](https://img.shields.io/badge/Version-0.6.6-success?style=flat-square)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner)
+[![Version](https://img.shields.io/badge/Version-0.6.7-success?style=flat-square)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner)
 [![Dependency](https://img.shields.io/badge/Dependency-None-brightgreen?style=flat-square)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner)
 [![Verify](https://img.shields.io/github/actions/workflow/status/ROOT94-MAX/DiscordAIMessageCleaner/verify.yml?branch=main&style=flat-square&label=verify)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/actions/workflows/verify.yml)
 [![License](https://img.shields.io/badge/License-GPL%20v2-blue?style=flat-square)](./LICENSE)
 
 A BetterDiscord plugin that uses AI to review and clean up **your own** past messages on Discord: search by account, review against your own policy, back up and confirm before deleting.
 
-**Current version: v0.6.6** · **Runtime: BetterDiscord (no third-party library)**
+**Current version: v0.6.7** · **Runtime: BetterDiscord (no third-party library)**
 
 [Download stable release](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/releases/latest/download/DiscordAIMessageCleaner.plugin.js) · [简体中文](README.md) · [Architecture](./ARCHITECTURE.md)
 
@@ -97,11 +97,12 @@ The settings panel has four tabs:
 - **Deep-paging cap:** the Discord search endpoint reaches back ~5000 results at most; beyond that it truncates with a notice, so use time ranges to work in passes.
 - **Bulk deletion is anti-spam sensitive:** default single-concurrency, 1200ms + jitter between deletes, auto-pause on repeated rate limits. Don't set the pacing too low.
 
-## Known issues (v0.6.6)
+## Export compatibility fix (v0.6.7)
 
-- **Export is currently unusable**: the pre-deletion JSON backup and the deletion-log export can fail end-to-end on some setups (all three tiers of the save chain — BD save dialog → Discord native save dialog → silent write to Downloads). Under investigation; a fix will ship in a later version.
-- It fails safe: if the backup box is ticked and the save fails or is cancelled, **the deletion is abandoned** — "deleted but not backed up" cannot happen.
-- Workaround: untick the backup box in the delete confirmation (or set the backup mode to "never" under Settings → Behavior). Deletion then proceeds, but without a backup net — keep runs small and be careful.
+- Fixes a v0.6.6 path where a save API could return no file path but still be reported as successful.
+- The save chain now tries the BetterDiscord dialog, Discord's native dialog, and a Downloads fallback; success is reported only after the target exists with the expected UTF-8 byte length.
+- The dialog receives an absolute Downloads default path and a JSON filter, with support for `saveWithDialog2`, legacy `saveWithDialog`, and multiple cancellation field names.
+- Failure remains safe: when a pre-deletion backup was requested, cancelling or exhausting every save tier abandons deletion.
 
 ## Security & privacy
 
