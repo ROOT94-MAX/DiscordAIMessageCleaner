@@ -158,7 +158,7 @@
 				h("span", { className: `${CSS_PREFIX}-select-label` }, current ? current.label : String(props.value)),
 				h("span", { className: `${CSS_PREFIX}-sel-arrow`, dangerouslySetInnerHTML: { __html: CHEVRON_SVG } })
 			),
-			pop.open ? h("div", { className: `${CSS_PREFIX}-pop`, role: "listbox" },
+			pop.open ? h("div", { className: `${CSS_PREFIX}-pop${props.up ? ` ${CSS_PREFIX}-pop-up` : ""}`, role: "listbox" },
 				props.options.map(option => h("button", {
 					key: String(option.value),
 					type: "button",
@@ -426,7 +426,10 @@
 			try {
 				BdApi.UI.showConfirmationModal(
 					t("provider_delete"),
-					t("provider_delete_confirm", { name: displayName }),
+					h("div", { className: `${CSS_PREFIX}-ui ${CSS_PREFIX}-confirm-body` },
+						h("div", null, tEmph("provider_delete_confirm", { name: displayName }, "name")),
+						h("div", { className: `${CSS_PREFIX}-confirm-note` }, t("confirm_irreversible"))
+					),
 					{
 						danger: true,
 						confirmText: t("provider_delete"),
@@ -614,7 +617,10 @@
 			try {
 				BdApi.UI.showConfirmationModal(
 					t("provider_delete"),
-					t("prompt_delete_confirm", { name }),
+					h("div", { className: `${CSS_PREFIX}-ui ${CSS_PREFIX}-confirm-body` },
+						h("div", null, tEmph("prompt_delete_confirm", { name }, "name")),
+						h("div", { className: `${CSS_PREFIX}-confirm-note` }, t("confirm_irreversible"))
+					),
 					{
 						danger: true,
 						confirmText: t("provider_delete"),

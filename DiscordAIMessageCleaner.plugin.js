@@ -271,6 +271,7 @@ module.exports = (() => {
 			review_summary: "审查完成：{flagged} 条命中（共 {total} 条），已自动勾选",
 			review_partial: "有 {n} 条消息所在批次审查失败，可重试。",
 			filter_flagged: "只看命中",
+			filter_all: "全部",
 			filter_all: "全部消息",
 			chip_all: "全部频道",
 			filter_channel: "频道筛选",
@@ -287,6 +288,7 @@ module.exports = (() => {
 			cat_other: "其他违规",
 			// delete
 			delete_confirm_title: "确认删除",
+			confirm_irreversible: "此操作不可撤销。",
 			delete_confirm_body: "即将永久删除 {n} 条你自己的消息。此操作不可撤销，删除的消息无法恢复。确定继续？",
 			delete_confirm_over_cap: "选中 {n} 条，超过单次上限 {max} 条，本次将只删除最新的 {max} 条，其余请分次处理。",
 			delete_confirm_ok: "永久删除",
@@ -376,7 +378,7 @@ module.exports = (() => {
 			prompt_duplicate: "复制为新策略",
 			prompt_unnamed: "未命名策略",
 			prompt_default_name: "策略 {n}",
-			prompt_delete_confirm: "确定删除策略「{name}」？",
+			prompt_delete_confirm: "确定删除策略「{name}」？其提示词内容将一并清除。",
 			prompt_placeholder: "留空使用内置模板",
 			policy_readonly: "只读",
 			// settings: diagnostics
@@ -528,6 +530,7 @@ module.exports = (() => {
 			review_summary: "Review done: {flagged} flagged of {total}, auto-selected",
 			review_partial: "Batches covering {n} messages failed to review. You can retry.",
 			filter_flagged: "Flagged only",
+			filter_all: "All",
 			filter_all: "All messages",
 			chip_all: "All channels",
 			filter_channel: "Channel filter",
@@ -543,6 +546,7 @@ module.exports = (() => {
 			cat_ad: "Spam / ads",
 			cat_other: "Other",
 			delete_confirm_title: "Confirm deletion",
+			confirm_irreversible: "This cannot be undone.",
 			delete_confirm_body: "About to permanently delete {n} of your own messages. This cannot be undone. Continue?",
 			delete_confirm_over_cap: "{n} selected, above the per-run cap of {max}. Only the newest {max} will be deleted this run; handle the rest in another pass.",
 			delete_confirm_ok: "Delete permanently",
@@ -625,7 +629,7 @@ module.exports = (() => {
 			prompt_duplicate: "Duplicate as new policy",
 			prompt_unnamed: "Unnamed policy",
 			prompt_default_name: "Policy {n}",
-			prompt_delete_confirm: "Delete policy \"{name}\"?",
+			prompt_delete_confirm: "Delete policy \"{name}\"? Its prompt text will be removed as well.",
 			prompt_placeholder: "Empty = use the built-in template",
 			policy_readonly: "Read-only",
 			group_about: "About",
@@ -2292,6 +2296,11 @@ module.exports = (() => {
 		.${CSS_PREFIX}-confirm-wide > :last-child {
 			display: none !important;
 		}
+		/* The shell's content padding is zeroed so the plugin owns every inset;
+		   that is what lets the footer action zone bleed edge to edge. */
+		.${CSS_PREFIX}-confirm-wide > div:not(:first-child):not(:last-child) {
+			padding: 0 !important;
+		}
 		.${CSS_PREFIX}-confirm-wide > :first-child,
 		.${CSS_PREFIX}-confirm-wide > :first-child > * {
 			width: 100%;
@@ -2308,9 +2317,6 @@ module.exports = (() => {
 		}
 		.${CSS_PREFIX}-confirm-header .${CSS_PREFIX}-shell-close {
 			margin: -4px 4px -4px auto;
-		}
-		.${CSS_PREFIX}-confirm-wide .${CSS_PREFIX}-modal {
-			padding-bottom: 16px;
 		}
 		.${CSS_PREFIX}-shell-close {
 			display: flex;
@@ -2380,7 +2386,8 @@ module.exports = (() => {
 		.${CSS_PREFIX}-modal {
 			display: flex;
 			flex-direction: column;
-			gap: 16px;
+			gap: 14px;
+			padding: 12px 16px 16px;
 			color: var(--damc-text, #dbdee1);
 			font-size: 15px;
 			user-select: text;
@@ -2399,13 +2406,43 @@ module.exports = (() => {
 			color: var(--damc-text-faint, #949ba4);
 			margin: 4px 0 12px;
 		}
-		/* Cleaner-modal field labels: same 16px scale as the settings tabs. */
-		.${CSS_PREFIX}-modal-flabel {
+		/* Setup-stage config card: row-form rows (16px label left, control
+		   right), the same scale and zoning as the settings tabs. */
+		.${CSS_PREFIX}-zone {
+			background: var(--damc-surface, #2b2d31);
+			border-radius: 8px;
+		}
+		.${CSS_PREFIX}-zone-pad {
+			padding: 14px;
+		}
+		.${CSS_PREFIX}-zone-row {
+			display: flex;
+			align-items: center;
+			gap: 14px;
+			padding: 12px 14px;
+		}
+		.${CSS_PREFIX}-zone-row + .${CSS_PREFIX}-zone-row {
+			border-top: 1px solid rgba(255, 255, 255, 0.05);
+		}
+		.${CSS_PREFIX}-zone-label {
 			font-size: 16px;
 			font-weight: 500;
 			line-height: 20px;
 			color: var(--damc-text, #dbdee1);
-			margin: 14px 0 8px;
+			display: flex;
+			align-items: center;
+			gap: 5px;
+			flex: 1 1 auto;
+			min-width: 0;
+		}
+		.${CSS_PREFIX}-zone-ctl {
+			flex: 0 0 auto;
+			display: flex;
+			justify-content: flex-end;
+			min-width: 0;
+		}
+		.${CSS_PREFIX}-zone-wide {
+			flex: 1 1 auto;
 		}
 		.${CSS_PREFIX}-banner {
 			padding: 10px 12px;
@@ -2435,12 +2472,11 @@ module.exports = (() => {
 			color: var(--damc-text, #dbdee1);
 		}
 		.${CSS_PREFIX}-presets {
-			display: flex;
+			display: inline-flex;
 			flex-wrap: wrap;
-			gap: 4px;
+			gap: 3px;
 			padding: 3px;
-			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
-			border-radius: 8px;
+			border-radius: 7px;
 			background: var(--damc-sunken, #1e1f22);
 		}
 		.${CSS_PREFIX}-preset {
@@ -2450,9 +2486,9 @@ module.exports = (() => {
 			display: flex;
 			align-items: center;
 			height: 30px;
-			padding: 0 14px;
+			padding: 0 12px;
 			border-radius: 5px;
-			font-size: 14px;
+			font-size: 13.5px;
 			font-weight: 600;
 			cursor: pointer;
 			color: var(--damc-text-faint, #949ba4);
@@ -2512,8 +2548,13 @@ module.exports = (() => {
 			flex-wrap: wrap;
 			align-items: center;
 		}
+		/* Footer action zone: the host's own modal-footer pairing (#313338 body
+		   over #2b2d31 footer), bleeding edge to edge past the modal padding. */
 		.${CSS_PREFIX}-actions-footer {
 			justify-content: flex-end;
+			margin: 2px -16px -16px;
+			padding: 12px 16px;
+			background: var(--damc-surface, #2b2d31);
 		}
 		.${CSS_PREFIX}-btn {
 			height: 32px;
@@ -2537,13 +2578,35 @@ module.exports = (() => {
 			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
 		}
 		.${CSS_PREFIX}-btn.${CSS_PREFIX}-danger {
-			background: var(--damc-danger, #f23f43);
+			/* Host button red; #f23f43 stays a text/status color only. */
+			background: var(--button-danger-background, #da373c);
 		}
-		.${CSS_PREFIX}-hero {
-			display: flex;
+		/* Review-model badge (variant A status pill): non-interactive, footer left. */
+		.${CSS_PREFIX}-model-pill {
+			display: inline-flex;
 			align-items: center;
-			justify-content: flex-end;
-			gap: 10px;
+			gap: 7px;
+			height: 26px;
+			padding: 0 11px;
+			border-radius: 999px;
+			background: color-mix(in srgb, var(--damc-text, #dbdee1) 4%, transparent);
+			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
+			font-size: 12.5px;
+			color: var(--damc-text, #dbdee1);
+			min-width: 0;
+			cursor: default;
+		}
+		.${CSS_PREFIX}-model-pill-dot {
+			width: 6px;
+			height: 6px;
+			border-radius: 50%;
+			background: var(--damc-ok, #23a55a);
+			flex: 0 0 auto;
+		}
+		.${CSS_PREFIX}-model-pill-text {
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
 		}
 		.${CSS_PREFIX}-strip {
 			display: flex;
@@ -2605,73 +2668,116 @@ module.exports = (() => {
 			100% { margin-left: 0; }
 		}
 		.${CSS_PREFIX}-stats {
-			font-size: 14px;
-			font-weight: 600;
-			color: var(--damc-text-strong, #f2f3f5);
+			font-size: 13px;
+			color: var(--damc-text-faint, #949ba4);
 		}
-		.${CSS_PREFIX}-selbar {
+		.${CSS_PREFIX}-stats-warn {
+			color: var(--damc-warn, #f0b232);
+		}
+		/* Review-done status line: green dot + text, no banner box. */
+		.${CSS_PREFIX}-okline {
+			display: flex;
+			align-items: center;
+			gap: 6px;
+			font-size: 13px;
+			font-weight: 600;
+			color: var(--damc-ok, #23a55a);
+		}
+		.${CSS_PREFIX}-okline-dot {
+			width: 6px;
+			height: 6px;
+			border-radius: 50%;
+			background: var(--damc-ok, #23a55a);
+			flex: 0 0 auto;
+		}
+		/* Result list: search-results panel — sunken panel, tool row in the
+		   head band, rounded message cards dug back to the modal base color. */
+		.${CSS_PREFIX}-panel {
+			display: flex;
+			flex-direction: column;
+			border-radius: 8px;
+			background: var(--damc-sunken, #1e1f22);
+			overflow: hidden;
+		}
+		.${CSS_PREFIX}-panel-head {
 			display: flex;
 			align-items: center;
 			gap: 10px;
+			padding: 8px 12px;
+			background: color-mix(in srgb, var(--damc-text, #dbdee1) 4%, var(--damc-sunken, #1e1f22));
+			border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+			flex: 0 0 auto;
 		}
-		.${CSS_PREFIX}-selbar .${CSS_PREFIX}-note {
+		.${CSS_PREFIX}-panel-spacer {
 			flex: 1 1 auto;
-			text-align: right;
-			margin: 0;
 		}
-		.${CSS_PREFIX}-link-btn {
-			border: 0;
-			background: transparent;
-			font: inherit;
-			font-size: 13px;
-			font-weight: 600;
-			color: var(--damc-text-sub, #b5bac1);
-			cursor: pointer;
-			padding: 2px 6px;
-			border-radius: 4px;
+		.${CSS_PREFIX}-panel-count {
+			font-size: 12.5px;
+			color: var(--damc-text-faint, #949ba4);
+			font-variant-numeric: tabular-nums;
+			flex: 0 0 auto;
 		}
-		.${CSS_PREFIX}-link-btn:hover {
-			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
-			color: var(--damc-text, #dbdee1);
-		}
-		.${CSS_PREFIX}-list {
+		.${CSS_PREFIX}-panel-body {
 			display: flex;
 			flex-direction: column;
 			/* Shrinks on short windows so the footer stays reachable. */
 			max-height: min(340px, 38vh);
 			overflow-y: auto;
-			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
-			border-radius: 8px;
-			background: var(--damc-sunken, #1e1f22);
+			padding: 0 8px 8px;
 		}
-		.${CSS_PREFIX}-list::-webkit-scrollbar {
+		.${CSS_PREFIX}-panel-body::-webkit-scrollbar {
 			width: 8px;
 		}
-		.${CSS_PREFIX}-list::-webkit-scrollbar-thumb {
+		.${CSS_PREFIX}-panel-body::-webkit-scrollbar-thumb {
 			background: var(--damc-scroll-thumb, rgba(78, 80, 88, 0.48));
 			border-radius: 4px;
 		}
-		.${CSS_PREFIX}-row {
+		/* Day group header: left-aligned, no through-lines. */
+		.${CSS_PREFIX}-day {
+			padding: 10px 4px 4px;
+			font-size: 12px;
+			font-weight: 700;
+			color: var(--damc-text-faint, #949ba4);
+			flex: 0 0 auto;
+		}
+		.${CSS_PREFIX}-mcard {
+			position: relative;
 			display: flex;
 			align-items: flex-start;
 			gap: 10px;
-			padding: 8px 12px;
+			padding: 9px 11px;
 			border: 0;
-			border-bottom: 1px solid var(--damc-border, rgba(78, 80, 88, 0.32));
-			background: transparent;
+			border-radius: 8px;
+			background: var(--damc-bg, #313338);
 			font: inherit;
 			text-align: left;
 			cursor: pointer;
 			color: var(--damc-text, #dbdee1);
+			flex: 0 0 auto;
 		}
-		.${CSS_PREFIX}-row:last-child {
-			border-bottom: 0;
+		.${CSS_PREFIX}-mcard + .${CSS_PREFIX}-mcard {
+			margin-top: 8px;
 		}
-		.${CSS_PREFIX}-row:hover {
-			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
+		.${CSS_PREFIX}-mcard:hover {
+			background: color-mix(in srgb, #fff 5%, var(--damc-bg, #313338));
 		}
-		.${CSS_PREFIX}-row.${CSS_PREFIX}-row-on {
-			background: var(--damc-selected, rgba(255, 255, 255, 0.09));
+		/* Selection is the checkbox's job alone: no card tint (select-all is
+		   the normal case; tinting every row turns the list into patchwork). */
+		.${CSS_PREFIX}-mcard-flagged::before {
+			content: "";
+			position: absolute;
+			left: 0;
+			top: 8px;
+			bottom: 8px;
+			width: 2px;
+			border-radius: 1px;
+			background: var(--damc-flag, var(--damc-danger, #f23f43));
+		}
+		.${CSS_PREFIX}-mcard-static {
+			cursor: default;
+		}
+		.${CSS_PREFIX}-mcard-static:hover {
+			background: var(--damc-bg, #313338);
 		}
 		.${CSS_PREFIX}-checkbox {
 			width: 18px;
@@ -2687,7 +2793,7 @@ module.exports = (() => {
 			color: var(--damc-on-brand, #fff);
 			transition: background 120ms ease, border-color 120ms ease;
 		}
-		.${CSS_PREFIX}-row:hover .${CSS_PREFIX}-checkbox:not(.${CSS_PREFIX}-checkbox-on) {
+		.${CSS_PREFIX}-mcard:hover .${CSS_PREFIX}-checkbox:not(.${CSS_PREFIX}-checkbox-on) {
 			border-color: var(--damc-icon, #b5bac1);
 		}
 		.${CSS_PREFIX}-checkbox.${CSS_PREFIX}-checkbox-on {
@@ -2712,16 +2818,39 @@ module.exports = (() => {
 			display: inline-flex;
 			align-items: center;
 			padding: 0 6px;
-			height: 16px;
-			border-radius: 8px;
+			height: 17px;
+			border-radius: 4px;
 			font-size: 11px;
-			font-weight: 600;
-			background: var(--damc-surface, #2b2d31);
-			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
+			font-weight: 500;
+			background: color-mix(in srgb, var(--damc-text, #dbdee1) 6%, transparent);
 			color: var(--damc-text-sub, #b5bac1);
+			flex: 0 0 auto;
+		}
+		/* Category label: role-color language — dot + colored text, no pill. */
+		.${CSS_PREFIX}-cat {
+			margin-left: auto;
+			flex: 0 0 auto;
+			display: inline-flex;
+			align-items: center;
+			gap: 5px;
+			font-size: 12px;
+			font-weight: 600;
+			color: var(--damc-flag, var(--damc-danger, #f23f43));
+		}
+		.${CSS_PREFIX}-cat::before {
+			content: "";
+			width: 6px;
+			height: 6px;
+			border-radius: 50%;
+			background: currentColor;
+			flex: 0 0 auto;
+		}
+		.${CSS_PREFIX}-mtime {
+			font-variant-numeric: tabular-nums;
+			flex: 0 0 auto;
 		}
 		.${CSS_PREFIX}-row-text {
-			font-size: 14px;
+			font-size: 15px;
 			line-height: 1.4;
 			overflow: hidden;
 			text-overflow: ellipsis;
@@ -2844,16 +2973,15 @@ module.exports = (() => {
 			box-shadow: 0 0 0 3px color-mix(in srgb, var(--damc-brand, #5865f2) 18%, transparent);
 		}
 		.${CSS_PREFIX}-seg {
-			display: flex;
-			gap: 4px;
+			display: inline-flex;
+			gap: 3px;
 			padding: 3px;
-			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
-			border-radius: 8px;
+			border-radius: 7px;
 			background: var(--damc-sunken, #1e1f22);
 		}
 		.${CSS_PREFIX}-seg-btn {
-			flex: 1 1 0;
-			height: 32px;
+			flex: 0 0 auto;
+			height: 30px;
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -2862,7 +2990,7 @@ module.exports = (() => {
 			background: transparent;
 			border-radius: 5px;
 			font: inherit;
-			font-size: 14px;
+			font-size: 13.5px;
 			font-weight: 600;
 			color: var(--damc-text-faint, #949ba4);
 			cursor: pointer;
@@ -2878,7 +3006,41 @@ module.exports = (() => {
 			color: var(--damc-on-brand, #fff);
 		}
 		.${CSS_PREFIX}-seg-icon { display: flex; }
-		.${CSS_PREFIX}-seg-icon svg { width: 16px; height: 16px; }
+		.${CSS_PREFIX}-seg-icon svg { width: 13px; height: 13px; }
+		/* Flag-filter mini segment: lives in the list panel head band. */
+		.${CSS_PREFIX}-seg-mini {
+			display: inline-flex;
+			gap: 2px;
+			padding: 2px;
+			border-radius: 6px;
+			background: var(--damc-sunken, #1e1f22);
+			flex: 0 0 auto;
+		}
+		.${CSS_PREFIX}-seg-mini-btn {
+			border: 0;
+			background: transparent;
+			font: inherit;
+			display: flex;
+			align-items: center;
+			gap: 4px;
+			height: 24px;
+			padding: 0 10px;
+			border-radius: 4px;
+			font-size: 12.5px;
+			font-weight: 600;
+			color: var(--damc-text-faint, #949ba4);
+			cursor: pointer;
+			transition: background 120ms ease, color 120ms ease;
+		}
+		.${CSS_PREFIX}-seg-mini-btn:hover {
+			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
+			color: var(--damc-text, #dbdee1);
+		}
+		.${CSS_PREFIX}-seg-mini-btn.${CSS_PREFIX}-active,
+		.${CSS_PREFIX}-seg-mini-btn.${CSS_PREFIX}-active:hover {
+			background: var(--damc-brand, #5865f2);
+			color: var(--damc-on-brand, #fff);
+		}
 		.${CSS_PREFIX}-emoji {
 			width: 20px;
 			height: 20px;
@@ -2888,12 +3050,12 @@ module.exports = (() => {
 		}
 		.${CSS_PREFIX}-row-thumbs {
 			display: flex;
-			gap: 4px;
-			margin-top: 2px;
+			gap: 6px;
+			margin-top: 6px;
 		}
 		.${CSS_PREFIX}-thumb {
-			width: 40px;
-			height: 40px;
+			width: 44px;
+			height: 44px;
 			object-fit: cover;
 			border-radius: 4px;
 			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
@@ -2950,20 +3112,19 @@ module.exports = (() => {
 		.${CSS_PREFIX}-backup-format-label {
 			flex: 0 0 auto;
 		}
-		.${CSS_PREFIX}-backup-format-select {
+		.${CSS_PREFIX}-backup-format .${CSS_PREFIX}-select-trigger {
 			height: 30px;
-			min-width: 150px;
-			padding: 0 28px 0 8px;
-			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
-			border-radius: 4px;
-			background: var(--damc-input-bg, #1e1f22);
-			color: var(--damc-text, #dbdee1);
-			font: inherit;
-			font-size: 13px;
+			min-width: 160px;
+			font-size: 13.5px;
 		}
-		.${CSS_PREFIX}-backup-format-select option {
-			background: var(--damc-surface, #2b2d31);
-			color: var(--damc-text, #dbdee1);
+		/* Emphasized object inside confirm bodies (count, policy name). */
+		.${CSS_PREFIX}-emph {
+			color: var(--damc-text-strong, #f2f3f5);
+			font-weight: 700;
+		}
+		.${CSS_PREFIX}-confirm-note {
+			font-size: 12.5px;
+			color: var(--damc-text-faint, #949ba4);
 		}
 		.${CSS_PREFIX}-pill {
 			position: fixed;
@@ -3023,51 +3184,41 @@ module.exports = (() => {
 			cursor: zoom-out;
 		}
 		.${CSS_PREFIX}-thumb { cursor: zoom-in; }
-		.${CSS_PREFIX}-hero-context {
-			flex: 1 1 auto;
-			min-width: 0;
-		}
-		.${CSS_PREFIX}-hero-context-k {
-			font-size: 11px;
-			letter-spacing: 0.02em;
-			color: var(--damc-text-faint, #949ba4);
-		}
-		.${CSS_PREFIX}-hero-context-v {
-			margin-top: 1px;
-			font-size: 13px;
-			color: var(--damc-text, #dbdee1);
+		/* Load-more: the list's own tail row (resume-scan). */
+		.${CSS_PREFIX}-lmore {
 			display: flex;
 			align-items: center;
+			justify-content: center;
 			gap: 6px;
-			min-width: 0;
-			overflow: hidden;
-			text-overflow: ellipsis;
-			white-space: nowrap;
-		}
-		.${CSS_PREFIX}-hero-context-dot {
+			margin-top: 8px;
+			padding: 9px;
+			border: 0;
+			border-radius: 8px;
+			background: transparent;
+			font: inherit;
+			font-size: 13px;
+			font-weight: 500;
+			color: var(--damc-icon, #b5bac1);
+			cursor: pointer;
 			flex: 0 0 auto;
-			width: 6px;
-			height: 6px;
-			border-radius: 50%;
-			background: var(--damc-ok, #23a55a);
 		}
-		.${CSS_PREFIX}-badge.${CSS_PREFIX}-badge-flag {
-			background: color-mix(in srgb, var(--damc-danger, #f23f43) 14%, transparent);
-			border-color: var(--damc-danger, #f23f43);
-			color: var(--damc-danger, #f23f43);
+		.${CSS_PREFIX}-lmore:hover {
+			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
+			color: var(--damc-text, #dbdee1);
 		}
-		.${CSS_PREFIX}-row.${CSS_PREFIX}-row-flagged {
-			box-shadow: inset 3px 0 0 var(--damc-danger, #f23f43);
+		.${CSS_PREFIX}-lmore:disabled {
+			opacity: 0.45;
+			cursor: not-allowed;
+		}
+		.${CSS_PREFIX}-lmore svg {
+			width: 14px;
+			height: 14px;
+			flex: 0 0 auto;
 		}
 		.${CSS_PREFIX}-row-reason {
-			font-size: 12px;
+			font-size: 13px;
 			line-height: 1.4;
-			color: var(--damc-danger, #f23f43);
-			opacity: 0.9;
-		}
-		.${CSS_PREFIX}-link-btn.${CSS_PREFIX}-link-active {
-			background: color-mix(in srgb, var(--damc-danger, #f23f43) 14%, transparent);
-			color: var(--damc-danger, #f23f43);
+			color: var(--damc-text-faint, #949ba4);
 		}
 		/* settings: tabs */
 		.${CSS_PREFIX}-tabbar {
@@ -4170,6 +4321,15 @@ module.exports = (() => {
 		dangerouslySetInnerHTML: { __html: CLEANER_ICON_SVG }
 	});
 
+	// t() with one emphasized parameter rendered as a <b>, regardless of where
+	// the placeholder sits in the translated sentence.
+	const tEmph = (key, params, emphKey) => {
+		const marker = String.fromCharCode(1);
+		const wrapped = Object.assign({}, params, { [emphKey]: `${marker}${params[emphKey]}${marker}` });
+		return t(key, wrapped).split(marker).map((part, index) =>
+			index === 1 ? h("b", { key: "emph", className: `${CSS_PREFIX}-emph` }, part) : part);
+	};
+
 	// Native Discord button when available so themes restyle it; falls back to
 	// the plugin's own CSS button.
 	const Btn = props => {
@@ -4238,6 +4398,20 @@ module.exports = (() => {
 
 	const UnsupportedContent = () => h("div", { className: `${CSS_PREFIX}-note` }, t("unsupported_hint"));
 
+	// Category hues follow Discord's own status/role palette; the hue drives a
+	// flagged card's left bar and its role-style colored category label.
+	const CATEGORY_COLORS = {
+		abuse: "#f23f43",
+		nsfw: "#eb459e",
+		privacy: "#f57c22",
+		politics: "#f0b232",
+		ad: "#26a5ff",
+		other: "#b5bac1"
+	};
+
+	// Material Symbols Rounded "history" (load-more / resume-scan row).
+	const HISTORY_ICON_SVG = `<svg width="14" height="14" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M477-120q-142 0-243.5-95.5T121-451q-1-12 7.5-21t21.5-9q12 0 20.5 8.5T181-451q11 115 95 193t201 78q127 0 215-89t88-216q0-124-89-209.5T477-780q-68 0-127.5 31T246-667h75q13 0 21.5 8.5T351-637q0 13-8.5 21.5T321-607H172q-13 0-21.5-8.5T142-637v-148q0-13 8.5-21.5T172-815q13 0 21.5 8.5T202-785v76q52-61 123.5-96T477-840q75 0 141 28t115.5 76.5Q783-687 811.5-622T840-482q0 75-28.5 141t-78 115Q684-177 618-148.5T477-120Zm34-374 115 113q9 9 9 21.5t-9 21.5q-9 9-21 9t-21-9L460-460q-5-5-7-10.5t-2-11.5v-171q0-13 8.5-21.5T481-683q13 0 21.5 8.5T511-653v159Z"/></svg>`;
+
 	// Custom emoji tags render as the real emoji image from Discord's CDN.
 	const EMOJI_TAG_RE = /<(a?):(\w+):(\d{5,})>/g;
 	const renderContentSegments = text => {
@@ -4269,10 +4443,6 @@ module.exports = (() => {
 		const verdict = props.verdict || null;
 		const hasText = Boolean(message.content);
 		const badges = [];
-		if (verdict) {
-			badges.push(h("span", { key: "flag", className: `${CSS_PREFIX}-badge ${CSS_PREFIX}-badge-flag` },
-				`${t(`cat_${verdict.category}`)}${verdict.severity >= 3 ? " !!!" : verdict.severity === 2 ? " !!" : ""}`));
-		}
 		if (props.showChannel && message.channelId) {
 			badges.push(h("span", { key: "chan", className: `${CSS_PREFIX}-badge` },
 				`#${DiscordAdapter.getChannelName(message.channelId) || message.channelId}`));
@@ -4283,6 +4453,12 @@ module.exports = (() => {
 		if (message.edited) {
 			badges.push(h("span", { key: "edit", className: `${CSS_PREFIX}-badge` }, t("edited_badge")));
 		}
+		// Role-color category label, right-aligned on the meta line; the same
+		// hue paints the card's left bar via --damc-flag.
+		if (verdict) {
+			badges.push(h("span", { key: "cat", className: `${CSS_PREFIX}-cat` },
+				`${t(`cat_${verdict.category}`)}${verdict.severity >= 3 ? " !!!" : verdict.severity === 2 ? " !!" : ""}`));
+		}
 		// Up to 3 tiny thumbnails for image attachments; lazy so a long list
 		// only loads what scrolls into view.
 		const thumbs = message.attachments.filter(att => att.isImage && att.url).slice(0, 3);
@@ -4290,7 +4466,8 @@ module.exports = (() => {
 			type: "button",
 			role: "checkbox",
 			"aria-checked": props.selected,
-			className: `${CSS_PREFIX}-row${props.selected ? ` ${CSS_PREFIX}-row-on` : ""}${verdict ? ` ${CSS_PREFIX}-row-flagged` : ""}`,
+			className: `${CSS_PREFIX}-mcard${verdict ? ` ${CSS_PREFIX}-mcard-flagged` : ""}`,
+			style: verdict ? { "--damc-flag": CATEGORY_COLORS[verdict.category] || CATEGORY_COLORS.other } : undefined,
 			onClick: () => props.onToggle(message.id)
 		},
 			h("span", {
@@ -4299,7 +4476,7 @@ module.exports = (() => {
 			}),
 			h("div", { className: `${CSS_PREFIX}-row-body` },
 				h("div", { className: `${CSS_PREFIX}-row-meta` },
-					h("span", null, Utils.formatDateTime(message.timestamp)),
+					h("span", { className: `${CSS_PREFIX}-mtime` }, Utils.formatTime(message.timestamp)),
 					badges
 				),
 				hasText
@@ -4356,21 +4533,25 @@ module.exports = (() => {
 				}),
 				h("span", null, props.label)
 			),
-			on ? h("label", { className: `${CSS_PREFIX}-backup-format` },
+			on ? h("div", { className: `${CSS_PREFIX}-backup-format` },
 				h("span", { className: `${CSS_PREFIX}-backup-format-label` }, t("backup_format_label")),
-				h("select", {
-					className: `${CSS_PREFIX}-backup-format-select`,
+				// Family dropdown (self-drawn, opens upward: it sits at the
+				// bottom of the confirm modal).
+				h(SelectMenu, {
+					ariaLabel: t("backup_format_label"),
 					value: format,
-					onChange: event => {
-						const next = ExportService.normalizeFormat(event.target.value);
+					up: true,
+					options: [
+						{ value: "md", label: t("backup_format_md") },
+						{ value: "txt", label: t("backup_format_txt") },
+						{ value: "json", label: t("backup_format_json") }
+					],
+					onChange: value => {
+						const next = ExportService.normalizeFormat(value);
 						setFormat(next);
 						props.onFormatChange(next);
 					}
-				},
-					h("option", { value: "md" }, t("backup_format_md")),
-					h("option", { value: "txt" }, t("backup_format_txt")),
-					h("option", { value: "json" }, t("backup_format_json"))
-			)
+				})
 		) : null
 		);
 	};
@@ -4876,7 +5057,7 @@ module.exports = (() => {
 			const content = h("div", { className: `${CSS_PREFIX}-ui ${CSS_PREFIX}-confirm-body` },
 				overCap ? h("div", { className: `${CSS_PREFIX}-warn` },
 					t("delete_confirm_over_cap", { n: selected.size, max: maxPerRun })) : null,
-				h("div", null, t("delete_confirm_body", { n: items.length })),
+				h("div", null, tEmph("delete_confirm_body", { n: items.length }, "n")),
 					h(BackupChoice, {
 						initial: choice.backup,
 						initialFormat: choice.format,
@@ -4951,106 +5132,125 @@ module.exports = (() => {
 
 		if (stage === "setup") {
 			if (!aiReady) children.push(h("div", { key: "banner", className: `${CSS_PREFIX}-warn` }, t("banner_no_ai")));
-			// Field labels mirror the settings-page 16px scale; the per-scope
-			// explanation lives in the label's info hint instead of a text row
-			// sandwiched between two controls.
-			const fieldLabel = (key, text, hint) => h("div", { key, className: `${CSS_PREFIX}-modal-flabel` },
+			// Config card: row-form rows (16px label left, control right) in one
+			// zone, the same scale and zoning as the settings tabs. Per-scope
+			// explanations live in the label's info hint.
+			const zoneLabel = (text, hint) => h("span", { className: `${CSS_PREFIX}-zone-label` },
 				h("span", { className: `${CSS_PREFIX}-set-title` },
 					h("span", { className: `${CSS_PREFIX}-set-title-text` }, text),
 					hint ? h(InfoHint, { text: hint }) : null
 				)
 			);
 			const searchSupported = SearchService.supported(ctx);
+			const zoneRows = [];
 			if (searchSupported) {
-				children.push(fieldLabel("scopelabel", t("scan_scope_label"),
-					t(scope === "guild" ? "scope_note_guild" : "scope_note_channel")));
-				children.push(h("div", { key: "scope", className: `${CSS_PREFIX}-seg`, role: "radiogroup" },
-					[["channel", "scope_channel", HASH_ICON_SVG], ["guild", "scope_guild", GLOBE_ICON_SVG]].map(entry => h("button", {
-						key: entry[0],
-						type: "button",
-						role: "radio",
-						"aria-checked": scope === entry[0],
-						className: `${CSS_PREFIX}-seg-btn${scope === entry[0] ? ` ${CSS_PREFIX}-active` : ""}`,
-						onClick: () => setScope(entry[0])
-					},
-						h("span", { className: `${CSS_PREFIX}-seg-icon`, dangerouslySetInnerHTML: { __html: entry[2] } }),
-						t(entry[1])
-					))
-				));
-			}
-			children.push(fieldLabel("timelabel", t("range_title"), searchSupported ? null : t("range_note")));
-			children.push(h("div", { key: "presets", className: `${CSS_PREFIX}-presets` },
-				[["1d", 1], ["7d", 7], ["30d", 30], ["all", null]].map(entry => h("button", {
-					key: entry[0],
-					type: "button",
-					className: `${CSS_PREFIX}-preset${preset === entry[0] ? ` ${CSS_PREFIX}-active` : ""}`,
-					"aria-pressed": preset === entry[0],
-					onClick: () => applyPreset(entry[0], entry[1])
-				}, t(`preset_${entry[0]}`))),
-				h("button", {
-					key: "custom",
-					type: "button",
-					className: `${CSS_PREFIX}-preset${preset === "custom" ? ` ${CSS_PREFIX}-active` : ""}`,
-					"aria-pressed": preset === "custom",
-					onClick: () => setPreset("custom")
-				}, t("preset_custom"))
-			));
-			if (preset === "custom") {
-				children.push(h("div", { key: "range", className: `${CSS_PREFIX}-range-grid` },
-					h("div", null,
-						h("div", { className: `${CSS_PREFIX}-field-label` }, t("start_label")),
-						h("input", {
-							type: "datetime-local",
-							className: `${CSS_PREFIX}-input`,
-							value: startVal,
-							onChange: event => setStartVal(event.target.value)
-						})
-					),
-					h("div", null,
-						h("div", { className: `${CSS_PREFIX}-field-label` }, t("end_label")),
-						h("input", {
-							type: "datetime-local",
-							className: `${CSS_PREFIX}-input`,
-							value: endVal,
-							onChange: event => setEndVal(event.target.value)
-						})
+				zoneRows.push(h("div", { key: "scope", className: `${CSS_PREFIX}-zone-row` },
+					zoneLabel(t("scan_scope_label"), t(scope === "guild" ? "scope_note_guild" : "scope_note_channel")),
+					h("div", { className: `${CSS_PREFIX}-zone-ctl` },
+						h("div", { className: `${CSS_PREFIX}-seg`, role: "radiogroup" },
+							[["channel", "scope_channel", HASH_ICON_SVG], ["guild", "scope_guild", GLOBE_ICON_SVG]].map(entry => h("button", {
+								key: entry[0],
+								type: "button",
+								role: "radio",
+								"aria-checked": scope === entry[0],
+								className: `${CSS_PREFIX}-seg-btn${scope === entry[0] ? ` ${CSS_PREFIX}-active` : ""}`,
+								onClick: () => setScope(entry[0])
+							},
+								h("span", { className: `${CSS_PREFIX}-seg-icon`, dangerouslySetInnerHTML: { __html: entry[2] } }),
+								t(entry[1])
+							))
+						)
 					)
 				));
 			}
+			zoneRows.push(h("div", { key: "time", className: `${CSS_PREFIX}-zone-row` },
+				zoneLabel(t("range_title"), searchSupported ? null : t("range_note")),
+				h("div", { className: `${CSS_PREFIX}-zone-ctl` },
+					h("div", { className: `${CSS_PREFIX}-presets` },
+						[["1d", 1], ["7d", 7], ["30d", 30], ["all", null]].map(entry => h("button", {
+							key: entry[0],
+							type: "button",
+							className: `${CSS_PREFIX}-preset${preset === entry[0] ? ` ${CSS_PREFIX}-active` : ""}`,
+							"aria-pressed": preset === entry[0],
+							onClick: () => applyPreset(entry[0], entry[1])
+						}, t(`preset_${entry[0]}`))),
+						h("button", {
+							key: "custom",
+							type: "button",
+							className: `${CSS_PREFIX}-preset${preset === "custom" ? ` ${CSS_PREFIX}-active` : ""}`,
+							"aria-pressed": preset === "custom",
+							onClick: () => setPreset("custom")
+						}, t("preset_custom"))
+					)
+				)
+			));
+			if (preset === "custom") {
+				zoneRows.push(h("div", { key: "range", className: `${CSS_PREFIX}-zone-row` },
+					h("div", { className: `${CSS_PREFIX}-range-grid ${CSS_PREFIX}-zone-wide` },
+						h("div", null,
+							h("div", { className: `${CSS_PREFIX}-field-label` }, t("start_label")),
+							h("input", {
+								type: "datetime-local",
+								className: `${CSS_PREFIX}-input`,
+								value: startVal,
+								onChange: event => setStartVal(event.target.value)
+							})
+						),
+						h("div", null,
+							h("div", { className: `${CSS_PREFIX}-field-label` }, t("end_label")),
+							h("input", {
+								type: "datetime-local",
+								className: `${CSS_PREFIX}-input`,
+								value: endVal,
+								onChange: event => setEndVal(event.target.value)
+							})
+						)
+					)
+				));
+			}
+			children.push(h("div", { key: "config", className: `${CSS_PREFIX}-zone` }, zoneRows));
 			if (preset === "all") {
 				children.push(h("div", { key: "allnote", className: `${CSS_PREFIX}-note` },
 					t("all_range_note", { max: Utils.num(SettingsStore.get("fetch.maxMessages"), 2000) })));
 			}
-			const heroChildren = [];
+			// Footer action zone: review-model status pill (variant A: the label
+			// lives in the tooltip) on the left, the one primary action right.
+			const footerChildren = [];
 			if (aiReady) {
 				const activeConfig = AIService.config();
 				const contextText = `${AIService.displayName(activeConfig.provider)}${activeConfig.model ? ` · ${activeConfig.model}` : ""}`;
-				heroChildren.push(h("div", { key: "aictx", className: `${CSS_PREFIX}-hero-context`, title: contextText },
-					h("div", { className: `${CSS_PREFIX}-hero-context-k` }, t("scan_model_label")),
-					h("div", { className: `${CSS_PREFIX}-hero-context-v` },
-						h("span", { className: `${CSS_PREFIX}-hero-context-dot` }),
-						contextText
-					)
+				footerChildren.push(h("div", {
+					key: "aictx",
+					className: `${CSS_PREFIX}-model-pill`,
+					style: { marginRight: "auto" },
+					title: `${t("scan_model_label")} · ${contextText}`
+				},
+					h("span", { className: `${CSS_PREFIX}-model-pill-dot` }),
+					h("span", { className: `${CSS_PREFIX}-model-pill-text` }, contextText)
 				));
 			}
-			heroChildren.push(h(Btn, { key: "go", onClick: runScan }, t("hero_fetch")));
-			children.push(h("div", { key: "hero", className: `${CSS_PREFIX}-hero` }, heroChildren));
+			footerChildren.push(h(Btn, { key: "go", onClick: runScan }, t("hero_fetch")));
+			children.push(h("div", { key: "hero", className: `${CSS_PREFIX}-actions ${CSS_PREFIX}-actions-footer` }, footerChildren));
 		}
 
 		if (stage === "fetching" && progress) {
-			children.push(h(ProgressStrip, {
-				key: "fstrip",
-				label: t("phase_fetching"),
-				ratio: progress.ratio,
-				text: progress.rateLimited
-					? t("progress_rate_limited")
-					: progress.indexing
-						? t("progress_indexing")
-						: progress.total !== undefined
-							? t("progress_searching", { count: progress.count, total: progress.total })
-							: t("progress_fetching", { count: progress.count, time: Utils.formatDateTime(progress.oldestTs) }),
-				onCancel: cancelRun
-			}));
+			children.push(h("div", { key: "fzone", className: `${CSS_PREFIX}-zone ${CSS_PREFIX}-zone-pad` },
+				h(ProgressStrip, {
+					key: "fstrip",
+					label: t("phase_fetching"),
+					ratio: progress.ratio,
+					text: progress.rateLimited
+						? t("progress_rate_limited")
+						: progress.indexing
+							? t("progress_indexing")
+							: progress.total !== undefined
+								? t("progress_searching", { count: progress.count, total: progress.total })
+								: t("progress_fetching", { count: progress.count, time: Utils.formatDateTime(progress.oldestTs) })
+				})
+			));
+			children.push(h("div", { key: "ffooter", className: `${CSS_PREFIX}-actions ${CSS_PREFIX}-actions-footer` },
+				h(Btn, { tone: "secondary", onClick: cancelRun }, t("act_cancel"))
+			));
 		}
 
 		if (stage === "results" && fetchResult) {
@@ -5096,10 +5296,8 @@ module.exports = (() => {
 			children.push(h("div", { key: "stats", className: `${CSS_PREFIX}-stats` },
 				// Search totals are approximate and can undercount; never show
 				// "scanned" below the number of own messages actually found.
-				t("results_stats", { mine: total, scanned: Math.max(Utils.num(fetchResult.scanned, 0), total) })));
-			if (fetchResult.cancelled) {
-				children.push(h("div", { key: "cnote", className: `${CSS_PREFIX}-note` }, t("results_cancelled")));
-			}
+				t("results_stats", { mine: total, scanned: Math.max(Utils.num(fetchResult.scanned, 0), total) }),
+				fetchResult.cancelled ? h("span", { className: `${CSS_PREFIX}-stats-warn` }, ` · ${t("results_cancelled")}`) : null));
 			if (fetchResult.capped) {
 				children.push(h("div", { key: "capnote", className: `${CSS_PREFIX}-warn` },
 					t("results_capped", { max: fetchResult.options.maxMessages })));
@@ -5117,19 +5315,19 @@ module.exports = (() => {
 				));
 			}
 			if (reviewing) {
-				children.push(h(ProgressStrip, {
-					key: "rstrip",
-					label: t("phase_reviewing"),
-					ratio: reviewStage ? reviewStage.i / Math.max(1, reviewStage.k) : null,
-					text: reviewStage ? t("progress_review", { i: reviewStage.i, k: reviewStage.k }) : "",
-					onCancel: () => ReviewSession.abortAndClear()
-				}));
-				children.push(h("div", { key: "rmin", className: `${CSS_PREFIX}-actions ${CSS_PREFIX}-actions-footer` },
-					h(Btn, { tone: "secondary", onClick: () => CleanerModal.minimize() }, t("act_minimize"))
+				children.push(h("div", { key: "rzone", className: `${CSS_PREFIX}-zone ${CSS_PREFIX}-zone-pad` },
+					h(ProgressStrip, {
+						key: "rstrip",
+						label: t("phase_reviewing"),
+						ratio: reviewStage ? reviewStage.i / Math.max(1, reviewStage.k) : null,
+						text: reviewStage ? t("progress_review", { i: reviewStage.i, k: reviewStage.k }) : "",
+						onCancel: () => ReviewSession.abortAndClear()
+					})
 				));
 			}
 			if (reviewDone) {
-				children.push(h("div", { key: "rsummary", className: `${CSS_PREFIX}-banner` },
+				children.push(h("div", { key: "rsummary", className: `${CSS_PREFIX}-okline` },
+					h("span", { className: `${CSS_PREFIX}-okline-dot` }),
 					t("review_summary", { flagged: flaggedCount, total })));
 			}
 			if (reviewFailed.length > 0 && !reviewing) {
@@ -5143,39 +5341,17 @@ module.exports = (() => {
 			// Master tri-state checkbox over the DISPLAYED (possibly filtered) rows.
 			const displayedSelected = displayed.reduce((count, message) => count + (selected.has(message.id) ? 1 : 0), 0);
 			const masterState = displayedSelected === 0 ? "none" : displayedSelected === displayed.length ? "all" : "some";
-			children.push(h("div", { key: "selbar", className: `${CSS_PREFIX}-selbar` },
-				h("button", {
-					type: "button",
-					role: "checkbox",
-					"aria-checked": masterState === "all" ? true : masterState === "none" ? false : "mixed",
-					className: `${CSS_PREFIX}-check`,
-					title: t("select_all"),
-					onClick: () => (masterState === "all" ? selectNone() : selectAll())
-				},
-					h("span", {
-						className: `${CSS_PREFIX}-checkbox${masterState !== "none" ? ` ${CSS_PREFIX}-checkbox-on` : ""}`,
-						dangerouslySetInnerHTML: { __html: masterState === "all" ? CHECK_MARK_SVG : masterState === "some" ? DASH_MARK_SVG : "" }
-					}),
-					t("select_all")
-				),
-				flaggedCount > 0 ? h("button", {
-					type: "button",
-					className: `${CSS_PREFIX}-link-btn${flagFilter ? ` ${CSS_PREFIX}-link-active` : ""}`,
-					"aria-pressed": flagFilter,
-					onClick: () => setFlagFilter(!flagFilter)
-				}, `${t("filter_flagged")} (${flaggedCount})`) : null,
-				// Channel switcher: same SelectMenu component and styling as the
-				// settings panel (chips get unwieldy with many channels).
-				channelOptions && channelOptions.length > 2 ? h(SelectMenu, {
-					ariaLabel: t("filter_channel"),
-					value: effectiveChannelFilter || "",
-					options: channelOptions,
-					onChange: value => setChannelFilter(value || null)
-				}) : null,
-				h("div", { className: `${CSS_PREFIX}-note` }, t("selected_count", { n: selected.size, m: total }))
-			));
-			children.push(h("div", { key: "list", className: `${CSS_PREFIX}-list` },
-				displayed.map(message => h(MessageRow, {
+			// Search-results panel: tool row in the head band, day-grouped
+			// message cards in the scrollable body, load-more as the tail row.
+			const listRows = [];
+			let lastDay = null;
+			for (const message of displayed) {
+				const day = Utils.formatDate(message.timestamp);
+				if (day !== lastDay) {
+					lastDay = day;
+					listRows.push(h("div", { key: `day-${day}`, className: `${CSS_PREFIX}-day` }, day));
+				}
+				listRows.push(h(MessageRow, {
 					key: message.id,
 					message,
 					selected: selected.has(message.id),
@@ -5183,14 +5359,69 @@ module.exports = (() => {
 					showChannel: fetchResult.scope === "guild" && effectiveChannelFilter === null,
 					onPreview: att => setLightbox({ url: att.url, name: att.filename }),
 					onToggle: toggleSelected
-				}))
-			));
-			// Resume lives bottom-left in the footer: tall result lists scroll,
-			// and the footer is the one row always worth reaching.
+				}));
+			}
 			const canResume = (fetchResult.cancelled || fetchResult.capped) && fetchResult.resumeCursor;
+			if (canResume) {
+				listRows.push(h("button", {
+					key: "lmore",
+					type: "button",
+					className: `${CSS_PREFIX}-lmore`,
+					disabled: reviewing,
+					onClick: resumeScan
+				},
+					h("span", { style: { display: "flex" }, dangerouslySetInnerHTML: { __html: HISTORY_ICON_SVG } }),
+					t("act_resume_scan")
+				));
+			}
+			children.push(h("div", { key: "panel", className: `${CSS_PREFIX}-panel` },
+				h("div", { className: `${CSS_PREFIX}-panel-head` },
+					h("button", {
+						type: "button",
+						role: "checkbox",
+						"aria-checked": masterState === "all" ? true : masterState === "none" ? false : "mixed",
+						className: `${CSS_PREFIX}-check`,
+						title: t("select_all"),
+						onClick: () => (masterState === "all" ? selectNone() : selectAll())
+					},
+						h("span", {
+							className: `${CSS_PREFIX}-checkbox${masterState !== "none" ? ` ${CSS_PREFIX}-checkbox-on` : ""}`,
+							dangerouslySetInnerHTML: { __html: masterState === "all" ? CHECK_MARK_SVG : masterState === "some" ? DASH_MARK_SVG : "" }
+						}),
+						t("select_all")
+					),
+					// Channel switcher: same SelectMenu component and styling as
+					// the settings panel (chips get unwieldy with many channels).
+					channelOptions && channelOptions.length > 2 ? h(SelectMenu, {
+						ariaLabel: t("filter_channel"),
+						value: effectiveChannelFilter || "",
+						options: channelOptions,
+						onChange: value => setChannelFilter(value || null)
+					}) : null,
+					h("span", { className: `${CSS_PREFIX}-panel-spacer` }),
+					flaggedCount > 0 ? h("div", { className: `${CSS_PREFIX}-seg-mini`, role: "radiogroup" },
+						h("button", {
+							type: "button",
+							role: "radio",
+							"aria-checked": flagFilter,
+							className: `${CSS_PREFIX}-seg-mini-btn${flagFilter ? ` ${CSS_PREFIX}-active` : ""}`,
+							onClick: () => setFlagFilter(true)
+						}, `${t("filter_flagged")} ${flaggedCount}`),
+						h("button", {
+							type: "button",
+							role: "radio",
+							"aria-checked": !flagFilter,
+							className: `${CSS_PREFIX}-seg-mini-btn${!flagFilter ? ` ${CSS_PREFIX}-active` : ""}`,
+							onClick: () => setFlagFilter(false)
+						}, t("filter_all"))
+					) : null,
+					h("span", { className: `${CSS_PREFIX}-panel-count` }, t("selected_count", { n: selected.size, m: total }))
+				),
+				h("div", { className: `${CSS_PREFIX}-panel-body` }, listRows)
+			));
 			children.push(h("div", { key: "footer", className: `${CSS_PREFIX}-actions ${CSS_PREFIX}-actions-footer` },
-				canResume ? h("div", { style: { marginRight: "auto" } },
-					h(Btn, { tone: "secondary", disabled: reviewing, onClick: resumeScan }, t("act_resume_scan"))
+				reviewing ? h("div", { style: { marginRight: "auto" } },
+					h(Btn, { tone: "secondary", onClick: () => CleanerModal.minimize() }, t("act_minimize"))
 				) : null,
 				h(Btn, { tone: "secondary", disabled: reviewing, onClick: () => setStage("setup") }, t("back")),
 				h(Btn, { disabled: !aiReady || reviewing, onClick: () => runReview(null, false) },
@@ -5201,18 +5432,20 @@ module.exports = (() => {
 		}
 
 		if (stage === "deleting" && deleteProgress) {
-			children.push(h(ProgressStrip, {
-				key: "dstrip",
-				label: t("phase_deleting"),
-				ratio: deleteProgress.total ? deleteProgress.done / deleteProgress.total : null,
-				text: t("progress_deleting", { done: deleteProgress.done, total: deleteProgress.total }),
-				onCancel: cancelRun
-			}));
+			children.push(h("div", { key: "dzone", className: `${CSS_PREFIX}-zone ${CSS_PREFIX}-zone-pad` },
+				h(ProgressStrip, {
+					key: "dstrip",
+					label: t("phase_deleting"),
+					ratio: deleteProgress.total ? deleteProgress.done / deleteProgress.total : null,
+					text: t("progress_deleting", { done: deleteProgress.done, total: deleteProgress.total })
+				})
+			));
 			if (stormPaused) {
 				children.push(h("div", { key: "storm", className: `${CSS_PREFIX}-warn` }, t("delete_paused_storm")));
 			}
 			children.push(h("div", { key: "dactions", className: `${CSS_PREFIX}-actions ${CSS_PREFIX}-actions-footer` },
-				h(Btn, { tone: "secondary", onClick: togglePause }, paused ? t("delete_resume") : t("delete_pause"))
+				h(Btn, { tone: "secondary", onClick: togglePause }, paused ? t("delete_resume") : t("delete_pause")),
+				h(Btn, { tone: "secondary", onClick: cancelRun }, t("act_cancel"))
 			));
 		}
 
@@ -5228,13 +5461,15 @@ module.exports = (() => {
 			}
 			if (deleteReport.failed.length) {
 				children.push(h("div", { key: "dfailhdr", className: `${CSS_PREFIX}-note` }, t("delete_report_failed")));
-				children.push(h("div", { key: "dfaillist", className: `${CSS_PREFIX}-list`, style: { maxHeight: "160px" } },
-					deleteReport.failed.map(entry => h("div", { key: entry.id, className: `${CSS_PREFIX}-row`, style: { cursor: "default" } },
-						h("div", { className: `${CSS_PREFIX}-row-body` },
-							h("div", { className: `${CSS_PREFIX}-row-meta` }, `${entry.id} · HTTP ${entry.code || "?"}`),
-							entry.detail ? h("div", { className: `${CSS_PREFIX}-row-text ${CSS_PREFIX}-faint` }, entry.detail) : null
-						)
-					))
+				children.push(h("div", { key: "dfaillist", className: `${CSS_PREFIX}-panel` },
+					h("div", { className: `${CSS_PREFIX}-panel-body`, style: { maxHeight: "180px", paddingTop: "8px" } },
+						deleteReport.failed.map(entry => h("div", { key: entry.id, className: `${CSS_PREFIX}-mcard ${CSS_PREFIX}-mcard-static` },
+							h("div", { className: `${CSS_PREFIX}-row-body` },
+								h("div", { className: `${CSS_PREFIX}-row-meta` }, `${entry.id} · HTTP ${entry.code || "?"}`),
+								entry.detail ? h("div", { className: `${CSS_PREFIX}-row-text ${CSS_PREFIX}-faint` }, entry.detail) : null
+							)
+						))
+					)
 				));
 			}
 			children.push(h("div", { key: "dfooter", className: `${CSS_PREFIX}-actions ${CSS_PREFIX}-actions-footer` },
@@ -5681,7 +5916,7 @@ module.exports = (() => {
 				h("span", { className: `${CSS_PREFIX}-select-label` }, current ? current.label : String(props.value)),
 				h("span", { className: `${CSS_PREFIX}-sel-arrow`, dangerouslySetInnerHTML: { __html: CHEVRON_SVG } })
 			),
-			pop.open ? h("div", { className: `${CSS_PREFIX}-pop`, role: "listbox" },
+			pop.open ? h("div", { className: `${CSS_PREFIX}-pop${props.up ? ` ${CSS_PREFIX}-pop-up` : ""}`, role: "listbox" },
 				props.options.map(option => h("button", {
 					key: String(option.value),
 					type: "button",
@@ -5949,7 +6184,10 @@ module.exports = (() => {
 			try {
 				BdApi.UI.showConfirmationModal(
 					t("provider_delete"),
-					t("provider_delete_confirm", { name: displayName }),
+					h("div", { className: `${CSS_PREFIX}-ui ${CSS_PREFIX}-confirm-body` },
+						h("div", null, tEmph("provider_delete_confirm", { name: displayName }, "name")),
+						h("div", { className: `${CSS_PREFIX}-confirm-note` }, t("confirm_irreversible"))
+					),
 					{
 						danger: true,
 						confirmText: t("provider_delete"),
@@ -6137,7 +6375,10 @@ module.exports = (() => {
 			try {
 				BdApi.UI.showConfirmationModal(
 					t("provider_delete"),
-					t("prompt_delete_confirm", { name }),
+					h("div", { className: `${CSS_PREFIX}-ui ${CSS_PREFIX}-confirm-body` },
+						h("div", null, tEmph("prompt_delete_confirm", { name }, "name")),
+						h("div", { className: `${CSS_PREFIX}-confirm-note` }, t("confirm_irreversible"))
+					),
 					{
 						danger: true,
 						confirmText: t("provider_delete"),

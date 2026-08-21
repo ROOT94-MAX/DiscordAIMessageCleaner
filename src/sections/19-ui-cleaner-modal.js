@@ -2,6 +2,20 @@
 
 	const UnsupportedContent = () => h("div", { className: `${CSS_PREFIX}-note` }, t("unsupported_hint"));
 
+	// Category hues follow Discord's own status/role palette; the hue drives a
+	// flagged card's left bar and its role-style colored category label.
+	const CATEGORY_COLORS = {
+		abuse: "#f23f43",
+		nsfw: "#eb459e",
+		privacy: "#f57c22",
+		politics: "#f0b232",
+		ad: "#26a5ff",
+		other: "#b5bac1"
+	};
+
+	// Material Symbols Rounded "history" (load-more / resume-scan row).
+	const HISTORY_ICON_SVG = `<svg width="14" height="14" viewBox="0 -960 960 960" aria-hidden="true"><path fill="currentColor" d="M477-120q-142 0-243.5-95.5T121-451q-1-12 7.5-21t21.5-9q12 0 20.5 8.5T181-451q11 115 95 193t201 78q127 0 215-89t88-216q0-124-89-209.5T477-780q-68 0-127.5 31T246-667h75q13 0 21.5 8.5T351-637q0 13-8.5 21.5T321-607H172q-13 0-21.5-8.5T142-637v-148q0-13 8.5-21.5T172-815q13 0 21.5 8.5T202-785v76q52-61 123.5-96T477-840q75 0 141 28t115.5 76.5Q783-687 811.5-622T840-482q0 75-28.5 141t-78 115Q684-177 618-148.5T477-120Zm34-374 115 113q9 9 9 21.5t-9 21.5q-9 9-21 9t-21-9L460-460q-5-5-7-10.5t-2-11.5v-171q0-13 8.5-21.5T481-683q13 0 21.5 8.5T511-653v159Z"/></svg>`;
+
 	// Custom emoji tags render as the real emoji image from Discord's CDN.
 	const EMOJI_TAG_RE = /<(a?):(\w+):(\d{5,})>/g;
 	const renderContentSegments = text => {
@@ -33,10 +47,6 @@
 		const verdict = props.verdict || null;
 		const hasText = Boolean(message.content);
 		const badges = [];
-		if (verdict) {
-			badges.push(h("span", { key: "flag", className: `${CSS_PREFIX}-badge ${CSS_PREFIX}-badge-flag` },
-				`${t(`cat_${verdict.category}`)}${verdict.severity >= 3 ? " !!!" : verdict.severity === 2 ? " !!" : ""}`));
-		}
 		if (props.showChannel && message.channelId) {
 			badges.push(h("span", { key: "chan", className: `${CSS_PREFIX}-badge` },
 				`#${DiscordAdapter.getChannelName(message.channelId) || message.channelId}`));
@@ -47,6 +57,12 @@
 		if (message.edited) {
 			badges.push(h("span", { key: "edit", className: `${CSS_PREFIX}-badge` }, t("edited_badge")));
 		}
+		// Role-color category label, right-aligned on the meta line; the same
+		// hue paints the card's left bar via --damc-flag.
+		if (verdict) {
+			badges.push(h("span", { key: "cat", className: `${CSS_PREFIX}-cat` },
+				`${t(`cat_${verdict.category}`)}${verdict.severity >= 3 ? " !!!" : verdict.severity === 2 ? " !!" : ""}`));
+		}
 		// Up to 3 tiny thumbnails for image attachments; lazy so a long list
 		// only loads what scrolls into view.
 		const thumbs = message.attachments.filter(att => att.isImage && att.url).slice(0, 3);
@@ -54,7 +70,8 @@
 			type: "button",
 			role: "checkbox",
 			"aria-checked": props.selected,
-			className: `${CSS_PREFIX}-row${props.selected ? ` ${CSS_PREFIX}-row-on` : ""}${verdict ? ` ${CSS_PREFIX}-row-flagged` : ""}`,
+			className: `${CSS_PREFIX}-mcard${verdict ? ` ${CSS_PREFIX}-mcard-flagged` : ""}`,
+			style: verdict ? { "--damc-flag": CATEGORY_COLORS[verdict.category] || CATEGORY_COLORS.other } : undefined,
 			onClick: () => props.onToggle(message.id)
 		},
 			h("span", {
@@ -63,7 +80,7 @@
 			}),
 			h("div", { className: `${CSS_PREFIX}-row-body` },
 				h("div", { className: `${CSS_PREFIX}-row-meta` },
-					h("span", null, Utils.formatDateTime(message.timestamp)),
+					h("span", { className: `${CSS_PREFIX}-mtime` }, Utils.formatTime(message.timestamp)),
 					badges
 				),
 				hasText
@@ -120,21 +137,25 @@
 				}),
 				h("span", null, props.label)
 			),
-			on ? h("label", { className: `${CSS_PREFIX}-backup-format` },
+			on ? h("div", { className: `${CSS_PREFIX}-backup-format` },
 				h("span", { className: `${CSS_PREFIX}-backup-format-label` }, t("backup_format_label")),
-				h("select", {
-					className: `${CSS_PREFIX}-backup-format-select`,
+				// Family dropdown (self-drawn, opens upward: it sits at the
+				// bottom of the confirm modal).
+				h(SelectMenu, {
+					ariaLabel: t("backup_format_label"),
 					value: format,
-					onChange: event => {
-						const next = ExportService.normalizeFormat(event.target.value);
+					up: true,
+					options: [
+						{ value: "md", label: t("backup_format_md") },
+						{ value: "txt", label: t("backup_format_txt") },
+						{ value: "json", label: t("backup_format_json") }
+					],
+					onChange: value => {
+						const next = ExportService.normalizeFormat(value);
 						setFormat(next);
 						props.onFormatChange(next);
 					}
-				},
-					h("option", { value: "md" }, t("backup_format_md")),
-					h("option", { value: "txt" }, t("backup_format_txt")),
-					h("option", { value: "json" }, t("backup_format_json"))
-			)
+				})
 		) : null
 		);
 	};
@@ -640,7 +661,7 @@
 			const content = h("div", { className: `${CSS_PREFIX}-ui ${CSS_PREFIX}-confirm-body` },
 				overCap ? h("div", { className: `${CSS_PREFIX}-warn` },
 					t("delete_confirm_over_cap", { n: selected.size, max: maxPerRun })) : null,
-				h("div", null, t("delete_confirm_body", { n: items.length })),
+				h("div", null, tEmph("delete_confirm_body", { n: items.length }, "n")),
 					h(BackupChoice, {
 						initial: choice.backup,
 						initialFormat: choice.format,
@@ -715,106 +736,125 @@
 
 		if (stage === "setup") {
 			if (!aiReady) children.push(h("div", { key: "banner", className: `${CSS_PREFIX}-warn` }, t("banner_no_ai")));
-			// Field labels mirror the settings-page 16px scale; the per-scope
-			// explanation lives in the label's info hint instead of a text row
-			// sandwiched between two controls.
-			const fieldLabel = (key, text, hint) => h("div", { key, className: `${CSS_PREFIX}-modal-flabel` },
+			// Config card: row-form rows (16px label left, control right) in one
+			// zone, the same scale and zoning as the settings tabs. Per-scope
+			// explanations live in the label's info hint.
+			const zoneLabel = (text, hint) => h("span", { className: `${CSS_PREFIX}-zone-label` },
 				h("span", { className: `${CSS_PREFIX}-set-title` },
 					h("span", { className: `${CSS_PREFIX}-set-title-text` }, text),
 					hint ? h(InfoHint, { text: hint }) : null
 				)
 			);
 			const searchSupported = SearchService.supported(ctx);
+			const zoneRows = [];
 			if (searchSupported) {
-				children.push(fieldLabel("scopelabel", t("scan_scope_label"),
-					t(scope === "guild" ? "scope_note_guild" : "scope_note_channel")));
-				children.push(h("div", { key: "scope", className: `${CSS_PREFIX}-seg`, role: "radiogroup" },
-					[["channel", "scope_channel", HASH_ICON_SVG], ["guild", "scope_guild", GLOBE_ICON_SVG]].map(entry => h("button", {
-						key: entry[0],
-						type: "button",
-						role: "radio",
-						"aria-checked": scope === entry[0],
-						className: `${CSS_PREFIX}-seg-btn${scope === entry[0] ? ` ${CSS_PREFIX}-active` : ""}`,
-						onClick: () => setScope(entry[0])
-					},
-						h("span", { className: `${CSS_PREFIX}-seg-icon`, dangerouslySetInnerHTML: { __html: entry[2] } }),
-						t(entry[1])
-					))
-				));
-			}
-			children.push(fieldLabel("timelabel", t("range_title"), searchSupported ? null : t("range_note")));
-			children.push(h("div", { key: "presets", className: `${CSS_PREFIX}-presets` },
-				[["1d", 1], ["7d", 7], ["30d", 30], ["all", null]].map(entry => h("button", {
-					key: entry[0],
-					type: "button",
-					className: `${CSS_PREFIX}-preset${preset === entry[0] ? ` ${CSS_PREFIX}-active` : ""}`,
-					"aria-pressed": preset === entry[0],
-					onClick: () => applyPreset(entry[0], entry[1])
-				}, t(`preset_${entry[0]}`))),
-				h("button", {
-					key: "custom",
-					type: "button",
-					className: `${CSS_PREFIX}-preset${preset === "custom" ? ` ${CSS_PREFIX}-active` : ""}`,
-					"aria-pressed": preset === "custom",
-					onClick: () => setPreset("custom")
-				}, t("preset_custom"))
-			));
-			if (preset === "custom") {
-				children.push(h("div", { key: "range", className: `${CSS_PREFIX}-range-grid` },
-					h("div", null,
-						h("div", { className: `${CSS_PREFIX}-field-label` }, t("start_label")),
-						h("input", {
-							type: "datetime-local",
-							className: `${CSS_PREFIX}-input`,
-							value: startVal,
-							onChange: event => setStartVal(event.target.value)
-						})
-					),
-					h("div", null,
-						h("div", { className: `${CSS_PREFIX}-field-label` }, t("end_label")),
-						h("input", {
-							type: "datetime-local",
-							className: `${CSS_PREFIX}-input`,
-							value: endVal,
-							onChange: event => setEndVal(event.target.value)
-						})
+				zoneRows.push(h("div", { key: "scope", className: `${CSS_PREFIX}-zone-row` },
+					zoneLabel(t("scan_scope_label"), t(scope === "guild" ? "scope_note_guild" : "scope_note_channel")),
+					h("div", { className: `${CSS_PREFIX}-zone-ctl` },
+						h("div", { className: `${CSS_PREFIX}-seg`, role: "radiogroup" },
+							[["channel", "scope_channel", HASH_ICON_SVG], ["guild", "scope_guild", GLOBE_ICON_SVG]].map(entry => h("button", {
+								key: entry[0],
+								type: "button",
+								role: "radio",
+								"aria-checked": scope === entry[0],
+								className: `${CSS_PREFIX}-seg-btn${scope === entry[0] ? ` ${CSS_PREFIX}-active` : ""}`,
+								onClick: () => setScope(entry[0])
+							},
+								h("span", { className: `${CSS_PREFIX}-seg-icon`, dangerouslySetInnerHTML: { __html: entry[2] } }),
+								t(entry[1])
+							))
+						)
 					)
 				));
 			}
+			zoneRows.push(h("div", { key: "time", className: `${CSS_PREFIX}-zone-row` },
+				zoneLabel(t("range_title"), searchSupported ? null : t("range_note")),
+				h("div", { className: `${CSS_PREFIX}-zone-ctl` },
+					h("div", { className: `${CSS_PREFIX}-presets` },
+						[["1d", 1], ["7d", 7], ["30d", 30], ["all", null]].map(entry => h("button", {
+							key: entry[0],
+							type: "button",
+							className: `${CSS_PREFIX}-preset${preset === entry[0] ? ` ${CSS_PREFIX}-active` : ""}`,
+							"aria-pressed": preset === entry[0],
+							onClick: () => applyPreset(entry[0], entry[1])
+						}, t(`preset_${entry[0]}`))),
+						h("button", {
+							key: "custom",
+							type: "button",
+							className: `${CSS_PREFIX}-preset${preset === "custom" ? ` ${CSS_PREFIX}-active` : ""}`,
+							"aria-pressed": preset === "custom",
+							onClick: () => setPreset("custom")
+						}, t("preset_custom"))
+					)
+				)
+			));
+			if (preset === "custom") {
+				zoneRows.push(h("div", { key: "range", className: `${CSS_PREFIX}-zone-row` },
+					h("div", { className: `${CSS_PREFIX}-range-grid ${CSS_PREFIX}-zone-wide` },
+						h("div", null,
+							h("div", { className: `${CSS_PREFIX}-field-label` }, t("start_label")),
+							h("input", {
+								type: "datetime-local",
+								className: `${CSS_PREFIX}-input`,
+								value: startVal,
+								onChange: event => setStartVal(event.target.value)
+							})
+						),
+						h("div", null,
+							h("div", { className: `${CSS_PREFIX}-field-label` }, t("end_label")),
+							h("input", {
+								type: "datetime-local",
+								className: `${CSS_PREFIX}-input`,
+								value: endVal,
+								onChange: event => setEndVal(event.target.value)
+							})
+						)
+					)
+				));
+			}
+			children.push(h("div", { key: "config", className: `${CSS_PREFIX}-zone` }, zoneRows));
 			if (preset === "all") {
 				children.push(h("div", { key: "allnote", className: `${CSS_PREFIX}-note` },
 					t("all_range_note", { max: Utils.num(SettingsStore.get("fetch.maxMessages"), 2000) })));
 			}
-			const heroChildren = [];
+			// Footer action zone: review-model status pill (variant A: the label
+			// lives in the tooltip) on the left, the one primary action right.
+			const footerChildren = [];
 			if (aiReady) {
 				const activeConfig = AIService.config();
 				const contextText = `${AIService.displayName(activeConfig.provider)}${activeConfig.model ? ` · ${activeConfig.model}` : ""}`;
-				heroChildren.push(h("div", { key: "aictx", className: `${CSS_PREFIX}-hero-context`, title: contextText },
-					h("div", { className: `${CSS_PREFIX}-hero-context-k` }, t("scan_model_label")),
-					h("div", { className: `${CSS_PREFIX}-hero-context-v` },
-						h("span", { className: `${CSS_PREFIX}-hero-context-dot` }),
-						contextText
-					)
+				footerChildren.push(h("div", {
+					key: "aictx",
+					className: `${CSS_PREFIX}-model-pill`,
+					style: { marginRight: "auto" },
+					title: `${t("scan_model_label")} · ${contextText}`
+				},
+					h("span", { className: `${CSS_PREFIX}-model-pill-dot` }),
+					h("span", { className: `${CSS_PREFIX}-model-pill-text` }, contextText)
 				));
 			}
-			heroChildren.push(h(Btn, { key: "go", onClick: runScan }, t("hero_fetch")));
-			children.push(h("div", { key: "hero", className: `${CSS_PREFIX}-hero` }, heroChildren));
+			footerChildren.push(h(Btn, { key: "go", onClick: runScan }, t("hero_fetch")));
+			children.push(h("div", { key: "hero", className: `${CSS_PREFIX}-actions ${CSS_PREFIX}-actions-footer` }, footerChildren));
 		}
 
 		if (stage === "fetching" && progress) {
-			children.push(h(ProgressStrip, {
-				key: "fstrip",
-				label: t("phase_fetching"),
-				ratio: progress.ratio,
-				text: progress.rateLimited
-					? t("progress_rate_limited")
-					: progress.indexing
-						? t("progress_indexing")
-						: progress.total !== undefined
-							? t("progress_searching", { count: progress.count, total: progress.total })
-							: t("progress_fetching", { count: progress.count, time: Utils.formatDateTime(progress.oldestTs) }),
-				onCancel: cancelRun
-			}));
+			children.push(h("div", { key: "fzone", className: `${CSS_PREFIX}-zone ${CSS_PREFIX}-zone-pad` },
+				h(ProgressStrip, {
+					key: "fstrip",
+					label: t("phase_fetching"),
+					ratio: progress.ratio,
+					text: progress.rateLimited
+						? t("progress_rate_limited")
+						: progress.indexing
+							? t("progress_indexing")
+							: progress.total !== undefined
+								? t("progress_searching", { count: progress.count, total: progress.total })
+								: t("progress_fetching", { count: progress.count, time: Utils.formatDateTime(progress.oldestTs) })
+				})
+			));
+			children.push(h("div", { key: "ffooter", className: `${CSS_PREFIX}-actions ${CSS_PREFIX}-actions-footer` },
+				h(Btn, { tone: "secondary", onClick: cancelRun }, t("act_cancel"))
+			));
 		}
 
 		if (stage === "results" && fetchResult) {
@@ -860,10 +900,8 @@
 			children.push(h("div", { key: "stats", className: `${CSS_PREFIX}-stats` },
 				// Search totals are approximate and can undercount; never show
 				// "scanned" below the number of own messages actually found.
-				t("results_stats", { mine: total, scanned: Math.max(Utils.num(fetchResult.scanned, 0), total) })));
-			if (fetchResult.cancelled) {
-				children.push(h("div", { key: "cnote", className: `${CSS_PREFIX}-note` }, t("results_cancelled")));
-			}
+				t("results_stats", { mine: total, scanned: Math.max(Utils.num(fetchResult.scanned, 0), total) }),
+				fetchResult.cancelled ? h("span", { className: `${CSS_PREFIX}-stats-warn` }, ` · ${t("results_cancelled")}`) : null));
 			if (fetchResult.capped) {
 				children.push(h("div", { key: "capnote", className: `${CSS_PREFIX}-warn` },
 					t("results_capped", { max: fetchResult.options.maxMessages })));
@@ -881,19 +919,19 @@
 				));
 			}
 			if (reviewing) {
-				children.push(h(ProgressStrip, {
-					key: "rstrip",
-					label: t("phase_reviewing"),
-					ratio: reviewStage ? reviewStage.i / Math.max(1, reviewStage.k) : null,
-					text: reviewStage ? t("progress_review", { i: reviewStage.i, k: reviewStage.k }) : "",
-					onCancel: () => ReviewSession.abortAndClear()
-				}));
-				children.push(h("div", { key: "rmin", className: `${CSS_PREFIX}-actions ${CSS_PREFIX}-actions-footer` },
-					h(Btn, { tone: "secondary", onClick: () => CleanerModal.minimize() }, t("act_minimize"))
+				children.push(h("div", { key: "rzone", className: `${CSS_PREFIX}-zone ${CSS_PREFIX}-zone-pad` },
+					h(ProgressStrip, {
+						key: "rstrip",
+						label: t("phase_reviewing"),
+						ratio: reviewStage ? reviewStage.i / Math.max(1, reviewStage.k) : null,
+						text: reviewStage ? t("progress_review", { i: reviewStage.i, k: reviewStage.k }) : "",
+						onCancel: () => ReviewSession.abortAndClear()
+					})
 				));
 			}
 			if (reviewDone) {
-				children.push(h("div", { key: "rsummary", className: `${CSS_PREFIX}-banner` },
+				children.push(h("div", { key: "rsummary", className: `${CSS_PREFIX}-okline` },
+					h("span", { className: `${CSS_PREFIX}-okline-dot` }),
 					t("review_summary", { flagged: flaggedCount, total })));
 			}
 			if (reviewFailed.length > 0 && !reviewing) {
@@ -907,39 +945,17 @@
 			// Master tri-state checkbox over the DISPLAYED (possibly filtered) rows.
 			const displayedSelected = displayed.reduce((count, message) => count + (selected.has(message.id) ? 1 : 0), 0);
 			const masterState = displayedSelected === 0 ? "none" : displayedSelected === displayed.length ? "all" : "some";
-			children.push(h("div", { key: "selbar", className: `${CSS_PREFIX}-selbar` },
-				h("button", {
-					type: "button",
-					role: "checkbox",
-					"aria-checked": masterState === "all" ? true : masterState === "none" ? false : "mixed",
-					className: `${CSS_PREFIX}-check`,
-					title: t("select_all"),
-					onClick: () => (masterState === "all" ? selectNone() : selectAll())
-				},
-					h("span", {
-						className: `${CSS_PREFIX}-checkbox${masterState !== "none" ? ` ${CSS_PREFIX}-checkbox-on` : ""}`,
-						dangerouslySetInnerHTML: { __html: masterState === "all" ? CHECK_MARK_SVG : masterState === "some" ? DASH_MARK_SVG : "" }
-					}),
-					t("select_all")
-				),
-				flaggedCount > 0 ? h("button", {
-					type: "button",
-					className: `${CSS_PREFIX}-link-btn${flagFilter ? ` ${CSS_PREFIX}-link-active` : ""}`,
-					"aria-pressed": flagFilter,
-					onClick: () => setFlagFilter(!flagFilter)
-				}, `${t("filter_flagged")} (${flaggedCount})`) : null,
-				// Channel switcher: same SelectMenu component and styling as the
-				// settings panel (chips get unwieldy with many channels).
-				channelOptions && channelOptions.length > 2 ? h(SelectMenu, {
-					ariaLabel: t("filter_channel"),
-					value: effectiveChannelFilter || "",
-					options: channelOptions,
-					onChange: value => setChannelFilter(value || null)
-				}) : null,
-				h("div", { className: `${CSS_PREFIX}-note` }, t("selected_count", { n: selected.size, m: total }))
-			));
-			children.push(h("div", { key: "list", className: `${CSS_PREFIX}-list` },
-				displayed.map(message => h(MessageRow, {
+			// Search-results panel: tool row in the head band, day-grouped
+			// message cards in the scrollable body, load-more as the tail row.
+			const listRows = [];
+			let lastDay = null;
+			for (const message of displayed) {
+				const day = Utils.formatDate(message.timestamp);
+				if (day !== lastDay) {
+					lastDay = day;
+					listRows.push(h("div", { key: `day-${day}`, className: `${CSS_PREFIX}-day` }, day));
+				}
+				listRows.push(h(MessageRow, {
 					key: message.id,
 					message,
 					selected: selected.has(message.id),
@@ -947,14 +963,69 @@
 					showChannel: fetchResult.scope === "guild" && effectiveChannelFilter === null,
 					onPreview: att => setLightbox({ url: att.url, name: att.filename }),
 					onToggle: toggleSelected
-				}))
-			));
-			// Resume lives bottom-left in the footer: tall result lists scroll,
-			// and the footer is the one row always worth reaching.
+				}));
+			}
 			const canResume = (fetchResult.cancelled || fetchResult.capped) && fetchResult.resumeCursor;
+			if (canResume) {
+				listRows.push(h("button", {
+					key: "lmore",
+					type: "button",
+					className: `${CSS_PREFIX}-lmore`,
+					disabled: reviewing,
+					onClick: resumeScan
+				},
+					h("span", { style: { display: "flex" }, dangerouslySetInnerHTML: { __html: HISTORY_ICON_SVG } }),
+					t("act_resume_scan")
+				));
+			}
+			children.push(h("div", { key: "panel", className: `${CSS_PREFIX}-panel` },
+				h("div", { className: `${CSS_PREFIX}-panel-head` },
+					h("button", {
+						type: "button",
+						role: "checkbox",
+						"aria-checked": masterState === "all" ? true : masterState === "none" ? false : "mixed",
+						className: `${CSS_PREFIX}-check`,
+						title: t("select_all"),
+						onClick: () => (masterState === "all" ? selectNone() : selectAll())
+					},
+						h("span", {
+							className: `${CSS_PREFIX}-checkbox${masterState !== "none" ? ` ${CSS_PREFIX}-checkbox-on` : ""}`,
+							dangerouslySetInnerHTML: { __html: masterState === "all" ? CHECK_MARK_SVG : masterState === "some" ? DASH_MARK_SVG : "" }
+						}),
+						t("select_all")
+					),
+					// Channel switcher: same SelectMenu component and styling as
+					// the settings panel (chips get unwieldy with many channels).
+					channelOptions && channelOptions.length > 2 ? h(SelectMenu, {
+						ariaLabel: t("filter_channel"),
+						value: effectiveChannelFilter || "",
+						options: channelOptions,
+						onChange: value => setChannelFilter(value || null)
+					}) : null,
+					h("span", { className: `${CSS_PREFIX}-panel-spacer` }),
+					flaggedCount > 0 ? h("div", { className: `${CSS_PREFIX}-seg-mini`, role: "radiogroup" },
+						h("button", {
+							type: "button",
+							role: "radio",
+							"aria-checked": flagFilter,
+							className: `${CSS_PREFIX}-seg-mini-btn${flagFilter ? ` ${CSS_PREFIX}-active` : ""}`,
+							onClick: () => setFlagFilter(true)
+						}, `${t("filter_flagged")} ${flaggedCount}`),
+						h("button", {
+							type: "button",
+							role: "radio",
+							"aria-checked": !flagFilter,
+							className: `${CSS_PREFIX}-seg-mini-btn${!flagFilter ? ` ${CSS_PREFIX}-active` : ""}`,
+							onClick: () => setFlagFilter(false)
+						}, t("filter_all"))
+					) : null,
+					h("span", { className: `${CSS_PREFIX}-panel-count` }, t("selected_count", { n: selected.size, m: total }))
+				),
+				h("div", { className: `${CSS_PREFIX}-panel-body` }, listRows)
+			));
 			children.push(h("div", { key: "footer", className: `${CSS_PREFIX}-actions ${CSS_PREFIX}-actions-footer` },
-				canResume ? h("div", { style: { marginRight: "auto" } },
-					h(Btn, { tone: "secondary", disabled: reviewing, onClick: resumeScan }, t("act_resume_scan"))
+				reviewing ? h("div", { style: { marginRight: "auto" } },
+					h(Btn, { tone: "secondary", onClick: () => CleanerModal.minimize() }, t("act_minimize"))
 				) : null,
 				h(Btn, { tone: "secondary", disabled: reviewing, onClick: () => setStage("setup") }, t("back")),
 				h(Btn, { disabled: !aiReady || reviewing, onClick: () => runReview(null, false) },
@@ -965,18 +1036,20 @@
 		}
 
 		if (stage === "deleting" && deleteProgress) {
-			children.push(h(ProgressStrip, {
-				key: "dstrip",
-				label: t("phase_deleting"),
-				ratio: deleteProgress.total ? deleteProgress.done / deleteProgress.total : null,
-				text: t("progress_deleting", { done: deleteProgress.done, total: deleteProgress.total }),
-				onCancel: cancelRun
-			}));
+			children.push(h("div", { key: "dzone", className: `${CSS_PREFIX}-zone ${CSS_PREFIX}-zone-pad` },
+				h(ProgressStrip, {
+					key: "dstrip",
+					label: t("phase_deleting"),
+					ratio: deleteProgress.total ? deleteProgress.done / deleteProgress.total : null,
+					text: t("progress_deleting", { done: deleteProgress.done, total: deleteProgress.total })
+				})
+			));
 			if (stormPaused) {
 				children.push(h("div", { key: "storm", className: `${CSS_PREFIX}-warn` }, t("delete_paused_storm")));
 			}
 			children.push(h("div", { key: "dactions", className: `${CSS_PREFIX}-actions ${CSS_PREFIX}-actions-footer` },
-				h(Btn, { tone: "secondary", onClick: togglePause }, paused ? t("delete_resume") : t("delete_pause"))
+				h(Btn, { tone: "secondary", onClick: togglePause }, paused ? t("delete_resume") : t("delete_pause")),
+				h(Btn, { tone: "secondary", onClick: cancelRun }, t("act_cancel"))
 			));
 		}
 
@@ -992,13 +1065,15 @@
 			}
 			if (deleteReport.failed.length) {
 				children.push(h("div", { key: "dfailhdr", className: `${CSS_PREFIX}-note` }, t("delete_report_failed")));
-				children.push(h("div", { key: "dfaillist", className: `${CSS_PREFIX}-list`, style: { maxHeight: "160px" } },
-					deleteReport.failed.map(entry => h("div", { key: entry.id, className: `${CSS_PREFIX}-row`, style: { cursor: "default" } },
-						h("div", { className: `${CSS_PREFIX}-row-body` },
-							h("div", { className: `${CSS_PREFIX}-row-meta` }, `${entry.id} · HTTP ${entry.code || "?"}`),
-							entry.detail ? h("div", { className: `${CSS_PREFIX}-row-text ${CSS_PREFIX}-faint` }, entry.detail) : null
-						)
-					))
+				children.push(h("div", { key: "dfaillist", className: `${CSS_PREFIX}-panel` },
+					h("div", { className: `${CSS_PREFIX}-panel-body`, style: { maxHeight: "180px", paddingTop: "8px" } },
+						deleteReport.failed.map(entry => h("div", { key: entry.id, className: `${CSS_PREFIX}-mcard ${CSS_PREFIX}-mcard-static` },
+							h("div", { className: `${CSS_PREFIX}-row-body` },
+								h("div", { className: `${CSS_PREFIX}-row-meta` }, `${entry.id} · HTTP ${entry.code || "?"}`),
+								entry.detail ? h("div", { className: `${CSS_PREFIX}-row-text ${CSS_PREFIX}-faint` }, entry.detail) : null
+							)
+						))
+					)
 				));
 			}
 			children.push(h("div", { key: "dfooter", className: `${CSS_PREFIX}-actions ${CSS_PREFIX}-actions-footer` },

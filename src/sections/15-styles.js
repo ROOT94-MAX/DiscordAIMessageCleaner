@@ -8,6 +8,11 @@
 		.${CSS_PREFIX}-confirm-wide > :last-child {
 			display: none !important;
 		}
+		/* The shell's content padding is zeroed so the plugin owns every inset;
+		   that is what lets the footer action zone bleed edge to edge. */
+		.${CSS_PREFIX}-confirm-wide > div:not(:first-child):not(:last-child) {
+			padding: 0 !important;
+		}
 		.${CSS_PREFIX}-confirm-wide > :first-child,
 		.${CSS_PREFIX}-confirm-wide > :first-child > * {
 			width: 100%;
@@ -24,9 +29,6 @@
 		}
 		.${CSS_PREFIX}-confirm-header .${CSS_PREFIX}-shell-close {
 			margin: -4px 4px -4px auto;
-		}
-		.${CSS_PREFIX}-confirm-wide .${CSS_PREFIX}-modal {
-			padding-bottom: 16px;
 		}
 		.${CSS_PREFIX}-shell-close {
 			display: flex;
@@ -96,7 +98,8 @@
 		.${CSS_PREFIX}-modal {
 			display: flex;
 			flex-direction: column;
-			gap: 16px;
+			gap: 14px;
+			padding: 12px 16px 16px;
 			color: var(--damc-text, #dbdee1);
 			font-size: 15px;
 			user-select: text;
@@ -115,13 +118,43 @@
 			color: var(--damc-text-faint, #949ba4);
 			margin: 4px 0 12px;
 		}
-		/* Cleaner-modal field labels: same 16px scale as the settings tabs. */
-		.${CSS_PREFIX}-modal-flabel {
+		/* Setup-stage config card: row-form rows (16px label left, control
+		   right), the same scale and zoning as the settings tabs. */
+		.${CSS_PREFIX}-zone {
+			background: var(--damc-surface, #2b2d31);
+			border-radius: 8px;
+		}
+		.${CSS_PREFIX}-zone-pad {
+			padding: 14px;
+		}
+		.${CSS_PREFIX}-zone-row {
+			display: flex;
+			align-items: center;
+			gap: 14px;
+			padding: 12px 14px;
+		}
+		.${CSS_PREFIX}-zone-row + .${CSS_PREFIX}-zone-row {
+			border-top: 1px solid rgba(255, 255, 255, 0.05);
+		}
+		.${CSS_PREFIX}-zone-label {
 			font-size: 16px;
 			font-weight: 500;
 			line-height: 20px;
 			color: var(--damc-text, #dbdee1);
-			margin: 14px 0 8px;
+			display: flex;
+			align-items: center;
+			gap: 5px;
+			flex: 1 1 auto;
+			min-width: 0;
+		}
+		.${CSS_PREFIX}-zone-ctl {
+			flex: 0 0 auto;
+			display: flex;
+			justify-content: flex-end;
+			min-width: 0;
+		}
+		.${CSS_PREFIX}-zone-wide {
+			flex: 1 1 auto;
 		}
 		.${CSS_PREFIX}-banner {
 			padding: 10px 12px;
@@ -151,12 +184,11 @@
 			color: var(--damc-text, #dbdee1);
 		}
 		.${CSS_PREFIX}-presets {
-			display: flex;
+			display: inline-flex;
 			flex-wrap: wrap;
-			gap: 4px;
+			gap: 3px;
 			padding: 3px;
-			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
-			border-radius: 8px;
+			border-radius: 7px;
 			background: var(--damc-sunken, #1e1f22);
 		}
 		.${CSS_PREFIX}-preset {
@@ -166,9 +198,9 @@
 			display: flex;
 			align-items: center;
 			height: 30px;
-			padding: 0 14px;
+			padding: 0 12px;
 			border-radius: 5px;
-			font-size: 14px;
+			font-size: 13.5px;
 			font-weight: 600;
 			cursor: pointer;
 			color: var(--damc-text-faint, #949ba4);
@@ -228,8 +260,13 @@
 			flex-wrap: wrap;
 			align-items: center;
 		}
+		/* Footer action zone: the host's own modal-footer pairing (#313338 body
+		   over #2b2d31 footer), bleeding edge to edge past the modal padding. */
 		.${CSS_PREFIX}-actions-footer {
 			justify-content: flex-end;
+			margin: 2px -16px -16px;
+			padding: 12px 16px;
+			background: var(--damc-surface, #2b2d31);
 		}
 		.${CSS_PREFIX}-btn {
 			height: 32px;
@@ -253,13 +290,35 @@
 			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
 		}
 		.${CSS_PREFIX}-btn.${CSS_PREFIX}-danger {
-			background: var(--damc-danger, #f23f43);
+			/* Host button red; #f23f43 stays a text/status color only. */
+			background: var(--button-danger-background, #da373c);
 		}
-		.${CSS_PREFIX}-hero {
-			display: flex;
+		/* Review-model badge (variant A status pill): non-interactive, footer left. */
+		.${CSS_PREFIX}-model-pill {
+			display: inline-flex;
 			align-items: center;
-			justify-content: flex-end;
-			gap: 10px;
+			gap: 7px;
+			height: 26px;
+			padding: 0 11px;
+			border-radius: 999px;
+			background: color-mix(in srgb, var(--damc-text, #dbdee1) 4%, transparent);
+			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
+			font-size: 12.5px;
+			color: var(--damc-text, #dbdee1);
+			min-width: 0;
+			cursor: default;
+		}
+		.${CSS_PREFIX}-model-pill-dot {
+			width: 6px;
+			height: 6px;
+			border-radius: 50%;
+			background: var(--damc-ok, #23a55a);
+			flex: 0 0 auto;
+		}
+		.${CSS_PREFIX}-model-pill-text {
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
 		}
 		.${CSS_PREFIX}-strip {
 			display: flex;
@@ -321,73 +380,116 @@
 			100% { margin-left: 0; }
 		}
 		.${CSS_PREFIX}-stats {
-			font-size: 14px;
-			font-weight: 600;
-			color: var(--damc-text-strong, #f2f3f5);
+			font-size: 13px;
+			color: var(--damc-text-faint, #949ba4);
 		}
-		.${CSS_PREFIX}-selbar {
+		.${CSS_PREFIX}-stats-warn {
+			color: var(--damc-warn, #f0b232);
+		}
+		/* Review-done status line: green dot + text, no banner box. */
+		.${CSS_PREFIX}-okline {
+			display: flex;
+			align-items: center;
+			gap: 6px;
+			font-size: 13px;
+			font-weight: 600;
+			color: var(--damc-ok, #23a55a);
+		}
+		.${CSS_PREFIX}-okline-dot {
+			width: 6px;
+			height: 6px;
+			border-radius: 50%;
+			background: var(--damc-ok, #23a55a);
+			flex: 0 0 auto;
+		}
+		/* Result list: search-results panel — sunken panel, tool row in the
+		   head band, rounded message cards dug back to the modal base color. */
+		.${CSS_PREFIX}-panel {
+			display: flex;
+			flex-direction: column;
+			border-radius: 8px;
+			background: var(--damc-sunken, #1e1f22);
+			overflow: hidden;
+		}
+		.${CSS_PREFIX}-panel-head {
 			display: flex;
 			align-items: center;
 			gap: 10px;
+			padding: 8px 12px;
+			background: color-mix(in srgb, var(--damc-text, #dbdee1) 4%, var(--damc-sunken, #1e1f22));
+			border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+			flex: 0 0 auto;
 		}
-		.${CSS_PREFIX}-selbar .${CSS_PREFIX}-note {
+		.${CSS_PREFIX}-panel-spacer {
 			flex: 1 1 auto;
-			text-align: right;
-			margin: 0;
 		}
-		.${CSS_PREFIX}-link-btn {
-			border: 0;
-			background: transparent;
-			font: inherit;
-			font-size: 13px;
-			font-weight: 600;
-			color: var(--damc-text-sub, #b5bac1);
-			cursor: pointer;
-			padding: 2px 6px;
-			border-radius: 4px;
+		.${CSS_PREFIX}-panel-count {
+			font-size: 12.5px;
+			color: var(--damc-text-faint, #949ba4);
+			font-variant-numeric: tabular-nums;
+			flex: 0 0 auto;
 		}
-		.${CSS_PREFIX}-link-btn:hover {
-			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
-			color: var(--damc-text, #dbdee1);
-		}
-		.${CSS_PREFIX}-list {
+		.${CSS_PREFIX}-panel-body {
 			display: flex;
 			flex-direction: column;
 			/* Shrinks on short windows so the footer stays reachable. */
 			max-height: min(340px, 38vh);
 			overflow-y: auto;
-			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
-			border-radius: 8px;
-			background: var(--damc-sunken, #1e1f22);
+			padding: 0 8px 8px;
 		}
-		.${CSS_PREFIX}-list::-webkit-scrollbar {
+		.${CSS_PREFIX}-panel-body::-webkit-scrollbar {
 			width: 8px;
 		}
-		.${CSS_PREFIX}-list::-webkit-scrollbar-thumb {
+		.${CSS_PREFIX}-panel-body::-webkit-scrollbar-thumb {
 			background: var(--damc-scroll-thumb, rgba(78, 80, 88, 0.48));
 			border-radius: 4px;
 		}
-		.${CSS_PREFIX}-row {
+		/* Day group header: left-aligned, no through-lines. */
+		.${CSS_PREFIX}-day {
+			padding: 10px 4px 4px;
+			font-size: 12px;
+			font-weight: 700;
+			color: var(--damc-text-faint, #949ba4);
+			flex: 0 0 auto;
+		}
+		.${CSS_PREFIX}-mcard {
+			position: relative;
 			display: flex;
 			align-items: flex-start;
 			gap: 10px;
-			padding: 8px 12px;
+			padding: 9px 11px;
 			border: 0;
-			border-bottom: 1px solid var(--damc-border, rgba(78, 80, 88, 0.32));
-			background: transparent;
+			border-radius: 8px;
+			background: var(--damc-bg, #313338);
 			font: inherit;
 			text-align: left;
 			cursor: pointer;
 			color: var(--damc-text, #dbdee1);
+			flex: 0 0 auto;
 		}
-		.${CSS_PREFIX}-row:last-child {
-			border-bottom: 0;
+		.${CSS_PREFIX}-mcard + .${CSS_PREFIX}-mcard {
+			margin-top: 8px;
 		}
-		.${CSS_PREFIX}-row:hover {
-			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
+		.${CSS_PREFIX}-mcard:hover {
+			background: color-mix(in srgb, #fff 5%, var(--damc-bg, #313338));
 		}
-		.${CSS_PREFIX}-row.${CSS_PREFIX}-row-on {
-			background: var(--damc-selected, rgba(255, 255, 255, 0.09));
+		/* Selection is the checkbox's job alone: no card tint (select-all is
+		   the normal case; tinting every row turns the list into patchwork). */
+		.${CSS_PREFIX}-mcard-flagged::before {
+			content: "";
+			position: absolute;
+			left: 0;
+			top: 8px;
+			bottom: 8px;
+			width: 2px;
+			border-radius: 1px;
+			background: var(--damc-flag, var(--damc-danger, #f23f43));
+		}
+		.${CSS_PREFIX}-mcard-static {
+			cursor: default;
+		}
+		.${CSS_PREFIX}-mcard-static:hover {
+			background: var(--damc-bg, #313338);
 		}
 		.${CSS_PREFIX}-checkbox {
 			width: 18px;
@@ -403,7 +505,7 @@
 			color: var(--damc-on-brand, #fff);
 			transition: background 120ms ease, border-color 120ms ease;
 		}
-		.${CSS_PREFIX}-row:hover .${CSS_PREFIX}-checkbox:not(.${CSS_PREFIX}-checkbox-on) {
+		.${CSS_PREFIX}-mcard:hover .${CSS_PREFIX}-checkbox:not(.${CSS_PREFIX}-checkbox-on) {
 			border-color: var(--damc-icon, #b5bac1);
 		}
 		.${CSS_PREFIX}-checkbox.${CSS_PREFIX}-checkbox-on {
@@ -428,16 +530,39 @@
 			display: inline-flex;
 			align-items: center;
 			padding: 0 6px;
-			height: 16px;
-			border-radius: 8px;
+			height: 17px;
+			border-radius: 4px;
 			font-size: 11px;
-			font-weight: 600;
-			background: var(--damc-surface, #2b2d31);
-			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
+			font-weight: 500;
+			background: color-mix(in srgb, var(--damc-text, #dbdee1) 6%, transparent);
 			color: var(--damc-text-sub, #b5bac1);
+			flex: 0 0 auto;
+		}
+		/* Category label: role-color language — dot + colored text, no pill. */
+		.${CSS_PREFIX}-cat {
+			margin-left: auto;
+			flex: 0 0 auto;
+			display: inline-flex;
+			align-items: center;
+			gap: 5px;
+			font-size: 12px;
+			font-weight: 600;
+			color: var(--damc-flag, var(--damc-danger, #f23f43));
+		}
+		.${CSS_PREFIX}-cat::before {
+			content: "";
+			width: 6px;
+			height: 6px;
+			border-radius: 50%;
+			background: currentColor;
+			flex: 0 0 auto;
+		}
+		.${CSS_PREFIX}-mtime {
+			font-variant-numeric: tabular-nums;
+			flex: 0 0 auto;
 		}
 		.${CSS_PREFIX}-row-text {
-			font-size: 14px;
+			font-size: 15px;
 			line-height: 1.4;
 			overflow: hidden;
 			text-overflow: ellipsis;
@@ -560,16 +685,15 @@
 			box-shadow: 0 0 0 3px color-mix(in srgb, var(--damc-brand, #5865f2) 18%, transparent);
 		}
 		.${CSS_PREFIX}-seg {
-			display: flex;
-			gap: 4px;
+			display: inline-flex;
+			gap: 3px;
 			padding: 3px;
-			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
-			border-radius: 8px;
+			border-radius: 7px;
 			background: var(--damc-sunken, #1e1f22);
 		}
 		.${CSS_PREFIX}-seg-btn {
-			flex: 1 1 0;
-			height: 32px;
+			flex: 0 0 auto;
+			height: 30px;
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -578,7 +702,7 @@
 			background: transparent;
 			border-radius: 5px;
 			font: inherit;
-			font-size: 14px;
+			font-size: 13.5px;
 			font-weight: 600;
 			color: var(--damc-text-faint, #949ba4);
 			cursor: pointer;
@@ -594,7 +718,41 @@
 			color: var(--damc-on-brand, #fff);
 		}
 		.${CSS_PREFIX}-seg-icon { display: flex; }
-		.${CSS_PREFIX}-seg-icon svg { width: 16px; height: 16px; }
+		.${CSS_PREFIX}-seg-icon svg { width: 13px; height: 13px; }
+		/* Flag-filter mini segment: lives in the list panel head band. */
+		.${CSS_PREFIX}-seg-mini {
+			display: inline-flex;
+			gap: 2px;
+			padding: 2px;
+			border-radius: 6px;
+			background: var(--damc-sunken, #1e1f22);
+			flex: 0 0 auto;
+		}
+		.${CSS_PREFIX}-seg-mini-btn {
+			border: 0;
+			background: transparent;
+			font: inherit;
+			display: flex;
+			align-items: center;
+			gap: 4px;
+			height: 24px;
+			padding: 0 10px;
+			border-radius: 4px;
+			font-size: 12.5px;
+			font-weight: 600;
+			color: var(--damc-text-faint, #949ba4);
+			cursor: pointer;
+			transition: background 120ms ease, color 120ms ease;
+		}
+		.${CSS_PREFIX}-seg-mini-btn:hover {
+			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
+			color: var(--damc-text, #dbdee1);
+		}
+		.${CSS_PREFIX}-seg-mini-btn.${CSS_PREFIX}-active,
+		.${CSS_PREFIX}-seg-mini-btn.${CSS_PREFIX}-active:hover {
+			background: var(--damc-brand, #5865f2);
+			color: var(--damc-on-brand, #fff);
+		}
 		.${CSS_PREFIX}-emoji {
 			width: 20px;
 			height: 20px;
@@ -604,12 +762,12 @@
 		}
 		.${CSS_PREFIX}-row-thumbs {
 			display: flex;
-			gap: 4px;
-			margin-top: 2px;
+			gap: 6px;
+			margin-top: 6px;
 		}
 		.${CSS_PREFIX}-thumb {
-			width: 40px;
-			height: 40px;
+			width: 44px;
+			height: 44px;
 			object-fit: cover;
 			border-radius: 4px;
 			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
@@ -666,20 +824,19 @@
 		.${CSS_PREFIX}-backup-format-label {
 			flex: 0 0 auto;
 		}
-		.${CSS_PREFIX}-backup-format-select {
+		.${CSS_PREFIX}-backup-format .${CSS_PREFIX}-select-trigger {
 			height: 30px;
-			min-width: 150px;
-			padding: 0 28px 0 8px;
-			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
-			border-radius: 4px;
-			background: var(--damc-input-bg, #1e1f22);
-			color: var(--damc-text, #dbdee1);
-			font: inherit;
-			font-size: 13px;
+			min-width: 160px;
+			font-size: 13.5px;
 		}
-		.${CSS_PREFIX}-backup-format-select option {
-			background: var(--damc-surface, #2b2d31);
-			color: var(--damc-text, #dbdee1);
+		/* Emphasized object inside confirm bodies (count, policy name). */
+		.${CSS_PREFIX}-emph {
+			color: var(--damc-text-strong, #f2f3f5);
+			font-weight: 700;
+		}
+		.${CSS_PREFIX}-confirm-note {
+			font-size: 12.5px;
+			color: var(--damc-text-faint, #949ba4);
 		}
 		.${CSS_PREFIX}-pill {
 			position: fixed;
@@ -739,51 +896,41 @@
 			cursor: zoom-out;
 		}
 		.${CSS_PREFIX}-thumb { cursor: zoom-in; }
-		.${CSS_PREFIX}-hero-context {
-			flex: 1 1 auto;
-			min-width: 0;
-		}
-		.${CSS_PREFIX}-hero-context-k {
-			font-size: 11px;
-			letter-spacing: 0.02em;
-			color: var(--damc-text-faint, #949ba4);
-		}
-		.${CSS_PREFIX}-hero-context-v {
-			margin-top: 1px;
-			font-size: 13px;
-			color: var(--damc-text, #dbdee1);
+		/* Load-more: the list's own tail row (resume-scan). */
+		.${CSS_PREFIX}-lmore {
 			display: flex;
 			align-items: center;
+			justify-content: center;
 			gap: 6px;
-			min-width: 0;
-			overflow: hidden;
-			text-overflow: ellipsis;
-			white-space: nowrap;
-		}
-		.${CSS_PREFIX}-hero-context-dot {
+			margin-top: 8px;
+			padding: 9px;
+			border: 0;
+			border-radius: 8px;
+			background: transparent;
+			font: inherit;
+			font-size: 13px;
+			font-weight: 500;
+			color: var(--damc-icon, #b5bac1);
+			cursor: pointer;
 			flex: 0 0 auto;
-			width: 6px;
-			height: 6px;
-			border-radius: 50%;
-			background: var(--damc-ok, #23a55a);
 		}
-		.${CSS_PREFIX}-badge.${CSS_PREFIX}-badge-flag {
-			background: color-mix(in srgb, var(--damc-danger, #f23f43) 14%, transparent);
-			border-color: var(--damc-danger, #f23f43);
-			color: var(--damc-danger, #f23f43);
+		.${CSS_PREFIX}-lmore:hover {
+			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
+			color: var(--damc-text, #dbdee1);
 		}
-		.${CSS_PREFIX}-row.${CSS_PREFIX}-row-flagged {
-			box-shadow: inset 3px 0 0 var(--damc-danger, #f23f43);
+		.${CSS_PREFIX}-lmore:disabled {
+			opacity: 0.45;
+			cursor: not-allowed;
+		}
+		.${CSS_PREFIX}-lmore svg {
+			width: 14px;
+			height: 14px;
+			flex: 0 0 auto;
 		}
 		.${CSS_PREFIX}-row-reason {
-			font-size: 12px;
+			font-size: 13px;
 			line-height: 1.4;
-			color: var(--damc-danger, #f23f43);
-			opacity: 0.9;
-		}
-		.${CSS_PREFIX}-link-btn.${CSS_PREFIX}-link-active {
-			background: color-mix(in srgb, var(--damc-danger, #f23f43) 14%, transparent);
-			color: var(--damc-danger, #f23f43);
+			color: var(--damc-text-faint, #949ba4);
 		}
 		/* settings: tabs */
 		.${CSS_PREFIX}-tabbar {

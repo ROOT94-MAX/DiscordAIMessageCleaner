@@ -10,6 +10,15 @@
 		dangerouslySetInnerHTML: { __html: CLEANER_ICON_SVG }
 	});
 
+	// t() with one emphasized parameter rendered as a <b>, regardless of where
+	// the placeholder sits in the translated sentence.
+	const tEmph = (key, params, emphKey) => {
+		const marker = String.fromCharCode(1);
+		const wrapped = Object.assign({}, params, { [emphKey]: `${marker}${params[emphKey]}${marker}` });
+		return t(key, wrapped).split(marker).map((part, index) =>
+			index === 1 ? h("b", { key: "emph", className: `${CSS_PREFIX}-emph` }, part) : part);
+	};
+
 	// Native Discord button when available so themes restyle it; falls back to
 	// the plugin's own CSS button.
 	const Btn = props => {
