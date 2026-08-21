@@ -335,6 +335,17 @@ const ctx = { channelId: "200000000000000001", isPrivate: false };
 	});
 
 	section("AIService.review concurrency");
+	await test("custom-provider model selection preserves the fetched model list", async () => {
+		api.SettingsStore.set("ai.custom", [{
+			id: "custom-model-cache", name: "cache", baseUrl: "http://localhost:1234/v1",
+			apiKey: "", model: "model-a", models: ["model-a", "model-b"]
+		}]);
+		api.AIService.setProviderField("custom-model-cache", "model", "model-b");
+		const record = api.AIService.providerRecord("custom-model-cache");
+		assert.strictEqual(record.model, "model-b");
+		assert.deepStrictEqual(record.models, ["model-a", "model-b"]);
+	});
+
 	await test("runs batches in parallel up to review.concurrency, collects everything", async () => {
 		// Make the provider look configured.
 		api.SettingsStore.set("ai.providers.openai", { apiKey: "sk-test", baseUrl: "", model: "gpt-test" });

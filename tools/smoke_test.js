@@ -114,6 +114,16 @@ check("field help uses inline trailing info hints instead of notes", () => {
 	}
 });
 
+check("model combo keeps fetched options after selection and reopens unfiltered", () => {
+	for (const needle of [
+		"cachedModels", "setCachedModels(incoming.slice())", "setFilter(\"\")",
+		"const models = props.models.length ? props.models : cachedModels",
+		"props.onCommit(model, models)", "AIService.setProviderField(id, \"models\", availableModels.slice())"
+	]) {
+		if (!pluginSource.includes(needle)) throw new Error(`missing model-combo persistence behavior: ${needle}`);
+	}
+});
+
 check("observer()/onSwitch() are safe", () => { instance.observer(); instance.onSwitch(); });
 check("stop() cleans up", () => instance.stop());
 check("settings were persisted on stop", () => {

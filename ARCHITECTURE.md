@@ -64,7 +64,7 @@ REGRESSION.md                发版前的人工回归清单（自动化测不到
 | 18-ui-chat-button | 输入框按钮组件 |
 | 19-ui-cleaner-modal | 清理弹窗：状态机、结果列表、表情/缩略图渲染、灯箱（body Portal） |
 | 20-chat-entry | 三入口：按钮注入（webpack patch，DOM 兜底）、右键菜单 ×3、`/aiclean` 命令 |
-| 21-settings-panel | 自绘 React 设置面板：AI 平台 / 审查策略 / 清理行为 / 诊断；字段说明通过紧跟标题文字的行内 InfoHint + Tooltip 呈现，组级说明保持可见 |
+| 21-settings-panel | 自绘 React 设置面板：AI 平台 / 审查策略 / 清理行为 / 诊断；字段说明通过紧跟标题文字的行内 InfoHint + Tooltip 呈现；模型组合框分离输入值/筛选词/模型缓存，选择后仍可重复下拉 |
 | 22-plugin-class | start/stop 生命周期、onSwitch、openCleaner |
 
 ## 5. Discord 内部触点与修复要点

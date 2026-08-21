@@ -199,36 +199,52 @@
 	// untheme-able floater in Electron, so it is banned here).
 	const ModelCombo = props => {
 		const [val, setVal] = useState(String(props.value || ""));
+		const [filter, setFilter] = useState("");
+		const [cachedModels, setCachedModels] = useState(() => Array.isArray(props.models) ? props.models.slice() : []);
 		const pop = usePopover();
 		useEffect(() => {
-			if (props.openSignal > 0 && props.models.length > 0) pop.setOpen(true);
+			const incoming = Array.isArray(props.models) ? props.models : [];
+			if (incoming.length) setCachedModels(incoming.slice());
+		}, [props.models]);
+		useEffect(() => { setVal(String(props.value || "")); }, [props.value]);
+		useEffect(() => {
+			if (props.openSignal > 0 && (props.models.length > 0 || cachedModels.length > 0)) {
+				setFilter("");
+				pop.setOpen(true);
+			}
 		}, [props.openSignal]);
-		const query = val.trim().toLowerCase();
-		const list = query ? props.models.filter(model => model.toLowerCase().includes(query)) : props.models;
+		const models = props.models.length ? props.models : cachedModels;
+		const query = filter.trim().toLowerCase();
+		const list = query ? models.filter(model => model.toLowerCase().includes(query)) : models;
 		return h("div", { className: `${CSS_PREFIX}-combo`, ref: pop.rootRef },
 			h("input", {
 				className: `${CSS_PREFIX}-input`,
 				type: "text",
 				placeholder: props.placeholder || "",
-				style: props.models.length ? undefined : { paddingRight: "10px" },
+				style: models.length ? undefined : { paddingRight: "10px" },
 				value: val,
 				onChange: event => {
-					setVal(event.target.value);
-					props.onCommit(event.target.value);
-					if (props.models.length) pop.setOpen(true);
+					const next = event.target.value;
+					setVal(next);
+					setFilter(next);
+					props.onCommit(next, models);
+					if (models.length) pop.setOpen(true);
 				}
 			}),
-			props.models.length ? h("button", {
+			models.length ? h("button", {
 				type: "button",
 				className: `${CSS_PREFIX}-combo-chevron${pop.open ? ` ${CSS_PREFIX}-open` : ""}`,
 				"aria-label": t("aria_open_models"),
 				"aria-expanded": pop.open,
-				onClick: () => pop.setOpen(!pop.open),
+				onClick: () => {
+					if (!pop.open) setFilter("");
+					pop.setOpen(!pop.open);
+				},
 				dangerouslySetInnerHTML: { __html: CHEVRON_SVG }
 			}) : null,
 			// Drop UP: the model field is always the last row of the form, so a
 			// downward list gets clipped by the settings modal's bottom edge.
-			pop.open && props.models.length ? h("div", { className: `${CSS_PREFIX}-pop ${CSS_PREFIX}-pop-up`, role: "listbox" },
+			pop.open && models.length ? h("div", { className: `${CSS_PREFIX}-pop ${CSS_PREFIX}-pop-up`, role: "listbox" },
 				list.length
 					? list.map(model => h("button", {
 						key: model,
@@ -239,7 +255,13 @@
 						className: `${CSS_PREFIX}-pop-item${model === val ? ` ${CSS_PREFIX}-pop-current` : ""}`,
 						// mousedown (not click): usePopover's outside-mousedown
 						// handler can otherwise tear the list down before click.
-						onMouseDown: event => { event.preventDefault(); setVal(model); props.onCommit(model); pop.setOpen(false); }
+						onMouseDown: event => {
+							event.preventDefault();
+							setVal(model);
+							setFilter("");
+							props.onCommit(model, models);
+							pop.setOpen(false);
+						}
 					}, model))
 					: h("div", { className: `${CSS_PREFIX}-pop-empty` }, t("combo_no_match"))
 			) : null
@@ -358,7 +380,13 @@
 					models,
 					openSignal,
 					placeholder: preset && preset.model ? preset.model : "model-id",
-					onCommit: value => { AIService.setProviderField(id, "model", value); props.onChanged(); }
+					onCommit: (value, availableModels) => {
+						AIService.setProviderField(id, "model", value);
+						if (Array.isArray(availableModels) && availableModels.length) {
+							AIService.setProviderField(id, "models", availableModels.slice());
+						}
+						props.onChanged();
+					}
 				}),
 				h(StatusLine, { text: status.text, tone: status.tone })
 			)
