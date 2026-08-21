@@ -8,10 +8,16 @@
 		.${CSS_PREFIX}-confirm-wide > :last-child {
 			display: none !important;
 		}
-		/* The shell's content padding is zeroed so the plugin owns every inset;
-		   that is what lets the footer action zone bleed edge to edge. */
+		/* The shell's content padding is zeroed so the plugin owns every inset.
+		   Discord's thin scroller also keeps overflow-y: scroll, permanently
+		   reserving an empty 8px track on the right (left/right insets end up
+		   unequal); auto shows the bar only when content actually overflows. */
 		.${CSS_PREFIX}-confirm-wide > div:not(:first-child):not(:last-child) {
 			padding: 0 !important;
+			margin: 0 !important;
+			overflow-x: hidden !important;
+			overflow-y: auto !important;
+			scrollbar-gutter: auto !important;
 		}
 		.${CSS_PREFIX}-confirm-wide > :first-child,
 		.${CSS_PREFIX}-confirm-wide > :first-child > * {
