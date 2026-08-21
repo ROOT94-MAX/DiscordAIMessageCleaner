@@ -4,8 +4,8 @@
 
 | Version | Status |
 |---|---|
-| 0.6.7 | Supported / 支持 |
-| < 0.6.7 | Unsupported / 停止维护 |
+| 0.6.8 | Supported / 支持 |
+| < 0.6.8 | Unsupported / 停止维护 |
 
 Security fixes are released as a new patch version. Published tags and Release assets remain immutable.
 

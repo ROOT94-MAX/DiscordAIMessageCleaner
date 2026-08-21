@@ -475,9 +475,45 @@
 		.${CSS_PREFIX}-set-label {
 			flex: 1 1 auto;
 			min-width: 0;
+			overflow: visible;
 			font-size: 16px;
 			font-weight: 500;
 			color: var(--damc-text, #dbdee1);
+		}
+		/* Info icon is a superscript anchored to the title text's upper-right
+		   corner. It is deliberately not part of the row's right-side controls. */
+		.${CSS_PREFIX}-set-title {
+			position: relative;
+			display: inline-block;
+			max-width: 100%;
+			line-height: 1.25;
+		}
+		.${CSS_PREFIX}-info-hint {
+			position: absolute;
+			top: -7px;
+			right: -15px;
+			z-index: 2;
+			width: 13px;
+			height: 13px;
+			padding: 0;
+			border: 0;
+			border-radius: 50%;
+			background: transparent;
+			color: var(--damc-text-faint, #949ba4);
+			cursor: help;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			line-height: 1;
+		}
+		.${CSS_PREFIX}-info-hint svg { width: 13px; height: 13px; display: block; }
+		.${CSS_PREFIX}-info-hint:hover,
+		.${CSS_PREFIX}-info-hint:focus-visible {
+			color: var(--damc-brand, #5865f2);
+			outline: none;
+		}
+		.${CSS_PREFIX}-info-hint:focus-visible {
+			box-shadow: 0 0 0 2px color-mix(in srgb, var(--damc-brand, #5865f2) 38%, transparent);
 		}
 		.${CSS_PREFIX}-num-input {
 			width: 96px;

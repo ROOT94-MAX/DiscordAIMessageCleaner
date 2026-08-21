@@ -2,7 +2,7 @@
  * @name DiscordAIMessageCleaner
  * @author ROOT94
  * @authorLink https://github.com/ROOT94-MAX/DiscordAIMessageCleaner
- * @version 0.6.7
+ * @version 0.6.8
  * @description Scan your own message history in any channel / DM / group DM, review it with an AI policy of your choice, and delete flagged messages after manual confirmation. Native BdApi, no library dependency.
  * @source https://github.com/ROOT94-MAX/DiscordAIMessageCleaner
  * @website https://github.com/ROOT94-MAX/DiscordAIMessageCleaner
@@ -14,7 +14,7 @@ module.exports = (() => {
 	// ==================== 01. CONSTANTS ====================
 
 	const PLUGIN_ID = "DiscordAIMessageCleaner";
-	const PLUGIN_VERSION = "0.6.7";
+	const PLUGIN_VERSION = "0.6.8";
 	const CSS_PREFIX = "damc";
 	const DISCORD_EPOCH = 1420070400000n;
 	// Guild: 0 text, 5 announcement, 10/11/12 threads. Private: 1 DM, 3 group DM.
@@ -2514,9 +2514,45 @@ module.exports = (() => {
 		.${CSS_PREFIX}-set-label {
 			flex: 1 1 auto;
 			min-width: 0;
+			overflow: visible;
 			font-size: 16px;
 			font-weight: 500;
 			color: var(--damc-text, #dbdee1);
+		}
+		/* Info icon is a superscript anchored to the title text's upper-right
+		   corner. It is deliberately not part of the row's right-side controls. */
+		.${CSS_PREFIX}-set-title {
+			position: relative;
+			display: inline-block;
+			max-width: 100%;
+			line-height: 1.25;
+		}
+		.${CSS_PREFIX}-info-hint {
+			position: absolute;
+			top: -7px;
+			right: -15px;
+			z-index: 2;
+			width: 13px;
+			height: 13px;
+			padding: 0;
+			border: 0;
+			border-radius: 50%;
+			background: transparent;
+			color: var(--damc-text-faint, #949ba4);
+			cursor: help;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			line-height: 1;
+		}
+		.${CSS_PREFIX}-info-hint svg { width: 13px; height: 13px; display: block; }
+		.${CSS_PREFIX}-info-hint:hover,
+		.${CSS_PREFIX}-info-hint:focus-visible {
+			color: var(--damc-brand, #5865f2);
+			outline: none;
+		}
+		.${CSS_PREFIX}-info-hint:focus-visible {
+			box-shadow: 0 0 0 2px color-mix(in srgb, var(--damc-brand, #5865f2) 38%, transparent);
 		}
 		.${CSS_PREFIX}-num-input {
 			width: 96px;
@@ -4776,8 +4812,42 @@ module.exports = (() => {
 		});
 	};
 
+	const INFO_SVG = `<svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path fill="currentColor" d="M11 10h2v7h-2zm0-3h2v2h-2z"/></svg>`;
+
+	const InfoHint = props => {
+		const renderIcon = tipProps => {
+			const inherited = tipProps || {};
+			return h("button", Object.assign({}, inherited, {
+				type: "button",
+				className: `${CSS_PREFIX}-info-hint`,
+				"aria-label": props.text,
+				onFocus: event => {
+					if (typeof inherited.onFocus === "function") inherited.onFocus(event);
+					else if (typeof inherited.onMouseEnter === "function") inherited.onMouseEnter(event);
+				},
+				onBlur: event => {
+					if (typeof inherited.onBlur === "function") inherited.onBlur(event);
+					else if (typeof inherited.onMouseLeave === "function") inherited.onMouseLeave(event);
+				},
+				onClick: event => {
+					event.preventDefault();
+					event.stopPropagation();
+				},
+				dangerouslySetInnerHTML: { __html: INFO_SVG }
+			}));
+		};
+		const Tooltip = BdApi.Components && BdApi.Components.Tooltip;
+		if (Tooltip) return h(Tooltip, { text: props.text }, tipProps => renderIcon(tipProps));
+		return renderIcon({ title: props.text });
+	};
+
+	const SettingTitle = props => h("span", { className: `${CSS_PREFIX}-set-title` },
+		props.label,
+		props.hint ? h(InfoHint, { text: props.hint }) : null
+	);
+
 	const SetRow = props => h("div", { className: `${CSS_PREFIX}-set-row` },
-		h("div", { className: `${CSS_PREFIX}-set-label` }, props.label),
+		h("div", { className: `${CSS_PREFIX}-set-label` }, h(SettingTitle, { label: props.label, hint: props.hint })),
 		props.children
 	);
 
@@ -4806,9 +4876,9 @@ module.exports = (() => {
 	const Field = props => h("div", { className: `${CSS_PREFIX}-f-item`, style: props.style },
 		props.actions
 			? h("div", { className: `${CSS_PREFIX}-f-row` },
-				h("div", { className: `${CSS_PREFIX}-f-label` }, props.label),
+				h("div", { className: `${CSS_PREFIX}-f-label` }, h(SettingTitle, { label: props.label, hint: props.hint })),
 				h("div", { className: `${CSS_PREFIX}-f-actions` }, props.actions))
-			: h("div", { className: `${CSS_PREFIX}-f-label` }, props.label),
+			: h("div", { className: `${CSS_PREFIX}-f-label` }, h(SettingTitle, { label: props.label, hint: props.hint })),
 		props.children
 	);
 
@@ -5210,7 +5280,7 @@ module.exports = (() => {
 					onCommit: value => { AIService.updatePolicy(activeId, { name: value }); props.onChanged(); }
 				})
 			) : null,
-			h(Field, { label: t("prompt_content"), actions },
+			h(Field, { label: t("prompt_content"), hint: t("set_policy_note"), actions },
 				h("textarea", {
 					className: `${CSS_PREFIX}-textarea`,
 					style: { minHeight: "150px" },
@@ -5221,8 +5291,7 @@ module.exports = (() => {
 						setText(event.target.value);
 						AIService.updatePolicy(activeId, { text: event.target.value });
 					})
-				}),
-				h("div", { className: `${CSS_PREFIX}-note`, style: { marginTop: "6px" } }, t("set_policy_note"))
+				})
 			)
 		);
 	};
@@ -5256,7 +5325,7 @@ module.exports = (() => {
 			),
 			h(PolicyEditor, { key: AIService.activePolicyId(), onChanged: bump }),
 			h("div", { className: `${CSS_PREFIX}-group-header` }, t("group_generation")),
-			h(SetRow, { label: t("set_concurrency") },
+			h(SetRow, { label: t("set_concurrency"), hint: t("set_concurrency_note") },
 				h(NumInput, {
 					value: Utils.num(SettingsStore.get("review.concurrency"), 3),
 					min: 1, max: 8, step: 1,
@@ -5264,7 +5333,6 @@ module.exports = (() => {
 					onCommit: value => SettingsStore.set("review.concurrency", Math.round(value))
 				})
 			),
-			h("div", { className: `${CSS_PREFIX}-note` }, t("set_concurrency_note")),
 			h(SetRow, { label: t("set_batch_size") },
 				h(NumInput, {
 					value: Utils.num(SettingsStore.get("review.batchSize"), 40),
@@ -5273,7 +5341,7 @@ module.exports = (() => {
 					onCommit: value => SettingsStore.set("review.batchSize", Math.round(value))
 				})
 			),
-			h(SetRow, { label: t("set_confirm_tokens") },
+			h(SetRow, { label: t("set_confirm_tokens"), hint: t("set_confirm_tokens_note") },
 				h(NumInput, {
 					value: Utils.num(SettingsStore.get("review.confirmAboveTokens"), 32000),
 					min: 0, max: 10000000, step: 1000,
@@ -5281,7 +5349,6 @@ module.exports = (() => {
 					onCommit: value => SettingsStore.set("review.confirmAboveTokens", Math.round(value))
 				})
 			),
-			h("div", { className: `${CSS_PREFIX}-note` }, t("set_confirm_tokens_note")),
 			h(SetRow, { label: t("set_idle_timeout") },
 				h(NumInput, {
 					value: Math.round(Utils.num(SettingsStore.get("ai.aiIdleTimeoutMs"), 60000) / 1000),
@@ -5308,16 +5375,15 @@ module.exports = (() => {
 					onCommit: value => SettingsStore.set("fetch.maxMessages", Math.round(value))
 				})
 			),
-			h(SetRow, { label: t("set_include_edited") },
+			h(SetRow, { label: t("set_include_edited"), hint: t("set_include_edited_note") },
 				h(SwitchC, {
 					value: SettingsStore.get("review.includeEdited") !== false,
 					ariaLabel: t("set_include_edited"),
 					onChange: value => { SettingsStore.set("review.includeEdited", value); bump(); }
 				})
 			),
-			h("div", { className: `${CSS_PREFIX}-note` }, t("set_include_edited_note")),
 			h("div", { className: `${CSS_PREFIX}-group-header` }, t("group_delete")),
-			h(SetRow, { label: t("set_delete_pacing") },
+			h(SetRow, { label: t("set_delete_pacing"), hint: t("set_delete_pacing_note") },
 				h(NumInput, {
 					value: Utils.num(SettingsStore.get("delete.pacingMs"), 1200),
 					min: 300, max: 30000, step: 100,
@@ -5325,8 +5391,7 @@ module.exports = (() => {
 					onCommit: value => SettingsStore.set("delete.pacingMs", Math.round(value))
 				})
 			),
-			h("div", { className: `${CSS_PREFIX}-note` }, t("set_delete_pacing_note")),
-			h(SetRow, { label: t("set_delete_max") },
+			h(SetRow, { label: t("set_delete_max"), hint: t("set_delete_max_note") },
 				h(NumInput, {
 					value: Utils.num(SettingsStore.get("delete.maxPerRun"), 200),
 					min: 1, max: 1000, step: 10,
@@ -5334,7 +5399,6 @@ module.exports = (() => {
 					onCommit: value => SettingsStore.set("delete.maxPerRun", Math.round(value))
 				})
 			),
-			h("div", { className: `${CSS_PREFIX}-note` }, t("set_delete_max_note")),
 			h(SetRow, { label: t("set_backup_mode") },
 				h(SelectMenu, {
 					ariaLabel: t("set_backup_mode"),
@@ -5448,7 +5512,6 @@ module.exports = (() => {
 			return h(SettingsRoot);
 		}
 	};
-
 	// ==================== 22. PLUGIN CLASS ====================
 
 	return class DiscordAIMessageCleaner {

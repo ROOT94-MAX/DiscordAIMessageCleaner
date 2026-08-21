@@ -15,6 +15,9 @@ const path = require("path");
 const assert = require("assert");
 
 const PLUGIN_PATH = process.argv[2] || path.join(__dirname, "..", "DiscordAIMessageCleaner.plugin.js");
+const VERSION_MATCH = fs.readFileSync(PLUGIN_PATH, "utf8").match(/^\s*\*\s*@version\s+(\S+)/m);
+if (!VERSION_MATCH) throw new Error("plugin @version not found");
+const PLUGIN_VERSION_UNDER_TEST = VERSION_MATCH[1];
 
 // ---------------- fake BdApi (enough to load + run services) ----------------
 
@@ -432,7 +435,7 @@ const ctx = { channelId: "200000000000000001", isPrivate: false };
 		assert.match(txt, /^AI 消息删除前备份/m);
 		assert.match(txt, /proof\.png: https:\/\/example\.test\/proof\.png/);
 		const json = JSON.parse(api.ExportService.buildBackup(exportContext, exportMessages, "json", "en-US"));
-		assert.strictEqual(json.plugin, "DiscordAIMessageCleaner v0.6.7");
+		assert.strictEqual(json.plugin, `DiscordAIMessageCleaner v${PLUGIN_VERSION_UNDER_TEST}`);
 		assert.strictEqual(json.count, 1);
 		assert.strictEqual(json.messages[0].content, "你好 backup");
 	});

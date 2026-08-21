@@ -4,6 +4,7 @@
 // Discord. The full functional harness arrives in M4.
 "use strict";
 
+const fs = require("fs");
 const path = require("path");
 
 let dataStore = {};
@@ -73,7 +74,9 @@ const renderTree = (node, depth) => {
 	if (node.children) renderTree(node.children, depth + 1);
 };
 
-const Plugin = require(path.join(__dirname, "..", "DiscordAIMessageCleaner.plugin.js"));
+const pluginPath = path.join(__dirname, "..", "DiscordAIMessageCleaner.plugin.js");
+const pluginSource = fs.readFileSync(pluginPath, "utf8");
+const Plugin = require(pluginPath);
 
 check("module loads and exports a class", () => {
 	if (typeof Plugin !== "function") throw new Error("export is not a constructor");
@@ -89,6 +92,22 @@ check("settings panel renders on every tab", () => {
 		renderTree(instance.getSettingsPanel(), 0);
 	}
 	forceTab = null;
+});
+
+check("field help uses title-corner info hints instead of inline notes", () => {
+	const hintKeys = [
+		"set_policy_note", "set_concurrency_note", "set_confirm_tokens_note",
+		"set_include_edited_note", "set_delete_pacing_note", "set_delete_max_note"
+	];
+	for (const key of hintKeys) {
+		if (!pluginSource.includes(`hint: t("${key}")`)) throw new Error(`missing hint binding: ${key}`);
+	}
+	if (!pluginSource.includes("top: -7px;") || !pluginSource.includes("right: -15px;")) {
+		throw new Error("info icon is not anchored to the title upper-right corner");
+	}
+	if (!pluginSource.includes('"aria-label": props.text') || !pluginSource.includes("title: props.text")) {
+		throw new Error("info hint accessibility/fallback missing");
+	}
 });
 
 check("observer()/onSwitch() are safe", () => { instance.observer(); instance.onSwitch(); });

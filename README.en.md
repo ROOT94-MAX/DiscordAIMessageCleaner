@@ -6,14 +6,14 @@
 
 [![Platform](https://img.shields.io/badge/Platform-Discord-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.com)
 [![Loader](https://img.shields.io/badge/Loader-BetterDiscord-4E5D94?style=flat-square)](https://betterdiscord.app)
-[![Version](https://img.shields.io/badge/Version-0.6.7-success?style=flat-square)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner)
+[![Version](https://img.shields.io/badge/Version-0.6.8-success?style=flat-square)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner)
 [![Dependency](https://img.shields.io/badge/Dependency-None-brightgreen?style=flat-square)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner)
 [![Verify](https://img.shields.io/github/actions/workflow/status/ROOT94-MAX/DiscordAIMessageCleaner/verify.yml?branch=main&style=flat-square&label=verify)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/actions/workflows/verify.yml)
 [![License](https://img.shields.io/badge/License-GPL%20v2-blue?style=flat-square)](./LICENSE)
 
 A BetterDiscord plugin that uses AI to review and clean up **your own** past messages on Discord: search by account, review against your own policy, back up and confirm before deleting.
 
-**Current version: v0.6.7** · **Runtime: BetterDiscord (no third-party library)**
+**Current version: v0.6.8** · **Runtime: BetterDiscord (no third-party library)**
 
 [Download stable release](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/releases/latest/download/DiscordAIMessageCleaner.plugin.js) · [简体中文](README.md) · [Architecture](./ARCHITECTURE.md)
 
@@ -105,6 +105,12 @@ The settings panel has four tabs:
 - Adds the missing `sanitizeFilename` helper so server/channel names with spaces or special characters reach the save dialog; the duplicate post-deletion “Export deletion log” action is removed.
 - Aligns with the sibling summary plugin's runtime constraints by using only BetterDiscord-compatible `fs`, `path`, and `USERPROFILE/HOME`; bare `os` / `buffer` imports that the plugin loader misread as relative paths are removed.
 - Failure remains safe: when a pre-deletion backup was requested, cancelling or exhausting every save tier abandons deletion.
+
+## Settings help icons (v0.6.8)
+
+- Field-level help moves into one consistent circular info icon, positioned as a superscript at the title text's upper-right corner rather than beside the row control.
+- Mouse hover and keyboard focus show a Discord-style Tooltip, with native `title` fallback when the component is unavailable.
+- Policy content, concurrency, confirmation threshold, edited-message handling, deletion pacing, and deletion cap use this pattern; group-level diagnostics guidance remains visible.
 
 ## Security & privacy
 

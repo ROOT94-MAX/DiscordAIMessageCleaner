@@ -6,14 +6,14 @@
 
 [![平台](https://img.shields.io/badge/Platform-Discord-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.com)
 [![加载器](https://img.shields.io/badge/Loader-BetterDiscord-4E5D94?style=flat-square)](https://betterdiscord.app)
-[![版本](https://img.shields.io/badge/Version-0.6.7-success?style=flat-square)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner)
+[![版本](https://img.shields.io/badge/Version-0.6.8-success?style=flat-square)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner)
 [![依赖](https://img.shields.io/badge/Dependency-None-brightgreen?style=flat-square)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner)
 [![验证](https://img.shields.io/github/actions/workflow/status/ROOT94-MAX/DiscordAIMessageCleaner/verify.yml?branch=main&style=flat-square&label=verify)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/actions/workflows/verify.yml)
 [![许可证](https://img.shields.io/badge/License-GPL%20v2-blue?style=flat-square)](./LICENSE)
 
 一款 BetterDiscord 插件，用 AI 审查并清理**你自己**在 Discord 里发过的历史消息：按账号搜索、自定义策略审查、备份后确认删除。
 
-**当前版本：v0.6.7** · **运行环境：BetterDiscord（无需第三方库）**
+**当前版本：v0.6.8** · **运行环境：BetterDiscord（无需第三方库）**
 
 [下载稳定版](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/releases/latest/download/DiscordAIMessageCleaner.plugin.js) · [English](README.en.md) · [架构文档](./ARCHITECTURE.md)
 
@@ -105,6 +105,12 @@
 - 补齐 `sanitizeFilename`，服务器/频道名称含空格或特殊字符时也能正常打开保存框；删除完成页不再重复提供“导出删除记录”。
 - 保存实现对齐总结插件的运行时约束，只使用 BetterDiscord 中可用的 `fs`、`path` 与 `USERPROFILE/HOME`；移除会被插件加载器误解析成相对路径的 `os` / `buffer` 引用。
 - 失败方向保持安全：请求了删除前备份时，取消或所有保存方式均失败都会放弃删除。
+
+## 设置说明图标（v0.6.8）
+
+- 字段级辅助说明收进统一的圆形信息图标，图标以“上标”方式固定在标题文字右上角，不占用输入框一侧的横向布局。
+- 鼠标悬停与键盘聚焦均显示 Discord 风格 Tooltip；组件缺失时回退到原生 `title` 提示。
+- 策略内容、并发数、确认阈值、已编辑消息、删除间隔和删除上限使用该模式；诊断等组级说明继续直接显示。
 
 ## 安全与隐私
 

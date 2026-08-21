@@ -23,8 +23,42 @@
 		});
 	};
 
+	const INFO_SVG = `<svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path fill="currentColor" d="M11 10h2v7h-2zm0-3h2v2h-2z"/></svg>`;
+
+	const InfoHint = props => {
+		const renderIcon = tipProps => {
+			const inherited = tipProps || {};
+			return h("button", Object.assign({}, inherited, {
+				type: "button",
+				className: `${CSS_PREFIX}-info-hint`,
+				"aria-label": props.text,
+				onFocus: event => {
+					if (typeof inherited.onFocus === "function") inherited.onFocus(event);
+					else if (typeof inherited.onMouseEnter === "function") inherited.onMouseEnter(event);
+				},
+				onBlur: event => {
+					if (typeof inherited.onBlur === "function") inherited.onBlur(event);
+					else if (typeof inherited.onMouseLeave === "function") inherited.onMouseLeave(event);
+				},
+				onClick: event => {
+					event.preventDefault();
+					event.stopPropagation();
+				},
+				dangerouslySetInnerHTML: { __html: INFO_SVG }
+			}));
+		};
+		const Tooltip = BdApi.Components && BdApi.Components.Tooltip;
+		if (Tooltip) return h(Tooltip, { text: props.text }, tipProps => renderIcon(tipProps));
+		return renderIcon({ title: props.text });
+	};
+
+	const SettingTitle = props => h("span", { className: `${CSS_PREFIX}-set-title` },
+		props.label,
+		props.hint ? h(InfoHint, { text: props.hint }) : null
+	);
+
 	const SetRow = props => h("div", { className: `${CSS_PREFIX}-set-row` },
-		h("div", { className: `${CSS_PREFIX}-set-label` }, props.label),
+		h("div", { className: `${CSS_PREFIX}-set-label` }, h(SettingTitle, { label: props.label, hint: props.hint })),
 		props.children
 	);
 
@@ -53,9 +87,9 @@
 	const Field = props => h("div", { className: `${CSS_PREFIX}-f-item`, style: props.style },
 		props.actions
 			? h("div", { className: `${CSS_PREFIX}-f-row` },
-				h("div", { className: `${CSS_PREFIX}-f-label` }, props.label),
+				h("div", { className: `${CSS_PREFIX}-f-label` }, h(SettingTitle, { label: props.label, hint: props.hint })),
 				h("div", { className: `${CSS_PREFIX}-f-actions` }, props.actions))
-			: h("div", { className: `${CSS_PREFIX}-f-label` }, props.label),
+			: h("div", { className: `${CSS_PREFIX}-f-label` }, h(SettingTitle, { label: props.label, hint: props.hint })),
 		props.children
 	);
 
@@ -457,7 +491,7 @@
 					onCommit: value => { AIService.updatePolicy(activeId, { name: value }); props.onChanged(); }
 				})
 			) : null,
-			h(Field, { label: t("prompt_content"), actions },
+			h(Field, { label: t("prompt_content"), hint: t("set_policy_note"), actions },
 				h("textarea", {
 					className: `${CSS_PREFIX}-textarea`,
 					style: { minHeight: "150px" },
@@ -468,8 +502,7 @@
 						setText(event.target.value);
 						AIService.updatePolicy(activeId, { text: event.target.value });
 					})
-				}),
-				h("div", { className: `${CSS_PREFIX}-note`, style: { marginTop: "6px" } }, t("set_policy_note"))
+				})
 			)
 		);
 	};
@@ -503,7 +536,7 @@
 			),
 			h(PolicyEditor, { key: AIService.activePolicyId(), onChanged: bump }),
 			h("div", { className: `${CSS_PREFIX}-group-header` }, t("group_generation")),
-			h(SetRow, { label: t("set_concurrency") },
+			h(SetRow, { label: t("set_concurrency"), hint: t("set_concurrency_note") },
 				h(NumInput, {
 					value: Utils.num(SettingsStore.get("review.concurrency"), 3),
 					min: 1, max: 8, step: 1,
@@ -511,7 +544,6 @@
 					onCommit: value => SettingsStore.set("review.concurrency", Math.round(value))
 				})
 			),
-			h("div", { className: `${CSS_PREFIX}-note` }, t("set_concurrency_note")),
 			h(SetRow, { label: t("set_batch_size") },
 				h(NumInput, {
 					value: Utils.num(SettingsStore.get("review.batchSize"), 40),
@@ -520,7 +552,7 @@
 					onCommit: value => SettingsStore.set("review.batchSize", Math.round(value))
 				})
 			),
-			h(SetRow, { label: t("set_confirm_tokens") },
+			h(SetRow, { label: t("set_confirm_tokens"), hint: t("set_confirm_tokens_note") },
 				h(NumInput, {
 					value: Utils.num(SettingsStore.get("review.confirmAboveTokens"), 32000),
 					min: 0, max: 10000000, step: 1000,
@@ -528,7 +560,6 @@
 					onCommit: value => SettingsStore.set("review.confirmAboveTokens", Math.round(value))
 				})
 			),
-			h("div", { className: `${CSS_PREFIX}-note` }, t("set_confirm_tokens_note")),
 			h(SetRow, { label: t("set_idle_timeout") },
 				h(NumInput, {
 					value: Math.round(Utils.num(SettingsStore.get("ai.aiIdleTimeoutMs"), 60000) / 1000),
@@ -555,16 +586,15 @@
 					onCommit: value => SettingsStore.set("fetch.maxMessages", Math.round(value))
 				})
 			),
-			h(SetRow, { label: t("set_include_edited") },
+			h(SetRow, { label: t("set_include_edited"), hint: t("set_include_edited_note") },
 				h(SwitchC, {
 					value: SettingsStore.get("review.includeEdited") !== false,
 					ariaLabel: t("set_include_edited"),
 					onChange: value => { SettingsStore.set("review.includeEdited", value); bump(); }
 				})
 			),
-			h("div", { className: `${CSS_PREFIX}-note` }, t("set_include_edited_note")),
 			h("div", { className: `${CSS_PREFIX}-group-header` }, t("group_delete")),
-			h(SetRow, { label: t("set_delete_pacing") },
+			h(SetRow, { label: t("set_delete_pacing"), hint: t("set_delete_pacing_note") },
 				h(NumInput, {
 					value: Utils.num(SettingsStore.get("delete.pacingMs"), 1200),
 					min: 300, max: 30000, step: 100,
@@ -572,8 +602,7 @@
 					onCommit: value => SettingsStore.set("delete.pacingMs", Math.round(value))
 				})
 			),
-			h("div", { className: `${CSS_PREFIX}-note` }, t("set_delete_pacing_note")),
-			h(SetRow, { label: t("set_delete_max") },
+			h(SetRow, { label: t("set_delete_max"), hint: t("set_delete_max_note") },
 				h(NumInput, {
 					value: Utils.num(SettingsStore.get("delete.maxPerRun"), 200),
 					min: 1, max: 1000, step: 10,
@@ -581,7 +610,6 @@
 					onCommit: value => SettingsStore.set("delete.maxPerRun", Math.round(value))
 				})
 			),
-			h("div", { className: `${CSS_PREFIX}-note` }, t("set_delete_max_note")),
 			h(SetRow, { label: t("set_backup_mode") },
 				h(SelectMenu, {
 					ariaLabel: t("set_backup_mode"),
@@ -695,4 +723,3 @@
 			return h(SettingsRoot);
 		}
 	};
-
