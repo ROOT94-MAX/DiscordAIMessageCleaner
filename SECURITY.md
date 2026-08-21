@@ -43,3 +43,7 @@ There is currently no bug-bounty program. Reports are handled on a best-effort b
 The in-plugin updater is manual-only. It accepts only this repository's official GitHub Release asset, requires GitHub's SHA-256 digest plus matching plugin metadata, keeps a local backup, verifies the installed file, and restores the backup on failure. It never performs background updates or downgrades a development candidate.
 
 插件内更新仅由用户手动触发，只接受本仓库的官方 GitHub Release 资产；必须通过 GitHub SHA-256 与插件元数据校验，安装前保留本地备份，写入后再次校验，失败时恢复。不会后台静默更新，也不会把开发候选版本降级。
+
+If the GitHub API is rate-limited or returns 403, the updater falls back to release-page version discovery but disables direct installation because no trusted digest is available; it offers the manual Release link instead.
+
+若 GitHub API 受限或返回 403，更新器仅回退到 Release 页面识别版本；由于缺少可信 digest，会禁用直接安装并只提供手动发布页入口。

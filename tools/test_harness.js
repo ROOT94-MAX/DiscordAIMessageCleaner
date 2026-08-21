@@ -598,6 +598,27 @@ const ctx = { channelId: "200000000000000001", isPrivate: false };
 		assert.strictEqual(api.UpdateService.compareVersions("1.0.0", "1.0.0-beta"), 1);
 	});
 
+	await test("GitHub API 403 falls back to the latest Release page without unsafe install", async () => {
+		let calls = 0;
+		const info = await api.UpdateService.check({
+			fetch: async () => {
+				calls++;
+				if (calls === 1) return { ok: false, status: 403 };
+				return {
+					ok: true,
+					status: 200,
+					url: "https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/releases/tag/v0.6.9",
+					text: async () => ""
+				};
+			}
+		});
+		assert.strictEqual(calls, 2);
+		assert.strictEqual(info.status, "available");
+		assert.strictEqual(info.source, "release-page");
+		assert.strictEqual(info.installable, false, "no digest -> manual Release link only");
+		assert.strictEqual(info.latest, "0.6.9");
+	});
+
 	await test("verified official asset backs up and replaces the plugin", async () => {
 		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "damc-update-ok-"));
 		const target = path.join(dir, api.UpdateService.ASSET_NAME);

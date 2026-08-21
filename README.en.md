@@ -115,8 +115,8 @@ The settings panel has four tabs:
 - The model list is a fixed `document.body` Portal: it compares available space above and below, chooses the better direction, caps its height to that space with internal scrolling, and repositions on window scroll/resize without panel clipping.
 - Settings sections now match the sibling summary plugin exactly: dividers are removed and group headings use `24px 0 8px` margins (0 above the first group), while rows and field items remain compact.
 - Interface language moves from Review Policy to General. Diagnostics becomes About & Diagnostics: an About card presents the description, version badge, and accessible GitHub icon, followed by runtime health and copy-diagnostics controls.
-- The Content field gets its own subordinate 15px/20px title hierarchy with a 6px title-to-textarea gap. Runtime Diagnostics guidance moves into the heading's info icon.
-- The About card provides manual update checks against the official latest stable GitHub Release. When newer, users can view notes or confirm Download & Install. Installation validates the official asset URL, GitHub SHA-256, plugin name and version, backs up the current plugin, verifies the installed file, and restores on failure—without background updates or candidate downgrades.
+- The Content title now matches Current Policy: 16px, weight 500, normal text color, 20px line height, and a 6px title-to-textarea gap. Runtime Diagnostics guidance moves into the heading's info icon.
+- Update checking lives in a separate Version & Updates group, not inside the About card. It prefers the official GitHub API and falls back to the latest Release page on 403/rate limits; fallback mode offers the manual Release link only. Download & Install appears only when the API supplies an official digest, then enforces URL/SHA-256/plugin-metadata validation, backup, post-write verification, and failure restoration—without background updates or candidate downgrades.
 
 ## Security & privacy
 

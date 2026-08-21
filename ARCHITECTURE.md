@@ -58,14 +58,14 @@ REGRESSION.md                发版前的人工回归清单（自动化测不到
 | 13-ai-service | 多平台配置解析、验证/取模型、并发工作池审查、容错判定解析（解析失败进重试桶，绝不误标） |
 | 14a-delete-service | 单并发节流删除队列：404=跳过、403=中止全队（错误带出已删部分供调用方收尾）、429 风暴自动暂停、逐条 channelId 路由 |
 | 14b-export-service | 删除前消息导出（MD/TXT/JSON）；三级保存链（openDialog → saveWithDialog2/saveWithDialog → Downloads），返回路径与落盘字节数验证后才算成功；遵循 BD 加载器约束，不裸加载 os/buffer |
-| 14c-update-service | 手动 GitHub Release 检查与安装：禁止降级；官方 URL + SHA-256 digest + 插件元数据校验；备份、写入后复验、失败恢复；无后台静默更新 |
+| 14c-update-service | 手动 GitHub Release 检查与安装：API 403 时回退 Release 页面且禁用直接安装；禁止降级；官方 URL + SHA-256 + 元数据校验；备份、写入复验、失败恢复；无后台更新 |
 | 15-styles | `--damc-*` 设计令牌层（映射 Discord CSS 变量）+ 全部组件样式 |
 | 16-lifecycle-registries | Disposables/ActiveRuns；**ReviewSession**（后台审查会话，唯一写入点）；**MiniPill**（悬浮胶囊，锚定聊天输入框列并避让其他悬浮元素）；**ScanCache**（误关弹窗恢复） |
 | 17-ui-react-helpers | h、Btn、ProgressStrip 等 |
 | 18-ui-chat-button | 输入框按钮组件 |
 | 19-ui-cleaner-modal | 清理弹窗：状态机、结果列表、表情/缩略图渲染、灯箱（body Portal） |
 | 20-chat-entry | 三入口：按钮注入（webpack patch，DOM 兜底）、右键菜单 ×3、`/aiclean` 命令 |
-| 21-settings-panel | 自绘 React 设置面板：AI 平台 / 审查策略 / 通用设置 / 关于与诊断；语言归入通用；About 卡片含版本/GitHub/手动更新；诊断标题 InfoHint；模型列表 body Portal 自适应展开；紧凑 24px 节奏 |
+| 21-settings-panel | 自绘 React 设置面板：AI 平台 / 审查策略 / 通用设置 / 关于与诊断；About 卡片含版本/GitHub，更新独立分组；诊断标题 InfoHint；模型列表 body Portal 自适应；紧凑 24px 节奏 |
 | 22-plugin-class | start/stop 生命周期、onSwitch、openCleaner |
 
 ## 5. Discord 内部触点与修复要点

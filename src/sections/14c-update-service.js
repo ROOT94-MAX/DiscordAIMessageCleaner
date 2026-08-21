@@ -5,6 +5,7 @@
 	const UpdateService = {
 		API_URL: "https://api.github.com/repos/ROOT94-MAX/DiscordAIMessageCleaner/releases/latest",
 		PROJECT_URL: "https://github.com/ROOT94-MAX/DiscordAIMessageCleaner",
+		FALLBACK_URL: "https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/releases/latest",
 		ASSET_NAME: "DiscordAIMessageCleaner.plugin.js",
 		normalizeVersion(value) {
 			return String(value || "").trim().replace(/^v/i, "").split("+")[0];
@@ -36,11 +37,29 @@
 				TextDecoder: typeof TextDecoder === "function" ? TextDecoder : null
 			}, overrides || {});
 		},
-		async check(overrides) {
-			const runtime = UpdateService._runtime(overrides);
+		_buildInfo(latest, releaseUrl, body, asset, source) {
+			const comparison = UpdateService.compareVersions(PLUGIN_VERSION, latest);
+			const status = comparison < 0 ? "available" : comparison > 0 ? "development" : "current";
+			const digestOk = /^sha256:[a-f0-9]{64}$/i.test(String(asset && asset.digest || ""));
+			const installable = status === "available" && digestOk && UpdateService._isOfficialAssetUrl(asset && asset.url);
+			return {
+				current: PLUGIN_VERSION,
+				latest,
+				status,
+				installable,
+				source: source || "api",
+				releaseUrl,
+				body: String(body || ""),
+				asset
+			};
+		},
+		async _checkApi(runtime) {
 			const response = await runtime.fetch(UpdateService.API_URL, {
 				method: "GET",
-				headers: { Accept: "application/vnd.github+json" },
+				headers: {
+					Accept: "application/vnd.github+json",
+					"X-GitHub-Api-Version": "2022-11-28"
+				},
 				timeout: 10000
 			});
 			if (!response || !response.ok) throw new Error(`GitHub HTTP ${response && response.status || "?"}`);
@@ -50,19 +69,50 @@
 			const assets = Array.isArray(release.assets) ? release.assets : [];
 			const asset = assets.find(item => item && item.name === UpdateService.ASSET_NAME);
 			if (!asset || !asset.browser_download_url) throw new Error("plugin asset missing");
-			const comparison = UpdateService.compareVersions(PLUGIN_VERSION, latest);
-			return {
-				current: PLUGIN_VERSION,
+			return UpdateService._buildInfo(
 				latest,
-				status: comparison < 0 ? "available" : comparison > 0 ? "development" : "current",
-				releaseUrl: String(release.html_url || `${UpdateService.PROJECT_URL}/releases/tag/v${latest}`),
-				body: String(release.body || ""),
-				asset: {
+				String(release.html_url || `${UpdateService.PROJECT_URL}/releases/tag/v${latest}`),
+				release.body,
+				{
 					url: String(asset.browser_download_url),
 					digest: String(asset.digest || ""),
 					size: Number(asset.size) || 0
-				}
-			};
+				},
+				"api"
+			);
+		},
+		async _checkFallback(runtime) {
+			const response = await runtime.fetch(UpdateService.FALLBACK_URL, {
+				method: "GET",
+				headers: { Accept: "text/html" },
+				timeout: 15000
+			});
+			if (!response || !response.ok) throw new Error(`GitHub Release HTTP ${response && response.status || "?"}`);
+			const finalUrl = String(response.url || "");
+			let match = finalUrl.match(/\/releases\/tag\/v?([^/?#]+)/i);
+			let html = "";
+			if (!match && typeof response.text === "function") {
+				html = await response.text();
+				match = String(html).match(/\/releases\/tag\/v?([0-9]+\.[0-9]+\.[0-9][^"'/?#<]*)/i);
+			}
+			if (!match) throw new Error("latest Release tag unavailable");
+			const latest = UpdateService.normalizeVersion(match[1]);
+			const releaseUrl = `${UpdateService.PROJECT_URL}/releases/tag/v${latest}`;
+			return UpdateService._buildInfo(latest, releaseUrl, "", {
+				url: `${UpdateService.PROJECT_URL}/releases/latest/download/${UpdateService.ASSET_NAME}`,
+				digest: "",
+				size: 0
+			}, "release-page");
+		},
+		async check(overrides) {
+			const runtime = UpdateService._runtime(overrides);
+			let apiError = null;
+			try { return await UpdateService._checkApi(runtime); }
+			catch (e) { apiError = e; }
+			try { return await UpdateService._checkFallback(runtime); }
+			catch (fallbackError) {
+				throw new Error(`${apiError && apiError.message || apiError}; ${fallbackError && fallbackError.message || fallbackError}`);
+			}
 		},
 		_isOfficialAssetUrl(value) {
 			try {

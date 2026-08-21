@@ -167,8 +167,11 @@ check("About & Diagnostics exposes version and accessible GitHub link", () => {
 	}
 });
 
-check("policy content title has a subordinate 15px hierarchy", () => {
-	for (const needle of ["prompt-content-field", "font-size: 15px;", "line-height: 20px;", "margin-bottom: 6px;"]) {
+check("policy content title matches the current-policy hierarchy", () => {
+	for (const needle of [
+		"prompt-content-field", "font-size: 16px;", "font-weight: 500;", "line-height: 20px;",
+		"color: var(--damc-text, #dbdee1);", "margin-bottom: 6px;"
+	]) {
 		if (!pluginSource.includes(needle)) throw new Error(`policy content hierarchy missing: ${needle}`);
 	}
 });
@@ -190,6 +193,13 @@ check("manual updater verifies official release assets and keeps a backup", () =
 	]) {
 		if (!pluginSource.includes(needle)) throw new Error(`manual updater safeguard missing: ${needle}`);
 	}
+	for (const needle of [
+		"FALLBACK_URL", "_checkFallback", "update_available_manual",
+		'h(GroupHeader, { label: t("group_updates") })', 't("update_current_version"'
+	]) {
+		if (!pluginSource.includes(needle)) throw new Error(`manual updater fallback/layout missing: ${needle}`);
+	}
+	if (pluginSource.includes("about-update")) throw new Error("update controls still live inside the About card");
 });
 
 check("observer()/onSwitch() are safe", () => { instance.observer(); instance.onSwitch(); });

@@ -385,6 +385,7 @@ module.exports = (() => {
 			update_checking: "正在检查更新…",
 			update_current: "已是最新稳定版 v{version}",
 			update_available: "发现新版本 v{version}",
+			update_available_manual: "发现新版本 v{version}；GitHub API 受限，请打开发布页手动更新。",
 			update_development: "当前 v{current} 高于最新稳定版 v{latest}（开发候选版本）",
 			update_failed: "检查或更新失败：{detail}",
 			update_view_release: "查看说明",
@@ -393,6 +394,8 @@ module.exports = (() => {
 			update_install_title: "安装更新 v{version}",
 			update_install_body: "将从官方 GitHub Release 下载并校验插件，备份当前 v{current} 后替换。确认继续？",
 			update_installed: "v{version} 已安装并校验，BetterDiscord 将重新加载插件。",
+			group_updates: "版本与更新",
+			update_current_version: "当前版本 v{version}",
 			group_diagnostics: "运行诊断",
 			set_diag_note: "Discord 更新导致功能异常时，先看这里。",
 			diag_entry: "输入框按钮入口",
@@ -625,6 +628,7 @@ module.exports = (() => {
 			update_checking: "Checking for updates…",
 			update_current: "Latest stable version: v{version}",
 			update_available: "New version available: v{version}",
+			update_available_manual: "New version available: v{version}. GitHub API is limited; open the Release page to update manually.",
 			update_development: "Current v{current} is newer than stable v{latest} (development candidate)",
 			update_failed: "Update check or install failed: {detail}",
 			update_view_release: "Release Notes",
@@ -633,6 +637,8 @@ module.exports = (() => {
 			update_install_title: "Install update v{version}",
 			update_install_body: "Download and verify the official GitHub Release asset, back up current v{current}, then replace it. Continue?",
 			update_installed: "v{version} installed and verified. BetterDiscord will reload the plugin.",
+			group_updates: "Version & Updates",
+			update_current_version: "Current version v{version}",
 			group_diagnostics: "Runtime Diagnostics",
 			set_diag_note: "Start here when a Discord update breaks something.",
 			diag_entry: "Chat input button entry",
@@ -2076,6 +2082,7 @@ module.exports = (() => {
 	const UpdateService = {
 		API_URL: "https://api.github.com/repos/ROOT94-MAX/DiscordAIMessageCleaner/releases/latest",
 		PROJECT_URL: "https://github.com/ROOT94-MAX/DiscordAIMessageCleaner",
+		FALLBACK_URL: "https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/releases/latest",
 		ASSET_NAME: "DiscordAIMessageCleaner.plugin.js",
 		normalizeVersion(value) {
 			return String(value || "").trim().replace(/^v/i, "").split("+")[0];
@@ -2107,11 +2114,29 @@ module.exports = (() => {
 				TextDecoder: typeof TextDecoder === "function" ? TextDecoder : null
 			}, overrides || {});
 		},
-		async check(overrides) {
-			const runtime = UpdateService._runtime(overrides);
+		_buildInfo(latest, releaseUrl, body, asset, source) {
+			const comparison = UpdateService.compareVersions(PLUGIN_VERSION, latest);
+			const status = comparison < 0 ? "available" : comparison > 0 ? "development" : "current";
+			const digestOk = /^sha256:[a-f0-9]{64}$/i.test(String(asset && asset.digest || ""));
+			const installable = status === "available" && digestOk && UpdateService._isOfficialAssetUrl(asset && asset.url);
+			return {
+				current: PLUGIN_VERSION,
+				latest,
+				status,
+				installable,
+				source: source || "api",
+				releaseUrl,
+				body: String(body || ""),
+				asset
+			};
+		},
+		async _checkApi(runtime) {
 			const response = await runtime.fetch(UpdateService.API_URL, {
 				method: "GET",
-				headers: { Accept: "application/vnd.github+json" },
+				headers: {
+					Accept: "application/vnd.github+json",
+					"X-GitHub-Api-Version": "2022-11-28"
+				},
 				timeout: 10000
 			});
 			if (!response || !response.ok) throw new Error(`GitHub HTTP ${response && response.status || "?"}`);
@@ -2121,19 +2146,50 @@ module.exports = (() => {
 			const assets = Array.isArray(release.assets) ? release.assets : [];
 			const asset = assets.find(item => item && item.name === UpdateService.ASSET_NAME);
 			if (!asset || !asset.browser_download_url) throw new Error("plugin asset missing");
-			const comparison = UpdateService.compareVersions(PLUGIN_VERSION, latest);
-			return {
-				current: PLUGIN_VERSION,
+			return UpdateService._buildInfo(
 				latest,
-				status: comparison < 0 ? "available" : comparison > 0 ? "development" : "current",
-				releaseUrl: String(release.html_url || `${UpdateService.PROJECT_URL}/releases/tag/v${latest}`),
-				body: String(release.body || ""),
-				asset: {
+				String(release.html_url || `${UpdateService.PROJECT_URL}/releases/tag/v${latest}`),
+				release.body,
+				{
 					url: String(asset.browser_download_url),
 					digest: String(asset.digest || ""),
 					size: Number(asset.size) || 0
-				}
-			};
+				},
+				"api"
+			);
+		},
+		async _checkFallback(runtime) {
+			const response = await runtime.fetch(UpdateService.FALLBACK_URL, {
+				method: "GET",
+				headers: { Accept: "text/html" },
+				timeout: 15000
+			});
+			if (!response || !response.ok) throw new Error(`GitHub Release HTTP ${response && response.status || "?"}`);
+			const finalUrl = String(response.url || "");
+			let match = finalUrl.match(/\/releases\/tag\/v?([^/?#]+)/i);
+			let html = "";
+			if (!match && typeof response.text === "function") {
+				html = await response.text();
+				match = String(html).match(/\/releases\/tag\/v?([0-9]+\.[0-9]+\.[0-9][^"'/?#<]*)/i);
+			}
+			if (!match) throw new Error("latest Release tag unavailable");
+			const latest = UpdateService.normalizeVersion(match[1]);
+			const releaseUrl = `${UpdateService.PROJECT_URL}/releases/tag/v${latest}`;
+			return UpdateService._buildInfo(latest, releaseUrl, "", {
+				url: `${UpdateService.PROJECT_URL}/releases/latest/download/${UpdateService.ASSET_NAME}`,
+				digest: "",
+				size: 0
+			}, "release-page");
+		},
+		async check(overrides) {
+			const runtime = UpdateService._runtime(overrides);
+			let apiError = null;
+			try { return await UpdateService._checkApi(runtime); }
+			catch (e) { apiError = e; }
+			try { return await UpdateService._checkFallback(runtime); }
+			catch (fallbackError) {
+				throw new Error(`${apiError && apiError.message || apiError}; ${fallbackError && fallbackError.message || fallbackError}`);
+			}
 		},
 		_isOfficialAssetUrl(value) {
 			try {
@@ -3377,9 +3433,10 @@ module.exports = (() => {
 		/* settings: prompt editor + diagnostics */
 		.${CSS_PREFIX}-prompt-editor { margin-top: 8px; margin-bottom: 2px; }
 		.${CSS_PREFIX}-prompt-content-field .${CSS_PREFIX}-f-label {
-			font-size: 15px;
-			font-weight: 600;
+			font-size: 16px;
+			font-weight: 500;
 			line-height: 20px;
+			color: var(--damc-text, #dbdee1);
 		}
 		.${CSS_PREFIX}-prompt-content-field .${CSS_PREFIX}-f-row {
 			min-height: 24px;
@@ -3388,7 +3445,6 @@ module.exports = (() => {
 		.${CSS_PREFIX}-about-card {
 			display: flex;
 			align-items: center;
-			flex-wrap: wrap;
 			gap: 12px;
 			padding: 12px;
 			border-radius: 8px;
@@ -3455,32 +3511,22 @@ module.exports = (() => {
 			box-shadow: 0 0 0 2px color-mix(in srgb, var(--damc-brand, #5865f2) 38%, transparent);
 		}
 		.${CSS_PREFIX}-about-github svg { width: 18px; height: 18px; }
-		.${CSS_PREFIX}-about-update {
-			flex: 1 0 100%;
-			min-height: 28px;
-			box-sizing: border-box;
-			padding-left: 48px;
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			gap: 10px;
-		}
-		.${CSS_PREFIX}-about-update-status {
-			flex: 1 1 auto;
-			min-width: 0;
+		.${CSS_PREFIX}-update-status {
+			margin-top: 4px;
 			font-size: 13px;
 			line-height: 1.4;
 			color: var(--damc-text-faint, #949ba4);
 		}
-		.${CSS_PREFIX}-about-update-status.${CSS_PREFIX}-ok { color: var(--damc-ok, #23a55a); }
-		.${CSS_PREFIX}-about-update-status.${CSS_PREFIX}-fail { color: var(--damc-danger, #f23f43); }
-		.${CSS_PREFIX}-about-update-actions {
-			flex: 0 0 auto;
+		.${CSS_PREFIX}-update-status.${CSS_PREFIX}-ok { color: var(--damc-ok, #23a55a); }
+		.${CSS_PREFIX}-update-status.${CSS_PREFIX}-fail { color: var(--damc-danger, #f23f43); }
+		.${CSS_PREFIX}-update-actions {
+			margin-top: 8px;
 			display: flex;
 			align-items: center;
+			justify-content: flex-end;
 			gap: 8px;
 		}
-		.${CSS_PREFIX}-about-release { text-decoration: none; box-sizing: border-box; }
+		.${CSS_PREFIX}-update-release { text-decoration: none; box-sizing: border-box; }
 		.${CSS_PREFIX}-diag-version {
 			font-size: 13px;
 			color: var(--damc-text-faint, #949ba4);
@@ -5846,7 +5892,9 @@ module.exports = (() => {
 		const updateText = updateState.message || (updateState.phase === "checking" ? t("update_checking")
 			: updateState.phase === "installing" ? t("update_installing")
 				: updateState.phase === "current" ? t("update_current", { version: updateState.info.latest })
-					: updateState.phase === "available" ? t("update_available", { version: updateState.info.latest })
+					: updateState.phase === "available" ? t(updateState.info.installable ? "update_available" : "update_available_manual", {
+						version: updateState.info.latest
+					})
 						: updateState.phase === "development" ? t("update_development", {
 							current: updateState.info.current, latest: updateState.info.latest
 						}) : "");
@@ -5871,28 +5919,30 @@ module.exports = (() => {
 						title: t("about_github"),
 						dangerouslySetInnerHTML: { __html: GITHUB_SVG }
 					})
-				),
-				h("div", { className: `${CSS_PREFIX}-about-update` },
-					h("div", {
-						className: `${CSS_PREFIX}-about-update-status${updateTone ? ` ${CSS_PREFIX}-${updateTone}` : ""}`,
-						"aria-live": "polite"
-					}, updateText),
-					h("div", { className: `${CSS_PREFIX}-about-update-actions` },
-						updateState.info ? h("a", {
-							className: `${CSS_PREFIX}-btn-sm ${CSS_PREFIX}-btn-sec ${CSS_PREFIX}-about-release`,
-							href: updateState.info.releaseUrl,
-							target: "_blank",
-							rel: "noopener noreferrer"
-						}, t("update_view_release")) : null,
-						updateState.phase === "available" ? h(SmallBtn, { onClick: confirmInstall }, t("update_install")) : null,
-						h(SmallBtn, {
-							secondary: true,
-							disabled: updateState.phase === "checking" || updateState.phase === "installing",
-							onClick: checkUpdates
-						}, updateState.phase === "checking" ? t("update_checking") : t("update_check"))
-					)
 				)
 			),
+			h(GroupHeader, { label: t("group_updates") }),
+			h(SetRow, { label: t("update_current_version", { version: PLUGIN_VERSION }) },
+				h(SmallBtn, {
+					secondary: true,
+					disabled: updateState.phase === "checking" || updateState.phase === "installing",
+					onClick: checkUpdates
+				}, updateState.phase === "checking" ? t("update_checking") : t("update_check"))
+			),
+			updateText ? h("div", {
+				className: `${CSS_PREFIX}-update-status${updateTone ? ` ${CSS_PREFIX}-${updateTone}` : ""}`,
+				"aria-live": "polite"
+			}, updateText) : null,
+			updateState.info ? h("div", { className: `${CSS_PREFIX}-update-actions` },
+				h("a", {
+					className: `${CSS_PREFIX}-btn-sm ${CSS_PREFIX}-btn-sec ${CSS_PREFIX}-update-release`,
+					href: updateState.info.releaseUrl,
+					target: "_blank",
+					rel: "noopener noreferrer"
+				}, t("update_view_release")),
+				updateState.phase === "available" && updateState.info.installable
+					? h(SmallBtn, { onClick: confirmInstall }, t("update_install")) : null
+			) : null,
 			h(GroupHeader, { label: t("group_diagnostics"), hint: t("set_diag_note") }),
 			h("div", { className: `${CSS_PREFIX}-diag-version` },
 				`BetterDiscord: ${BdApi.version || "?"}`),

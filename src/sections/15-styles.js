@@ -1159,9 +1159,10 @@
 		/* settings: prompt editor + diagnostics */
 		.${CSS_PREFIX}-prompt-editor { margin-top: 8px; margin-bottom: 2px; }
 		.${CSS_PREFIX}-prompt-content-field .${CSS_PREFIX}-f-label {
-			font-size: 15px;
-			font-weight: 600;
+			font-size: 16px;
+			font-weight: 500;
 			line-height: 20px;
+			color: var(--damc-text, #dbdee1);
 		}
 		.${CSS_PREFIX}-prompt-content-field .${CSS_PREFIX}-f-row {
 			min-height: 24px;
@@ -1170,7 +1171,6 @@
 		.${CSS_PREFIX}-about-card {
 			display: flex;
 			align-items: center;
-			flex-wrap: wrap;
 			gap: 12px;
 			padding: 12px;
 			border-radius: 8px;
@@ -1237,32 +1237,22 @@
 			box-shadow: 0 0 0 2px color-mix(in srgb, var(--damc-brand, #5865f2) 38%, transparent);
 		}
 		.${CSS_PREFIX}-about-github svg { width: 18px; height: 18px; }
-		.${CSS_PREFIX}-about-update {
-			flex: 1 0 100%;
-			min-height: 28px;
-			box-sizing: border-box;
-			padding-left: 48px;
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			gap: 10px;
-		}
-		.${CSS_PREFIX}-about-update-status {
-			flex: 1 1 auto;
-			min-width: 0;
+		.${CSS_PREFIX}-update-status {
+			margin-top: 4px;
 			font-size: 13px;
 			line-height: 1.4;
 			color: var(--damc-text-faint, #949ba4);
 		}
-		.${CSS_PREFIX}-about-update-status.${CSS_PREFIX}-ok { color: var(--damc-ok, #23a55a); }
-		.${CSS_PREFIX}-about-update-status.${CSS_PREFIX}-fail { color: var(--damc-danger, #f23f43); }
-		.${CSS_PREFIX}-about-update-actions {
-			flex: 0 0 auto;
+		.${CSS_PREFIX}-update-status.${CSS_PREFIX}-ok { color: var(--damc-ok, #23a55a); }
+		.${CSS_PREFIX}-update-status.${CSS_PREFIX}-fail { color: var(--damc-danger, #f23f43); }
+		.${CSS_PREFIX}-update-actions {
+			margin-top: 8px;
 			display: flex;
 			align-items: center;
+			justify-content: flex-end;
 			gap: 8px;
 		}
-		.${CSS_PREFIX}-about-release { text-decoration: none; box-sizing: border-box; }
+		.${CSS_PREFIX}-update-release { text-decoration: none; box-sizing: border-box; }
 		.${CSS_PREFIX}-diag-version {
 			font-size: 13px;
 			color: var(--damc-text-faint, #949ba4);

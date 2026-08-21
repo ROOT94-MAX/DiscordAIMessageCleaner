@@ -768,7 +768,9 @@
 		const updateText = updateState.message || (updateState.phase === "checking" ? t("update_checking")
 			: updateState.phase === "installing" ? t("update_installing")
 				: updateState.phase === "current" ? t("update_current", { version: updateState.info.latest })
-					: updateState.phase === "available" ? t("update_available", { version: updateState.info.latest })
+					: updateState.phase === "available" ? t(updateState.info.installable ? "update_available" : "update_available_manual", {
+						version: updateState.info.latest
+					})
 						: updateState.phase === "development" ? t("update_development", {
 							current: updateState.info.current, latest: updateState.info.latest
 						}) : "");
@@ -793,28 +795,30 @@
 						title: t("about_github"),
 						dangerouslySetInnerHTML: { __html: GITHUB_SVG }
 					})
-				),
-				h("div", { className: `${CSS_PREFIX}-about-update` },
-					h("div", {
-						className: `${CSS_PREFIX}-about-update-status${updateTone ? ` ${CSS_PREFIX}-${updateTone}` : ""}`,
-						"aria-live": "polite"
-					}, updateText),
-					h("div", { className: `${CSS_PREFIX}-about-update-actions` },
-						updateState.info ? h("a", {
-							className: `${CSS_PREFIX}-btn-sm ${CSS_PREFIX}-btn-sec ${CSS_PREFIX}-about-release`,
-							href: updateState.info.releaseUrl,
-							target: "_blank",
-							rel: "noopener noreferrer"
-						}, t("update_view_release")) : null,
-						updateState.phase === "available" ? h(SmallBtn, { onClick: confirmInstall }, t("update_install")) : null,
-						h(SmallBtn, {
-							secondary: true,
-							disabled: updateState.phase === "checking" || updateState.phase === "installing",
-							onClick: checkUpdates
-						}, updateState.phase === "checking" ? t("update_checking") : t("update_check"))
-					)
 				)
 			),
+			h(GroupHeader, { label: t("group_updates") }),
+			h(SetRow, { label: t("update_current_version", { version: PLUGIN_VERSION }) },
+				h(SmallBtn, {
+					secondary: true,
+					disabled: updateState.phase === "checking" || updateState.phase === "installing",
+					onClick: checkUpdates
+				}, updateState.phase === "checking" ? t("update_checking") : t("update_check"))
+			),
+			updateText ? h("div", {
+				className: `${CSS_PREFIX}-update-status${updateTone ? ` ${CSS_PREFIX}-${updateTone}` : ""}`,
+				"aria-live": "polite"
+			}, updateText) : null,
+			updateState.info ? h("div", { className: `${CSS_PREFIX}-update-actions` },
+				h("a", {
+					className: `${CSS_PREFIX}-btn-sm ${CSS_PREFIX}-btn-sec ${CSS_PREFIX}-update-release`,
+					href: updateState.info.releaseUrl,
+					target: "_blank",
+					rel: "noopener noreferrer"
+				}, t("update_view_release")),
+				updateState.phase === "available" && updateState.info.installable
+					? h(SmallBtn, { onClick: confirmInstall }, t("update_install")) : null
+			) : null,
 			h(GroupHeader, { label: t("group_diagnostics"), hint: t("set_diag_note") }),
 			h("div", { className: `${CSS_PREFIX}-diag-version` },
 				`BetterDiscord: ${BdApi.version || "?"}`),
