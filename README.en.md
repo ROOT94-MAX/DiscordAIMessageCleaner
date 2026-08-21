@@ -86,8 +86,8 @@ The settings panel has four tabs:
 | --- | --- |
 | AI Providers | 5 presets + any custom providers; Base URL / API Key / model; fetch model list, validate config |
 | Review Policy | interface language, policy-prompt library (built-in template + named custom), messages per batch, confirm-before-review token threshold, AI idle timeout |
-| Cleanup | message scanning (scan cap, whether to review edited messages), deletion safety (delete pacing, per-run cap, backup mode) |
-| Diagnostics | version, BetterDiscord version, health of each internal touch point, one-click copy of the diagnostics |
+| General | plugin interface language, message scanning (scan cap, whether to review edited messages), deletion safety (delete pacing, per-run cap, backup mode) |
+| About & Diagnostics | plugin description and version, GitHub source link, BetterDiscord version, health of each internal touch point, one-click copy of diagnostics |
 
 ## How it works & inherent limits
 
@@ -114,6 +114,7 @@ The settings panel has four tabs:
 - The model combo now separates the current value, filter query, and fetched-model cache: selecting a model keeps the chevron and full list available, and reopening clears the filter to show every fetched model.
 - The model list is a fixed `document.body` Portal: it compares available space above and below, chooses the better direction, caps its height to that space with internal scrolling, and repositions on window scroll/resize without panel clipping.
 - Settings sections now match the sibling summary plugin exactly: dividers are removed and group headings use `24px 0 8px` margins (0 above the first group), while rows and field items remain compact.
+- Interface language moves from Review Policy to General. Diagnostics becomes About & Diagnostics: an About card presents the description, version badge, and accessible GitHub icon, followed by runtime health and copy-diagnostics controls.
 
 ## Security & privacy
 

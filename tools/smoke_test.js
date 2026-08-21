@@ -144,6 +144,29 @@ check("settings sections use compact summary-plugin spacing", () => {
 	if (pluginSource.includes("group-header:not(:first-child)")) throw new Error("obsolete group divider remains");
 });
 
+check("language lives in General, not Review Policy", () => {
+	const reviewStart = pluginSource.indexOf("const ReviewPage =");
+	const generalStart = pluginSource.indexOf("const BehaviorPage =");
+	const diagStart = pluginSource.indexOf("const DiagPage =");
+	if (reviewStart < 0 || generalStart < 0 || diagStart < 0) throw new Error("settings page boundaries missing");
+	const reviewSource = pluginSource.slice(reviewStart, generalStart);
+	const generalSource = pluginSource.slice(generalStart, diagStart);
+	if (reviewSource.includes('t("set_language")')) throw new Error("language still appears in Review Policy");
+	if (!generalSource.includes('t("set_language")') || !generalSource.includes('t("group_language")')) {
+		throw new Error("language missing from General settings");
+	}
+});
+
+check("About & Diagnostics exposes version and accessible GitHub link", () => {
+	for (const needle of [
+		"about-card", "about-version", "about-github",
+		'const PROJECT_URL = "https://github.com/ROOT94-MAX/DiscordAIMessageCleaner"',
+		'target: "_blank"', 'rel: "noopener noreferrer"', 'aria-label": t("about_github")'
+	]) {
+		if (needle && !pluginSource.includes(needle)) throw new Error(`missing About behavior: ${needle}`);
+	}
+});
+
 check("observer()/onSwitch() are safe", () => { instance.observer(); instance.onSwitch(); });
 check("stop() cleans up", () => instance.stop());
 check("settings were persisted on stop", () => {

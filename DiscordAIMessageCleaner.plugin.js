@@ -356,8 +356,8 @@ module.exports = (() => {
 			tab_review: "审查策略",
 			tab_msg: "消息",
 			tab_delete: "删除安全",
-			tab_behavior: "清理行为",
-			tab_diag: "诊断",
+			tab_behavior: "通用设置",
+			tab_diag: "关于与诊断",
 			// settings: groups & language
 			group_language: "语言",
 			group_generation: "生成参数",
@@ -378,6 +378,10 @@ module.exports = (() => {
 			prompt_delete_confirm: "确定删除策略「{name}」？",
 			prompt_placeholder: "留空使用内置模板",
 			// settings: diagnostics
+			group_about: "关于插件",
+			about_description: "用 AI 审查并安全清理你自己发送的历史消息。",
+			about_github: "在 GitHub 查看源代码",
+			group_diagnostics: "运行诊断",
 			set_diag_note: "Discord 更新导致功能异常时，先看这里。",
 			diag_entry: "输入框按钮入口",
 			diag_copy: "复制诊断信息",
@@ -583,8 +587,8 @@ module.exports = (() => {
 			tab_review: "Review Policy",
 			tab_msg: "Messages",
 			tab_delete: "Deletion Safety",
-			tab_behavior: "Cleanup",
-			tab_diag: "Diagnostics",
+			tab_behavior: "General",
+			tab_diag: "About & Diagnostics",
 			group_language: "Language",
 			group_generation: "Generation",
 			group_prompt: "Review policy prompt",
@@ -602,6 +606,10 @@ module.exports = (() => {
 			prompt_default_name: "Policy {n}",
 			prompt_delete_confirm: "Delete policy \"{name}\"?",
 			prompt_placeholder: "Empty = use the built-in template",
+			group_about: "About",
+			about_description: "AI-review and safely clean the message history you sent.",
+			about_github: "View source on GitHub",
+			group_diagnostics: "Runtime Diagnostics",
 			set_diag_note: "Start here when a Discord update breaks something.",
 			diag_entry: "Chat input button entry",
 			diag_copy: "Copy diagnostics",
@@ -3197,6 +3205,75 @@ module.exports = (() => {
 		}
 		/* settings: prompt editor + diagnostics */
 		.${CSS_PREFIX}-prompt-editor { margin-top: 8px; margin-bottom: 2px; }
+		.${CSS_PREFIX}-about-card {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			padding: 12px;
+			border-radius: 8px;
+			background: color-mix(in srgb, var(--damc-brand, #5865f2) 8%, var(--damc-surface, #2b2d31));
+		}
+		.${CSS_PREFIX}-about-icon {
+			width: 36px;
+			height: 36px;
+			flex: 0 0 auto;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: 8px;
+			background: color-mix(in srgb, var(--damc-brand, #5865f2) 18%, transparent);
+			color: var(--damc-brand, #5865f2);
+		}
+		.${CSS_PREFIX}-about-icon svg { width: 22px; height: 22px; }
+		.${CSS_PREFIX}-about-copy { flex: 1 1 auto; min-width: 0; }
+		.${CSS_PREFIX}-about-name {
+			font-size: 16px;
+			font-weight: 700;
+			color: var(--damc-text-strong, #f2f3f5);
+		}
+		.${CSS_PREFIX}-about-description {
+			margin-top: 2px;
+			font-size: 13px;
+			line-height: 1.4;
+			color: var(--damc-text-faint, #949ba4);
+		}
+		.${CSS_PREFIX}-about-meta {
+			flex: 0 0 auto;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+		.${CSS_PREFIX}-about-version {
+			height: 22px;
+			padding: 0 8px;
+			display: inline-flex;
+			align-items: center;
+			border-radius: 11px;
+			background: color-mix(in srgb, var(--damc-brand, #5865f2) 15%, transparent);
+			color: var(--damc-brand, #5865f2);
+			font-size: 12px;
+			font-weight: 700;
+		}
+		.${CSS_PREFIX}-about-github {
+			width: 30px;
+			height: 30px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: 4px;
+			color: var(--damc-icon, #b5bac1);
+			text-decoration: none;
+		}
+		.${CSS_PREFIX}-about-github:hover,
+		.${CSS_PREFIX}-about-github:focus-visible {
+			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
+			color: var(--damc-text-strong, #f2f3f5);
+			outline: none;
+		}
+		.${CSS_PREFIX}-about-github:focus-visible {
+			box-shadow: 0 0 0 2px color-mix(in srgb, var(--damc-brand, #5865f2) 38%, transparent);
+		}
+		.${CSS_PREFIX}-about-github svg { width: 18px; height: 18px; }
 		.${CSS_PREFIX}-diag-version {
 			font-size: 13px;
 			color: var(--damc-text-faint, #949ba4);
@@ -4861,6 +4938,8 @@ module.exports = (() => {
 	const CHECK_CIRCLE_SVG = `<svg width="14" height="14" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm-1.2 14.4-4-4 1.4-1.4 2.6 2.6 5.6-5.6 1.4 1.4Z"/></svg>`;
 	const TRASH_SVG = `<svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4Zm-3 6h12l-.9 11.1a2 2 0 0 1-2 1.9H8.9a2 2 0 0 1-2-1.9Zm5 2v8h2v-8Zm-3.5 0 .5 8h2l-.5-8Zm7 0-.5 8h2l.5-8Z"/></svg>`;
 	const CHEVRON_SVG = `<svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M7 10l5 5 5-5z"/></svg>`;
+	const GITHUB_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.87c-2.78.6-3.37-1.18-3.37-1.18-.45-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.9 1.53 2.35 1.09 2.92.83.09-.65.35-1.09.64-1.34-2.22-.25-4.56-1.11-4.56-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.64 0 0 .84-.27 2.75 1.02A9.55 9.55 0 0 1 12 6.82a9.5 9.5 0 0 1 2.5.34c1.91-1.29 2.75-1.02 2.75-1.02.55 1.37.2 2.39.1 2.64.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.86v2.76c0 .27.18.58.69.48A10 10 0 0 0 12 2Z"/></svg>`;
+	const PROJECT_URL = "https://github.com/ROOT94-MAX/DiscordAIMessageCleaner";
 
 	const SmallBtn = props => h("button", {
 		type: "button",
@@ -5376,19 +5455,6 @@ module.exports = (() => {
 		const [, setTick] = useState(0);
 		const bump = () => setTick(value => value + 1);
 		return h("div", null,
-			h("div", { className: `${CSS_PREFIX}-group-header` }, t("group_language")),
-			h(SetRow, { label: t("set_language") },
-				h(SelectMenu, {
-					ariaLabel: t("set_language"),
-					value: String(SettingsStore.get("general.interfaceLanguage") || "system"),
-					options: langOptions(),
-					onChange: value => {
-						SettingsStore.set("general.interfaceLanguage", value || "system");
-						try { BdApi.UI.showToast(t("toast_lang_reopen"), { type: "info" }); } catch (e) { /* ignore */ }
-						bump();
-					}
-				})
-			),
 			h("div", { className: `${CSS_PREFIX}-group-header` }, t("group_prompt")),
 			h(SetRow, { label: t("prompt_active") },
 				h(SelectMenu, {
@@ -5442,6 +5508,19 @@ module.exports = (() => {
 		const [, setTick] = useState(0);
 		const bump = () => setTick(value => value + 1);
 		return h("div", null,
+			h("div", { className: `${CSS_PREFIX}-group-header` }, t("group_language")),
+			h(SetRow, { label: t("set_language") },
+				h(SelectMenu, {
+					ariaLabel: t("set_language"),
+					value: String(SettingsStore.get("general.interfaceLanguage") || "system"),
+					options: langOptions(),
+					onChange: value => {
+						SettingsStore.set("general.interfaceLanguage", value || "system");
+						try { BdApi.UI.showToast(t("toast_lang_reopen"), { type: "info" }); } catch (e) { /* ignore */ }
+						bump();
+					}
+				})
+			),
 			h("div", { className: `${CSS_PREFIX}-group-header` }, t("group_fetch")),
 			h(SetRow, { label: t("set_max_messages") },
 				h(NumInput, {
@@ -5508,9 +5587,30 @@ module.exports = (() => {
 			}
 		};
 		return h("div", null,
+			h("div", { className: `${CSS_PREFIX}-group-header` }, t("group_about")),
+			h("div", { className: `${CSS_PREFIX}-about-card` },
+				h("div", { className: `${CSS_PREFIX}-about-icon`, dangerouslySetInnerHTML: { __html: CLEANER_ICON_SVG } }),
+				h("div", { className: `${CSS_PREFIX}-about-copy` },
+					h("div", { className: `${CSS_PREFIX}-about-name` }, PLUGIN_ID),
+					h("div", { className: `${CSS_PREFIX}-about-description` }, t("about_description"))
+				),
+				h("div", { className: `${CSS_PREFIX}-about-meta` },
+					h("span", { className: `${CSS_PREFIX}-about-version` }, `v${PLUGIN_VERSION}`),
+					h("a", {
+						className: `${CSS_PREFIX}-about-github`,
+						href: PROJECT_URL,
+						target: "_blank",
+						rel: "noopener noreferrer",
+						"aria-label": t("about_github"),
+						title: t("about_github"),
+						dangerouslySetInnerHTML: { __html: GITHUB_SVG }
+					})
+				)
+			),
+			h("div", { className: `${CSS_PREFIX}-group-header` }, t("group_diagnostics")),
 			h("div", { className: `${CSS_PREFIX}-note`, style: { marginBottom: "8px" } }, t("set_diag_note")),
 			h("div", { className: `${CSS_PREFIX}-diag-version` },
-				`${t("version_label")}: ${PLUGIN_VERSION} | BetterDiscord: ${BdApi.version || "?"}`),
+				`BetterDiscord: ${BdApi.version || "?"}`),
 			h("div", { className: `${CSS_PREFIX}-diag-card` },
 				h("div", { className: `${CSS_PREFIX}-diag-row` },
 					h("span", { className: `${CSS_PREFIX}-diag-key` }, t("diag_entry")),

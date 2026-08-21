@@ -1158,6 +1158,75 @@
 		}
 		/* settings: prompt editor + diagnostics */
 		.${CSS_PREFIX}-prompt-editor { margin-top: 8px; margin-bottom: 2px; }
+		.${CSS_PREFIX}-about-card {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			padding: 12px;
+			border-radius: 8px;
+			background: color-mix(in srgb, var(--damc-brand, #5865f2) 8%, var(--damc-surface, #2b2d31));
+		}
+		.${CSS_PREFIX}-about-icon {
+			width: 36px;
+			height: 36px;
+			flex: 0 0 auto;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: 8px;
+			background: color-mix(in srgb, var(--damc-brand, #5865f2) 18%, transparent);
+			color: var(--damc-brand, #5865f2);
+		}
+		.${CSS_PREFIX}-about-icon svg { width: 22px; height: 22px; }
+		.${CSS_PREFIX}-about-copy { flex: 1 1 auto; min-width: 0; }
+		.${CSS_PREFIX}-about-name {
+			font-size: 16px;
+			font-weight: 700;
+			color: var(--damc-text-strong, #f2f3f5);
+		}
+		.${CSS_PREFIX}-about-description {
+			margin-top: 2px;
+			font-size: 13px;
+			line-height: 1.4;
+			color: var(--damc-text-faint, #949ba4);
+		}
+		.${CSS_PREFIX}-about-meta {
+			flex: 0 0 auto;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+		.${CSS_PREFIX}-about-version {
+			height: 22px;
+			padding: 0 8px;
+			display: inline-flex;
+			align-items: center;
+			border-radius: 11px;
+			background: color-mix(in srgb, var(--damc-brand, #5865f2) 15%, transparent);
+			color: var(--damc-brand, #5865f2);
+			font-size: 12px;
+			font-weight: 700;
+		}
+		.${CSS_PREFIX}-about-github {
+			width: 30px;
+			height: 30px;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			border-radius: 4px;
+			color: var(--damc-icon, #b5bac1);
+			text-decoration: none;
+		}
+		.${CSS_PREFIX}-about-github:hover,
+		.${CSS_PREFIX}-about-github:focus-visible {
+			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
+			color: var(--damc-text-strong, #f2f3f5);
+			outline: none;
+		}
+		.${CSS_PREFIX}-about-github:focus-visible {
+			box-shadow: 0 0 0 2px color-mix(in srgb, var(--damc-brand, #5865f2) 38%, transparent);
+		}
+		.${CSS_PREFIX}-about-github svg { width: 18px; height: 18px; }
 		.${CSS_PREFIX}-diag-version {
 			font-size: 13px;
 			color: var(--damc-text-faint, #949ba4);
