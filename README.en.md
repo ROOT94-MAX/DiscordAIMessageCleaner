@@ -113,9 +113,9 @@ The settings panel has four tabs:
 - Policy content, concurrency, confirmation threshold, edited-message handling, deletion pacing, and deletion cap use this pattern; group-level diagnostics guidance remains visible.
 - The model combo now separates the current value, filter query, and fetched-model cache: selecting a model keeps the chevron and full list available, and reopening clears the filter to show every fetched model.
 - The model list is a fixed `document.body` Portal: it compares available space above and below, chooses the better direction, caps its height to that space with internal scrolling, and repositions on window scroll/resize without panel clipping.
-- Settings sections now match the sibling summary plugin exactly: dividers are removed and group headings use `24px 0 8px` margins (0 above the first group), while rows and field items remain compact.
+- Settings use one vertical token scale: 16px tab-to-content, 24px/8px groups, 36px title rows, 16px between fields, and 4px label-to-control. Dividers and local prompt-editor 8/2 or 24/6 exceptions are removed.
 - Interface language moves from Review Policy to General. Diagnostics becomes About & Diagnostics: an About card presents the description, version badge, and accessible GitHub icon, followed by runtime health and copy-diagnostics controls.
-- The Content title now matches Current Policy: 16px, weight 500, normal text color, 20px line height, and a 6px title-to-textarea gap. Runtime Diagnostics guidance moves into the heading's info icon.
+- The Content title matches Current Policy: 16px, weight 500, normal text color, 20px line height, the same 36px title row, and the global 4px label-to-textarea gap. Runtime Diagnostics guidance moves into the heading's info icon.
 - Update checking lives in a separate Version & Updates group, not inside the About card. It prefers the official GitHub API and falls back to the latest Release page on 403/rate limits; fallback mode offers the manual Release link only. Download & Install appears only when the API supplies an official digest, then enforces URL/SHA-256/plugin-metadata validation, backup, post-write verification, and failure restoration—without background updates or candidate downgrades.
 
 ## Security & privacy

@@ -2721,6 +2721,12 @@ module.exports = (() => {
 		}
 		/* settings panel */
 		.${CSS_PREFIX}-set-root {
+			--damc-settings-page-gap: 16px;
+			--damc-settings-section-gap: 24px;
+			--damc-settings-section-title-gap: 8px;
+			--damc-settings-row-height: 36px;
+			--damc-settings-field-gap: 16px;
+			--damc-settings-label-control-gap: 4px;
 			display: flex;
 			flex-direction: column;
 			color: var(--damc-text, #dbdee1);
@@ -2730,11 +2736,11 @@ module.exports = (() => {
 			font-size: 14px;
 			font-weight: 700;
 			color: var(--damc-text-faint, #949ba4);
-			margin: 24px 0 8px;
+			margin: var(--damc-settings-section-gap) 0 var(--damc-settings-section-title-gap);
 		}
 		.${CSS_PREFIX}-group-header:first-child { margin-top: 0; }
 		.${CSS_PREFIX}-set-row {
-			min-height: 36px;
+			min-height: var(--damc-settings-row-height);
 			display: flex;
 			align-items: center;
 			justify-content: space-between;
@@ -3043,26 +3049,26 @@ module.exports = (() => {
 		}
 		.${CSS_PREFIX}-tabpage {
 			min-height: 360px;
-			margin-top: 12px;
+			margin-top: var(--damc-settings-page-gap);
 			/* Let self-drawn dropdowns overflow the panel instead of being clipped. */
 			overflow: visible;
 		}
 		/* settings: fields */
-		.${CSS_PREFIX}-f-item { margin-bottom: 12px; }
+		.${CSS_PREFIX}-f-item { margin-bottom: var(--damc-settings-field-gap); }
 		.${CSS_PREFIX}-f-item:last-child { margin-bottom: 0; }
 		.${CSS_PREFIX}-f-label {
 			font-size: 16px;
 			font-weight: 600;
 			color: var(--damc-text-strong, #f2f3f5);
-			margin: 0 0 4px;
+			margin: 0 0 var(--damc-settings-label-control-gap);
 		}
 		.${CSS_PREFIX}-f-row {
 			display: flex;
 			justify-content: space-between;
 			align-items: center;
-			min-height: 28px;
+			min-height: var(--damc-settings-row-height);
 			gap: 8px;
-			margin: 0 0 4px;
+			margin: 0 0 var(--damc-settings-label-control-gap);
 		}
 		.${CSS_PREFIX}-f-row .${CSS_PREFIX}-f-label { margin: 0; }
 		.${CSS_PREFIX}-f-actions { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -3431,16 +3437,12 @@ module.exports = (() => {
 			transform: translateX(16px);
 		}
 		/* settings: prompt editor + diagnostics */
-		.${CSS_PREFIX}-prompt-editor { margin-top: 8px; margin-bottom: 2px; }
+		.${CSS_PREFIX}-prompt-editor { margin: 0; }
 		.${CSS_PREFIX}-prompt-content-field .${CSS_PREFIX}-f-label {
 			font-size: 16px;
 			font-weight: 500;
 			line-height: 20px;
 			color: var(--damc-text, #dbdee1);
-		}
-		.${CSS_PREFIX}-prompt-content-field .${CSS_PREFIX}-f-row {
-			min-height: 24px;
-			margin-bottom: 6px;
 		}
 		.${CSS_PREFIX}-about-card {
 			display: flex;

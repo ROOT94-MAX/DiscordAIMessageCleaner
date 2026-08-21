@@ -138,10 +138,17 @@ check("model popup uses a viewport-bounded adaptive portal", () => {
 });
 
 check("settings sections use compact summary-plugin spacing", () => {
-	for (const needle of ["margin: 24px 0 8px;", "group-header:first-child { margin-top: 0; }", "min-height: 36px;", "margin-top: 12px;"]) {
+	for (const needle of [
+		"--damc-settings-page-gap: 16px;", "--damc-settings-section-gap: 24px;",
+		"--damc-settings-section-title-gap: 8px;", "--damc-settings-row-height: 36px;",
+		"--damc-settings-field-gap: 16px;", "--damc-settings-label-control-gap: 4px;",
+		"margin: var(--damc-settings-section-gap) 0 var(--damc-settings-section-title-gap);",
+		"min-height: var(--damc-settings-row-height);", "margin-top: var(--damc-settings-page-gap);"
+	]) {
 		if (!pluginSource.includes(needle)) throw new Error(`compact settings spacing missing: ${needle}`);
 	}
 	if (pluginSource.includes("group-header:not(:first-child)")) throw new Error("obsolete group divider remains");
+	if (!pluginSource.includes("prompt-editor { margin: 0; }")) throw new Error("prompt editor retains a local spacing exception");
 });
 
 check("language lives in General, not Review Policy", () => {
@@ -170,7 +177,7 @@ check("About & Diagnostics exposes version and accessible GitHub link", () => {
 check("policy content title matches the current-policy hierarchy", () => {
 	for (const needle of [
 		"prompt-content-field", "font-size: 16px;", "font-weight: 500;", "line-height: 20px;",
-		"color: var(--damc-text, #dbdee1);", "margin-bottom: 6px;"
+		"color: var(--damc-text, #dbdee1);", "var(--damc-settings-label-control-gap)"
 	]) {
 		if (!pluginSource.includes(needle)) throw new Error(`policy content hierarchy missing: ${needle}`);
 	}
