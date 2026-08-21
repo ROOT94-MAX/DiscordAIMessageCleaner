@@ -107,7 +107,7 @@ The settings panel has four tabs:
 - Aligns with the sibling summary plugin's runtime constraints by using only BetterDiscord-compatible `fs`, `path`, and `USERPROFILE/HOME`; bare `os` / `buffer` imports that the plugin loader misread as relative paths are removed.
 - Failure remains safe: when a pre-deletion backup was requested, cancelling or exhausting every save tier abandons deletion.
 
-## Settings help icons (v0.6.8)
+## Settings and cleaner-result experience (v0.6.8)
 
 - Field-level help moves into one consistent circular info icon, placed inline immediately after the title with a 5px gap, visual centering, and a 1px upward adjustment; it never enters the row's right-side control area.
 - Mouse hover and keyboard focus show a Discord-style Tooltip, with native `title` fallback when the component is unavailable.
@@ -119,6 +119,10 @@ The settings panel has four tabs:
 - The Content title matches Current Policy: 16px, weight 500, normal text color, 20px line height, the same 36px title row, and the global 4px label-to-textarea gap. Runtime Diagnostics guidance moves into the heading's info icon.
 - Update checking lives in a separate Version & Updates group, not inside the About card. It prefers the official GitHub API and falls back to the latest Release page on 403/rate limits; fallback mode offers the manual Release link only. Download & Install appears only when the API supplies an official digest, then enforces URL/SHA-256/plugin-metadata validation, backup, post-write verification, and failure restoration—without background updates or candidate downgrades.
 - All setting labels share one typography token: Name, API Base URL, API Key, Model, Current Policy, Content, Concurrent Review Requests, and peers use 16px/500/20px in the normal text color; provider titles remain 16px/700, input text 15px/400, and field action buttons 14px.
+- Cleaner results now follow the settings modal hierarchy: channel badges are quieter and selected rows use a subtle tint. Animated custom emoji retry GIF/WebP/PNG, images render directly, other attachments retain file metadata, and body/attachment links are clickable.
+- Message navigation uses the client's native channel selection and `jumpToMessage`; same-channel and cross-channel targets stay in-client without browser or full-page reload navigation.
+- Whole-server scans are cached for the current plugin session under `guild:<guildId>`, restoring results, filters, and manual selection from any channel in that server. Channel/DM scopes remain isolated under `channel:<channelId>`, with a 20-scope cap.
+- Delete confirmation uses explicit Cancel / Permanently Delete buttons, and deleted or already-missing messages are removed from scan cache, the background review session, and current selection.
 
 ## Security & privacy
 
