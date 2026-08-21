@@ -105,18 +105,22 @@
 			display: flex;
 			flex-direction: column;
 			gap: 14px;
-			padding: 12px 16px 16px;
+			padding: 4px 16px 16px;
 			color: var(--damc-text, #dbdee1);
 			font-size: 15px;
 			user-select: text;
 		}
 		.${CSS_PREFIX}-context {
 			font-size: 13px;
-			font-weight: 600;
+			font-weight: 500;
 			color: var(--damc-text-sub, #b5bac1);
 			overflow: hidden;
 			text-overflow: ellipsis;
 			white-space: nowrap;
+		}
+		/* Header stack: the stats line rides tight under the channel line. */
+		.${CSS_PREFIX}-context + .${CSS_PREFIX}-stats {
+			margin-top: -10px;
 		}
 		.${CSS_PREFIX}-note {
 			font-size: 13px;
@@ -347,6 +351,12 @@
 			text-overflow: ellipsis;
 			white-space: nowrap;
 		}
+		.${CSS_PREFIX}-strip-pct {
+			font-size: 13px;
+			color: var(--damc-text-faint, #949ba4);
+			font-variant-numeric: tabular-nums;
+			flex: 0 0 auto;
+		}
 		.${CSS_PREFIX}-strip-cancel {
 			border: 0;
 			background: transparent;
@@ -403,8 +413,17 @@
 			width: 6px;
 			height: 6px;
 			border-radius: 50%;
-			background: var(--damc-ok, #23a55a);
+			background: currentColor;
 			flex: 0 0 auto;
+		}
+		.${CSS_PREFIX}-okline-warn {
+			color: var(--damc-danger, #f23f43);
+		}
+		/* Wrapper that dims a native disabled button one step further: the
+		   host's own disabled state stays too saturated on dark surfaces. */
+		.${CSS_PREFIX}-btn-dim {
+			display: inline-flex;
+			opacity: 0.55;
 		}
 		/* Result list: no container box. The tool row and the embed-style
 		   message cards sit directly on the modal background — a sunken panel
@@ -440,9 +459,13 @@
 			font-variant-numeric: tabular-nums;
 			flex: 0 0 auto;
 		}
+		/* One surface container, tight rows inside — the same zone anatomy as
+		   the config card (floating per-message cards read as scattered). */
 		.${CSS_PREFIX}-panel-body {
 			display: flex;
 			flex-direction: column;
+			background: var(--damc-surface, #2b2d31);
+			border-radius: 8px;
 			/* Shrinks on short windows so the footer stays reachable. */
 			max-height: min(340px, 38vh);
 			overflow-y: auto;
@@ -454,37 +477,38 @@
 			background: var(--damc-scroll-thumb, rgba(78, 80, 88, 0.48));
 			border-radius: 4px;
 		}
-		/* Day group header: left-aligned, no through-lines. */
+		/* Day group header: a left-aligned section row inside the list. */
 		.${CSS_PREFIX}-day {
-			padding: 8px 2px 6px;
+			padding: 10px 12px 4px;
 			font-size: 12px;
 			font-weight: 700;
 			color: var(--damc-text-faint, #949ba4);
 			flex: 0 0 auto;
 		}
-		.${CSS_PREFIX}-panel-body > .${CSS_PREFIX}-day:first-child {
-			padding-top: 0;
+		.${CSS_PREFIX}-mcard + .${CSS_PREFIX}-day {
+			border-top: 1px solid rgba(255, 255, 255, 0.045);
+			margin-top: 2px;
 		}
-		/* Message card: the host's embed anatomy — surface color on the modal
-		   base, rounded, with the flagged left bar riding the card edge. */
+		/* Message row: flat, tight, hairline-separated — a list, not a card. */
 		.${CSS_PREFIX}-mcard {
 			position: relative;
 			display: flex;
 			align-items: flex-start;
 			gap: 10px;
-			padding: 9px 11px;
-			margin: 0 0 8px;
+			padding: 8px 12px;
 			border: 0;
-			border-radius: 8px;
-			background: var(--damc-surface, #2b2d31);
+			background: transparent;
 			font: inherit;
 			text-align: left;
 			cursor: pointer;
 			color: var(--damc-text, #dbdee1);
 			flex: 0 0 auto;
 		}
+		.${CSS_PREFIX}-mcard + .${CSS_PREFIX}-mcard {
+			border-top: 1px solid rgba(255, 255, 255, 0.045);
+		}
 		.${CSS_PREFIX}-mcard:hover {
-			background: color-mix(in srgb, #fff 4%, var(--damc-surface, #2b2d31));
+			background: var(--damc-hover, rgba(255, 255, 255, 0.06));
 		}
 		/* Selection is the checkbox's job alone: no card tint (select-all is
 		   the normal case; tinting every row turns the list into patchwork). */
@@ -492,8 +516,8 @@
 			content: "";
 			position: absolute;
 			left: 0;
-			top: 8px;
-			bottom: 8px;
+			top: 6px;
+			bottom: 6px;
 			width: 2px;
 			border-radius: 1px;
 			background: var(--damc-flag, var(--damc-danger, #f23f43));
@@ -502,7 +526,7 @@
 			cursor: default;
 		}
 		.${CSS_PREFIX}-mcard-static:hover {
-			background: var(--damc-surface, #2b2d31);
+			background: transparent;
 		}
 		.${CSS_PREFIX}-checkbox {
 			width: 18px;
@@ -510,7 +534,8 @@
 			flex: 0 0 auto;
 			margin-top: 1px;
 			border-radius: 4px;
-			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
+			/* Bright enough to read as an affordance on the surface color. */
+			border: 1px solid color-mix(in srgb, var(--damc-text, #dbdee1) 26%, transparent);
 			background: var(--damc-input-bg, #1e1f22);
 			display: inline-flex;
 			align-items: center;
@@ -539,16 +564,18 @@
 			font-size: 12px;
 			color: var(--damc-text-faint, #949ba4);
 		}
+		/* Meta badges stay per-row but must never compete with the content:
+		   one size down, faint text, barely-there fill. */
 		.${CSS_PREFIX}-badge {
 			display: inline-flex;
 			align-items: center;
-			padding: 0 6px;
-			height: 17px;
+			padding: 0 5px;
+			height: 15px;
 			border-radius: 4px;
-			font-size: 11px;
+			font-size: 10px;
 			font-weight: 500;
-			background: color-mix(in srgb, var(--damc-text, #dbdee1) 6%, transparent);
-			color: var(--damc-text-sub, #b5bac1);
+			background: color-mix(in srgb, var(--damc-text, #dbdee1) 4%, transparent);
+			color: var(--damc-text-faint, #949ba4);
 			flex: 0 0 auto;
 		}
 		/* Category label: role-color language — dot + colored text, no pill. */
@@ -574,12 +601,16 @@
 			font-variant-numeric: tabular-nums;
 			flex: 0 0 auto;
 		}
+		/* Two-line clamp: the user is judging whether to delete this message,
+		   so a one-line ellipsis hides exactly what they need to read. */
 		.${CSS_PREFIX}-row-text {
 			font-size: 15px;
 			line-height: 1.4;
+			display: -webkit-box;
+			-webkit-line-clamp: 2;
+			-webkit-box-orient: vertical;
 			overflow: hidden;
-			text-overflow: ellipsis;
-			white-space: nowrap;
+			overflow-wrap: anywhere;
 		}
 		.${CSS_PREFIX}-row-text.${CSS_PREFIX}-faint {
 			color: var(--damc-text-faint, #949ba4);
@@ -837,11 +868,6 @@
 		.${CSS_PREFIX}-backup-format-label {
 			flex: 0 0 auto;
 		}
-		.${CSS_PREFIX}-backup-format .${CSS_PREFIX}-select-trigger {
-			height: 30px;
-			min-width: 160px;
-			font-size: 13.5px;
-		}
 		/* Emphasized object inside confirm bodies (count, policy name). */
 		.${CSS_PREFIX}-emph {
 			color: var(--damc-text-strong, #f2f3f5);
@@ -917,7 +943,7 @@
 			gap: 6px;
 			padding: 9px;
 			border: 0;
-			border-radius: 8px;
+			border-top: 1px solid rgba(255, 255, 255, 0.045);
 			background: transparent;
 			font: inherit;
 			font-size: 13px;

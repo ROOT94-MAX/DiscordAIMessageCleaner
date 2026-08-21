@@ -47,7 +47,7 @@
 			search_fallback_toast: "搜索不可用（{detail}），已回退为逐页扫描当前频道。",
 			search_guild_failed: "服务器级搜索不可用：{detail}。可切换为「当前频道」用逐页扫描。",
 			// results
-			results_stats: "我的消息 {mine} 条（共扫描 {scanned} 条）",
+			results_stats: "我的消息 {mine} 条 · 共扫描 {scanned} 条",
 			results_capped: "已达扫描上限 {max} 条：仅包含最新部分，可分次处理更早的消息。",
 			results_cancelled: "扫描被取消，以下为已获取的部分结果。",
 			act_resume_scan: "继续扫描更早的消息",
@@ -307,7 +307,7 @@
 			progress_rate_limited: "Rate limited, waiting…",
 			search_fallback_toast: "Search unavailable ({detail}); fell back to paged scanning of this channel.",
 			search_guild_failed: "Guild-wide search unavailable: {detail}. Switch to \"This channel\" for the paged scan.",
-			results_stats: "{mine} of my messages ({scanned} scanned)",
+			results_stats: "{mine} of my messages · {scanned} scanned",
 			results_capped: "Scan cap of {max} reached: only the newest part is included. Run again for older messages.",
 			results_cancelled: "Scan cancelled; partial results below.",
 			act_resume_scan: "Continue scanning older messages",

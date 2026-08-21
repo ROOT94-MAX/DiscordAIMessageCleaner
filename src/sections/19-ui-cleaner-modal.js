@@ -139,23 +139,22 @@
 			),
 			on ? h("div", { className: `${CSS_PREFIX}-backup-format` },
 				h("span", { className: `${CSS_PREFIX}-backup-format-label` }, t("backup_format_label")),
-				// Family dropdown (self-drawn, opens upward: it sits at the
-				// bottom of the confirm modal).
-				h(SelectMenu, {
-					ariaLabel: t("backup_format_label"),
-					value: format,
-					up: true,
-					options: [
-						{ value: "md", label: t("backup_format_md") },
-						{ value: "txt", label: t("backup_format_txt") },
-						{ value: "json", label: t("backup_format_json") }
-					],
-					onChange: value => {
-						const next = ExportService.normalizeFormat(value);
-						setFormat(next);
-						props.onFormatChange(next);
-					}
-				})
+				// Three fixed options need no floater: a mini segment shows all
+				// of them at once inside the small confirm modal.
+				h("div", { className: `${CSS_PREFIX}-seg-mini`, role: "radiogroup" },
+					[["md", "backup_format_md"], ["txt", "backup_format_txt"], ["json", "backup_format_json"]].map(entry => h("button", {
+						key: entry[0],
+						type: "button",
+						role: "radio",
+						"aria-checked": format === entry[0],
+						className: `${CSS_PREFIX}-seg-mini-btn${format === entry[0] ? ` ${CSS_PREFIX}-active` : ""}`,
+						onClick: () => {
+							const next = ExportService.normalizeFormat(entry[0]);
+							setFormat(next);
+							props.onFormatChange(next);
+						}
+					}, t(entry[1])))
+				)
 		) : null
 		);
 	};
@@ -1061,19 +1060,27 @@
 		}
 
 		if (stage === "done" && deleteReport) {
-			children.push(h("div", { key: "dtitle", className: `${CSS_PREFIX}-empty-title` }, t("delete_done_title")));
-			children.push(h("div", { key: "dreport", className: `${CSS_PREFIX}-stats` }, t("delete_report", {
-				deleted: deleteReport.deleted.length,
-				skipped: deleteReport.skipped.length,
-				failed: deleteReport.failed.length
-			})));
+			// Report card: green status line when clean, danger when anything
+			// failed; the numbers ride underneath in the same card.
+			const failedCount = deleteReport.failed.length;
+			children.push(h("div", { key: "dcard", className: `${CSS_PREFIX}-zone ${CSS_PREFIX}-zone-pad` },
+				h("div", { className: `${CSS_PREFIX}-okline${failedCount ? ` ${CSS_PREFIX}-okline-warn` : ""}`, style: { fontSize: "15px" } },
+					h("span", { className: `${CSS_PREFIX}-okline-dot` }),
+					t("delete_done_title")
+				),
+				h("div", { className: `${CSS_PREFIX}-stats`, style: { marginTop: "6px" } }, t("delete_report", {
+					deleted: deleteReport.deleted.length,
+					skipped: deleteReport.skipped.length,
+					failed: failedCount
+				}))
+			));
 			if (deleteReport.cancelled) {
 				children.push(h("div", { key: "dcancel", className: `${CSS_PREFIX}-note` }, t("results_cancelled")));
 			}
 			if (deleteReport.failed.length) {
 				children.push(h("div", { key: "dfailhdr", className: `${CSS_PREFIX}-note` }, t("delete_report_failed")));
 				children.push(h("div", { key: "dfaillist", className: `${CSS_PREFIX}-panel` },
-					h("div", { className: `${CSS_PREFIX}-panel-body`, style: { maxHeight: "180px", paddingTop: "8px" } },
+					h("div", { className: `${CSS_PREFIX}-panel-body`, style: { maxHeight: "180px" } },
 						deleteReport.failed.map(entry => h("div", { key: entry.id, className: `${CSS_PREFIX}-mcard ${CSS_PREFIX}-mcard-static` },
 							h("div", { className: `${CSS_PREFIX}-row-body` },
 								h("div", { className: `${CSS_PREFIX}-row-meta` }, `${entry.id} · HTTP ${entry.code || "?"}`),
