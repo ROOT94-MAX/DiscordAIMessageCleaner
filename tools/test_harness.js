@@ -399,6 +399,167 @@ const ctx = { channelId: "200000000000000001", isPrivate: false };
 		assert.ok(thrown && thrown.code === "AI_PARSE", "throws AI_PARSE");
 	});
 
+	section("ExportService");
+	const exportDir = label => fs.mkdtempSync(path.join(os.tmpdir(), `damc-export-${label}-`));
+	const exportContext = {
+		guildId: "g1", guildName: "Guild / Demo", channelId: "c1", channelName: "general:chat", isPrivate: false
+	};
+	const exportMessages = [{
+		id: "m1", channelId: "c1", timestamp: Date.now(), content: "你好 backup", edited: true,
+		attachments: [{ filename: "proof.png", url: "https://example.test/proof.png" }]
+	}];
+
+	await test("filename sanitization works and deletion-log export is retired", async () => {
+		const filename = api.ExportService.buildFilename(exportContext, "_backup", "md");
+		assert.match(filename, /^AIMessageCleaner_Guild_Demo_general_chat_\d{8}-\d{4}_backup\.md$/);
+		assert.strictEqual(api.Utils.sanitizeFilename("  a/b:c  "), "a_b_c");
+		assert.strictEqual(api.ExportService.buildLog, undefined, "no duplicate post-deletion log exporter");
+	});
+
+	await test("BetterDiscord runtime path uses no os/buffer require and UTF-8 sizing is exact", async () => {
+		const pluginSource = fs.readFileSync(PLUGIN_PATH, "utf8");
+		assert.doesNotMatch(pluginSource, /require\(["'](?:os|buffer)["']\)/, "unsupported bare built-in require removed");
+		assert.strictEqual(api.ExportService._utf8Bytes("你好").length, 6);
+		assert.strictEqual(api.ExportService._utf8Bytes("A😀").length, 5);
+	});
+
+	await test("pre-deletion backup renders Markdown, TXT, and JSON", async () => {
+		const md = api.ExportService.buildBackup(exportContext, exportMessages, "md", "zh-CN");
+		assert.match(md, /^# AI 消息删除前备份/m);
+		assert.match(md, /你好 backup/);
+		assert.match(md, /\[proof\.png\]\(https:\/\/example\.test\/proof\.png\)/);
+		const txt = api.ExportService.buildBackup(exportContext, exportMessages, "txt", "zh-CN");
+		assert.match(txt, /^AI 消息删除前备份/m);
+		assert.match(txt, /proof\.png: https:\/\/example\.test\/proof\.png/);
+		const json = JSON.parse(api.ExportService.buildBackup(exportContext, exportMessages, "json", "en-US"));
+		assert.strictEqual(json.plugin, "DiscordAIMessageCleaner v0.6.7");
+		assert.strictEqual(json.count, 1);
+		assert.strictEqual(json.messages[0].content, "你好 backup");
+	});
+
+	await test("BetterDiscord save dialog writes and verifies the selected file", async () => {
+		const dir = exportDir("bd");
+		const target = path.join(dir, "selected.json");
+		let options = null;
+		const result = await api.ExportService.save("你好 export", "default.json", {
+			downloadsDir: dir,
+			discordNative: null,
+			ui: { openDialog: async value => { options = value; return { canceled: false, filePath: target }; } }
+		});
+		assert.strictEqual(result.saved, true);
+		assert.strictEqual(result.path, target);
+		assert.strictEqual(fs.readFileSync(target, "utf8"), "你好 export");
+		assert.strictEqual(options.defaultPath, path.join(dir, "default.json"), "absolute default path");
+		assert.deepStrictEqual(options.filters, [{ name: "JSON", extensions: ["json"] }]);
+	});
+
+	await test("system save dialog filter follows the selected MD/TXT/JSON format", async () => {
+		const dir = exportDir("filters");
+		for (const format of ["md", "txt", "json"]) {
+			const target = path.join(dir, `selected.${format}`);
+			let options = null;
+			await api.ExportService.save("format", `default.${format}`, {
+				downloadsDir: dir,
+				discordNative: null,
+				ui: { openDialog: async value => { options = value; return { canceled: false, filePath: target }; } }
+			});
+			assert.deepStrictEqual(options.filters, [{ name: format.toUpperCase(), extensions: [format] }]);
+			assert.strictEqual(fs.readFileSync(target, "utf8"), "format");
+		}
+	});
+
+	await test("BetterDiscord dialog cancel returns cancelled without fallback write", async () => {
+		const dir = exportDir("cancel");
+		const result = await api.ExportService.save("data", "cancelled.json", {
+			downloadsDir: dir,
+			discordNative: null,
+			ui: { openDialog: async () => ({ canceled: true }) }
+		});
+		assert.deepStrictEqual(result, { cancelled: true });
+		assert.deepStrictEqual(fs.readdirSync(dir), [], "cancel created no file");
+	});
+
+	await test("pathless BetterDiscord result is treated as cancel without fallback", async () => {
+		const dir = exportDir("pathless");
+		const result = await api.ExportService.save("fallback", "pathless.json", {
+			downloadsDir: dir,
+			discordNative: null,
+			ui: { openDialog: async () => ({ canceled: false }) }
+		});
+		assert.deepStrictEqual(result, { cancelled: true });
+		assert.deepStrictEqual(fs.readdirSync(dir), [], "pathless result created no file");
+	});
+
+	await test("BetterDiscord dialog failure falls through to a verified Downloads write", async () => {
+		const dir = exportDir("dialog-error");
+		const result = await api.ExportService.save("fallback", "dialog-error.json", {
+			downloadsDir: dir,
+			discordNative: null,
+			ui: { openDialog: async () => { throw new Error("dialog IPC unavailable"); } }
+		});
+		assert.strictEqual(result.path, path.join(dir, "dialog-error.json"));
+		assert.strictEqual(fs.readFileSync(result.path, "utf8"), "fallback");
+	});
+
+	await test("Discord saveWithDialog2 success requires a real verified file", async () => {
+		const dir = exportDir("native2");
+		const target = path.join(dir, "native2.json");
+		const result = await api.ExportService.save("native two", "native2.json", {
+			downloadsDir: dir,
+			ui: null,
+			discordNative: { fileManager: {
+				saveWithDialog2: async bytes => {
+					fs.writeFileSync(target, Buffer.from(bytes));
+					return { canceledByUser: false, filePath: target, directory: dir };
+				}
+			} }
+		});
+		assert.strictEqual(result.path, target);
+		assert.strictEqual(fs.readFileSync(target, "utf8"), "native two");
+	});
+
+	await test("legacy saveWithDialog null is treated as cancel, never false success", async () => {
+		const dir = exportDir("native-null");
+		const result = await api.ExportService.save("real fallback", "native-null.json", {
+			downloadsDir: dir,
+			ui: null,
+			discordNative: { fileManager: { saveWithDialog: async () => null } }
+		});
+		assert.deepStrictEqual(result, { cancelled: true });
+		assert.deepStrictEqual(fs.readdirSync(dir), [], "null result created no file");
+	});
+
+	await test("native cancel stops the chain instead of silently writing Downloads", async () => {
+		const dir = exportDir("native-cancel");
+		const result = await api.ExportService.save("data", "native-cancel.json", {
+			downloadsDir: dir,
+			ui: null,
+			discordNative: { fileManager: { saveWithDialog: async () => { throw new Error("Save dialog was canceled by user"); } } }
+		});
+		assert.deepStrictEqual(result, { cancelled: true });
+		assert.deepStrictEqual(fs.readdirSync(dir), [], "cancel created no file");
+	});
+
+	await test("fallback strips path traversal and surfaces a real disk failure", async () => {
+		const dir = exportDir("safe-name");
+		const saved = await api.ExportService.save("safe", "../safe.json", { downloadsDir: dir, ui: null, discordNative: null });
+		assert.strictEqual(saved.path, path.join(dir, "safe.json"));
+		let thrown = null;
+		try {
+			await api.ExportService.save("blocked", "blocked.json", {
+				downloadsDir: dir,
+				ui: null,
+				discordNative: null,
+				fs: {
+					mkdirSync() {},
+					writeFileSync() { throw new Error("disk blocked"); }
+				}
+			});
+		} catch (e) { thrown = e; }
+		assert.ok(thrown && thrown.code === "EXPORT_FAILED", "disk failure is reported");
+		assert.match(thrown.message, /disk blocked/);
+	});
+
 	console.log(`\n${results.pass} passed, ${results.fail} failed`);
 	process.exit(results.fail ? 1 : 0);
 })();

@@ -86,8 +86,12 @@
 			delete_confirm_body: "即将永久删除 {n} 条你自己的消息。此操作不可撤销，删除的消息无法恢复。确定继续？",
 			delete_confirm_over_cap: "选中 {n} 条，超过单次上限 {max} 条，本次将只删除最新的 {max} 条，其余请分次处理。",
 			delete_confirm_ok: "永久删除",
-			backup_choice_label: "先把这些消息导出为 JSON 备份",
-			backup_choice_locked: "按设置，删除前会先导出 JSON 备份",
+			backup_choice_label: "删除前先导出这些消息",
+			backup_choice_locked: "按设置，删除前必须先导出这些消息",
+			backup_format_label: "导出格式",
+			backup_format_md: "Markdown (.md)",
+			backup_format_txt: "TXT (.txt)",
+			backup_format_json: "JSON (.json)",
 			backup_saved: "备份已保存：{path}",
 			backup_save_cancelled: "已取消备份，删除未执行。",
 			phase_deleting: "删除中",
@@ -99,8 +103,6 @@
 			delete_report: "成功删除 {deleted} 条 · 跳过 {skipped} 条 · 失败 {failed} 条",
 			delete_report_skipped: "跳过（已不存在）：{n} 条",
 			delete_report_failed: "失败明细：",
-			delete_export_log: "导出删除记录",
-			delete_log_saved: "删除记录已保存：{path}",
 			done_back: "完成",
 			// empty
 			empty_title: "没有找到消息",
@@ -316,8 +318,12 @@
 			delete_confirm_body: "About to permanently delete {n} of your own messages. This cannot be undone. Continue?",
 			delete_confirm_over_cap: "{n} selected, above the per-run cap of {max}. Only the newest {max} will be deleted this run; handle the rest in another pass.",
 			delete_confirm_ok: "Delete permanently",
-			backup_choice_label: "Export these messages to a JSON backup first",
-			backup_choice_locked: "A JSON backup will be exported first (per settings)",
+			backup_choice_label: "Export these messages before deletion",
+			backup_choice_locked: "Export is required before deletion (per settings)",
+			backup_format_label: "Export format",
+			backup_format_md: "Markdown (.md)",
+			backup_format_txt: "TXT (.txt)",
+			backup_format_json: "JSON (.json)",
 			backup_saved: "Backup saved: {path}",
 			backup_save_cancelled: "Backup cancelled; nothing was deleted.",
 			phase_deleting: "Deleting",
@@ -329,8 +335,6 @@
 			delete_report: "{deleted} deleted · {skipped} skipped · {failed} failed",
 			delete_report_skipped: "Skipped (already gone): {n}",
 			delete_report_failed: "Failures:",
-			delete_export_log: "Export deletion log",
-			delete_log_saved: "Deletion log saved: {path}",
 			done_back: "Done",
 			empty_title: "No messages found",
 			empty_body: "No deletable messages of yours were found in this range.",
@@ -483,4 +487,3 @@
 		}
 	};
 	const t = I18N.t;
-

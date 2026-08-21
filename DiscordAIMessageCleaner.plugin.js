@@ -2,7 +2,7 @@
  * @name DiscordAIMessageCleaner
  * @author ROOT94
  * @authorLink https://github.com/ROOT94-MAX/DiscordAIMessageCleaner
- * @version 0.6.6
+ * @version 0.6.7
  * @description Scan your own message history in any channel / DM / group DM, review it with an AI policy of your choice, and delete flagged messages after manual confirmation. Native BdApi, no library dependency.
  * @source https://github.com/ROOT94-MAX/DiscordAIMessageCleaner
  * @website https://github.com/ROOT94-MAX/DiscordAIMessageCleaner
@@ -11,11 +11,10 @@
 "use strict";
 
 module.exports = (() => {
-
 	// ==================== 01. CONSTANTS ====================
 
 	const PLUGIN_ID = "DiscordAIMessageCleaner";
-	const PLUGIN_VERSION = "0.6.6";
+	const PLUGIN_VERSION = "0.6.7";
 	const CSS_PREFIX = "damc";
 	const DISCORD_EPOCH = 1420070400000n;
 	// Guild: 0 text, 5 announcement, 10/11/12 threads. Private: 1 DM, 3 group DM.
@@ -88,7 +87,6 @@ module.exports = (() => {
 	const DASH_MARK_SVG = `<svg width="12" height="12" viewBox="0 0 24 24"><path fill="currentColor" d="M5 11h14v2H5z"/></svg>`;
 	const HASH_ICON_SVG = `<svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M9.9 3.3 9.2 7H5v2h3.8l-.6 3.5H4v2h3.8L7.1 19h2l.7-4.5h4.3L13.4 19h2l.7-4.5H20v-2h-3.5l.6-3.5H21V7h-3.5l.7-3.7h-2L15.5 7h-4.3l.7-3.7h-2ZM10.8 9h4.3l-.6 3.5h-4.3L10.8 9Z"/></svg>`;
 	const GLOBE_ICON_SVG = `<svg width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm7.7 9h-3.3a15.9 15.9 0 0 0-1.2-5.4A8 8 0 0 1 19.7 11ZM12 4.1c.9 1.2 1.9 3.3 2.3 6.9H9.7c.4-3.6 1.4-5.7 2.3-6.9ZM4.3 13h3.3c.2 2 .6 3.9 1.2 5.4A8 8 0 0 1 4.3 13Zm3.3-2H4.3a8 8 0 0 1 4.5-5.4A15.9 15.9 0 0 0 7.6 11Zm4.4 8.9c-.9-1.2-1.9-3.3-2.3-6.9h4.6c-.4 3.6-1.4 5.7-2.3 6.9Zm2.7-1.5c.6-1.5 1-3.4 1.2-5.4h3.3a8 8 0 0 1-4.5 5.4Z"/></svg>`;
-
 	// ==================== 02. BOUND API + LOGGER ====================
 
 	const Api = new BdApi(PLUGIN_ID);
@@ -155,6 +153,9 @@ module.exports = (() => {
 			const d = new Date(ts);
 			return `${Utils.pad2(d.getHours())}:${Utils.pad2(d.getMinutes())}`;
 		},
+		sanitizeFilename(name) {
+			return String(name || "").replace(/[\\/:*?"<>|\s]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 60) || "channel";
+		},
 		formatDateTime(ts) {
 			return `${Utils.formatDate(ts)} ${Utils.formatTime(ts)}`;
 		},
@@ -199,7 +200,6 @@ module.exports = (() => {
 			}
 		}
 	};
-
 	// ==================== 04. I18N ====================
 
 	const LOCALES = {
@@ -288,8 +288,12 @@ module.exports = (() => {
 			delete_confirm_body: "即将永久删除 {n} 条你自己的消息。此操作不可撤销，删除的消息无法恢复。确定继续？",
 			delete_confirm_over_cap: "选中 {n} 条，超过单次上限 {max} 条，本次将只删除最新的 {max} 条，其余请分次处理。",
 			delete_confirm_ok: "永久删除",
-			backup_choice_label: "先把这些消息导出为 JSON 备份",
-			backup_choice_locked: "按设置，删除前会先导出 JSON 备份",
+			backup_choice_label: "删除前先导出这些消息",
+			backup_choice_locked: "按设置，删除前必须先导出这些消息",
+			backup_format_label: "导出格式",
+			backup_format_md: "Markdown (.md)",
+			backup_format_txt: "TXT (.txt)",
+			backup_format_json: "JSON (.json)",
 			backup_saved: "备份已保存：{path}",
 			backup_save_cancelled: "已取消备份，删除未执行。",
 			phase_deleting: "删除中",
@@ -301,8 +305,6 @@ module.exports = (() => {
 			delete_report: "成功删除 {deleted} 条 · 跳过 {skipped} 条 · 失败 {failed} 条",
 			delete_report_skipped: "跳过（已不存在）：{n} 条",
 			delete_report_failed: "失败明细：",
-			delete_export_log: "导出删除记录",
-			delete_log_saved: "删除记录已保存：{path}",
 			done_back: "完成",
 			// empty
 			empty_title: "没有找到消息",
@@ -518,8 +520,12 @@ module.exports = (() => {
 			delete_confirm_body: "About to permanently delete {n} of your own messages. This cannot be undone. Continue?",
 			delete_confirm_over_cap: "{n} selected, above the per-run cap of {max}. Only the newest {max} will be deleted this run; handle the rest in another pass.",
 			delete_confirm_ok: "Delete permanently",
-			backup_choice_label: "Export these messages to a JSON backup first",
-			backup_choice_locked: "A JSON backup will be exported first (per settings)",
+			backup_choice_label: "Export these messages before deletion",
+			backup_choice_locked: "Export is required before deletion (per settings)",
+			backup_format_label: "Export format",
+			backup_format_md: "Markdown (.md)",
+			backup_format_txt: "TXT (.txt)",
+			backup_format_json: "JSON (.json)",
 			backup_saved: "Backup saved: {path}",
 			backup_save_cancelled: "Backup cancelled; nothing was deleted.",
 			phase_deleting: "Deleting",
@@ -531,8 +537,6 @@ module.exports = (() => {
 			delete_report: "{deleted} deleted · {skipped} skipped · {failed} failed",
 			delete_report_skipped: "Skipped (already gone): {n}",
 			delete_report_failed: "Failures:",
-			delete_export_log: "Export deletion log",
-			delete_log_saved: "Deletion log saved: {path}",
 			done_back: "Done",
 			empty_title: "No messages found",
 			empty_body: "No deletable messages of yours were found in this range.",
@@ -685,7 +689,6 @@ module.exports = (() => {
 		}
 	};
 	const t = I18N.t;
-
 	// ==================== 05. SETTINGS STORE ====================
 
 	const SettingsStore = {
@@ -1789,11 +1792,17 @@ module.exports = (() => {
 	};
 
 	// ==================== 14b. EXPORT SERVICE ====================
-	// Pre-deletion JSON backup and deletion-log export. Save chain mirrors the
-	// sibling summary plugin: BdApi.UI.openDialog -> DiscordNative save dialog
-	// -> silent write into ~/Downloads. Returns {saved, path} or {cancelled}.
+	// Pre-deletion message export (Markdown / TXT / JSON). A tier only counts as
+	// successful after the target file exists with the expected byte length:
+	// BetterDiscord dialog -> DiscordNative dialog -> verified Downloads write.
+	// Returns {saved, path} or {cancelled}.
 
 	const ExportService = {
+		FORMATS: ["md", "txt", "json"],
+		normalizeFormat(format) {
+			const value = String(format || "md").toLowerCase();
+			return ExportService.FORMATS.includes(value) ? value : "md";
+		},
 		buildFilename(context, suffix, ext) {
 			const stamp = ts => {
 				const d = new Date(ts);
@@ -1804,80 +1813,230 @@ module.exports = (() => {
 				: `${Utils.sanitizeFilename(context.guildName || context.guildId)}_${Utils.sanitizeFilename(context.channelName || context.channelId)}`;
 			return `AIMessageCleaner_${scope}_${stamp(Date.now())}${suffix || ""}.${ext || "json"}`;
 		},
-		buildBackup(context, messages) {
-			return JSON.stringify({
-				plugin: `${PLUGIN_ID} v${PLUGIN_VERSION}`,
-				exportedAt: new Date().toISOString(),
-				guild: context.guildName || context.guildId || null,
-				channel: context.channelName || context.channelId || null,
-				channelId: context.channelId,
-				count: messages.length,
-				messages: messages.map(message => ({
-					id: message.id,
-					channelId: message.channelId || null,
-					timestamp: new Date(message.timestamp).toISOString(),
-					content: message.content,
-					attachments: message.attachments.map(att => ({ filename: att.filename, url: att.url })),
-					edited: message.edited
-				}))
-			}, null, 2);
+		buildBackup(context, messages, format, lang) {
+			const targetFormat = ExportService.normalizeFormat(format);
+			const exportedAt = new Date();
+			const normalized = messages.map(message => ({
+				id: message.id,
+				channelId: message.channelId || context.channelId || null,
+				timestamp: new Date(message.timestamp).toISOString(),
+				content: String(message.content || ""),
+				attachments: (Array.isArray(message.attachments) ? message.attachments : [])
+					.map(att => ({ filename: att.filename || "attachment", url: att.url || "" })),
+				edited: Boolean(message.edited)
+			}));
+			if (targetFormat === "json") {
+				return JSON.stringify({
+					plugin: `${PLUGIN_ID} v${PLUGIN_VERSION}`,
+					exportedAt: exportedAt.toISOString(),
+					guild: context.guildName || context.guildId || null,
+					channel: context.channelName || context.channelId || null,
+					channelId: context.channelId,
+					count: normalized.length,
+					messages: normalized
+				}, null, 2);
+			}
+			const zh = String(lang || I18N.resolveUiLanguage()).toLowerCase().startsWith("zh");
+			const labels = zh ? {
+				title: "AI 消息删除前备份", exported: "导出时间", guild: "服务器", channel: "频道",
+				count: "消息数", id: "消息 ID", channelId: "频道 ID", edited: "已编辑", attachments: "附件",
+				yes: "是", no: "否", empty: "（无文本）"
+			} : {
+				title: "AI Message Pre-deletion Backup", exported: "Exported", guild: "Server", channel: "Channel",
+				count: "Messages", id: "Message ID", channelId: "Channel ID", edited: "Edited", attachments: "Attachments",
+				yes: "yes", no: "no", empty: "(no text)"
+			};
+			const guild = context.guildName || context.guildId || "DM";
+			const channel = context.channelName || context.channelId || "?";
+			const attachmentText = att => att.url ? `${att.filename}: ${att.url}` : att.filename;
+			if (targetFormat === "txt") {
+				const lines = [
+					labels.title,
+					`${labels.exported}: ${Utils.formatDateTime(exportedAt.getTime())}`,
+					`${labels.guild}: ${guild}`,
+					`${labels.channel}: ${channel}`,
+					`${labels.count}: ${normalized.length}`,
+					"=".repeat(72)
+				];
+				for (const message of normalized) {
+					lines.push(`[${Utils.formatDateTime(new Date(message.timestamp).getTime())}] ${labels.id}: ${message.id}`);
+					lines.push(`${labels.channelId}: ${message.channelId || "?"} | ${labels.edited}: ${message.edited ? labels.yes : labels.no}`);
+					lines.push(message.content || labels.empty);
+					if (message.attachments.length) lines.push(`${labels.attachments}: ${message.attachments.map(attachmentText).join(" | ")}`);
+					lines.push("-".repeat(72));
+				}
+				return lines.join("\n");
+			}
+			const lines = [
+				`# ${labels.title}`,
+				"",
+				"| | |",
+				"|---|---|",
+				`| ${labels.exported} | ${Utils.formatDateTime(exportedAt.getTime())} |`,
+				`| ${labels.guild} | ${guild} |`,
+				`| ${labels.channel} | ${channel} |`,
+				`| ${labels.count} | ${normalized.length} |`,
+				""
+			];
+			for (const message of normalized) {
+				lines.push(`## ${Utils.formatDateTime(new Date(message.timestamp).getTime())}`);
+				lines.push("");
+				lines.push(`- **${labels.id}:** \`${message.id}\``);
+				lines.push(`- **${labels.channelId}:** \`${message.channelId || "?"}\``);
+				lines.push(`- **${labels.edited}:** ${message.edited ? labels.yes : labels.no}`);
+				lines.push("");
+				lines.push(message.content || labels.empty);
+				if (message.attachments.length) {
+					lines.push("");
+					lines.push(`**${labels.attachments}:**`);
+					for (const att of message.attachments) lines.push(`- ${att.url ? `[${att.filename}](${att.url})` : att.filename}`);
+				}
+				lines.push("");
+			}
+			return lines.join("\n");
 		},
-		buildLog(context, report) {
-			return JSON.stringify({
-				plugin: `${PLUGIN_ID} v${PLUGIN_VERSION}`,
-				ranAt: new Date().toISOString(),
-				channelId: context.channelId,
-				channel: context.channelName || context.channelId || null,
-				deleted: report.deleted.map(item => ({ id: item.id, timestamp: new Date(item.timestamp).toISOString(), excerpt: item.excerpt })),
-				skipped: report.skipped.map(item => item.id),
-				failed: report.failed
-			}, null, 2);
+		_runtime(overrides) {
+			let discordNative = null;
+			try { discordNative = window.DiscordNative || null; } catch (e) { /* unavailable */ }
+			return Object.assign({
+				fs: require("fs"),
+				path: require("path"),
+				ui: Api.UI || BdApi.UI || null,
+				discordNative,
+				downloadsDir: ""
+			}, overrides || {});
 		},
-		async save(content, filename) {
-			let lastError = null;
+		_downloadsDir(runtime) {
+			if (runtime.downloadsDir) return runtime.path.resolve(String(runtime.downloadsDir));
+			const homes = [];
+			const addHome = value => {
+				const home = String(value || "").trim();
+				if (home && !homes.includes(home)) homes.push(home);
+			};
 			try {
-				if (BdApi.UI && typeof BdApi.UI.openDialog === "function") {
-					const result = await BdApi.UI.openDialog({
+				if (typeof process !== "undefined" && process.env) {
+					addHome(process.env.USERPROFILE);
+					addHome(process.env.HOME);
+				}
+			} catch (e) { /* checked below */ }
+			if (!homes.length) throw new Error("no home directory");
+			for (const home of homes) {
+				const candidate = runtime.path.join(home, "Downloads");
+				try {
+					if (runtime.fs.existsSync(candidate) && runtime.fs.statSync(candidate).isDirectory()) return candidate;
+				} catch (e) { /* try the next home */ }
+			}
+			const target = runtime.path.join(homes[0], "Downloads");
+			runtime.fs.mkdirSync(target, { recursive: true });
+			return target;
+		},
+		_utf8Bytes(content) {
+			const value = String(content);
+			if (typeof TextEncoder === "function") return new TextEncoder().encode(value);
+			const bytes = [];
+			for (let i = 0; i < value.length; i++) {
+				let code = value.charCodeAt(i);
+				if (code >= 0xd800 && code <= 0xdbff) {
+					const low = value.charCodeAt(i + 1);
+					if (low >= 0xdc00 && low <= 0xdfff) {
+						code = 0x10000 + ((code - 0xd800) << 10) + (low - 0xdc00);
+						i++;
+					} else code = 0xfffd;
+				} else if (code >= 0xdc00 && code <= 0xdfff) code = 0xfffd;
+				if (code <= 0x7f) bytes.push(code);
+				else if (code <= 0x7ff) bytes.push(0xc0 | (code >> 6), 0x80 | (code & 0x3f));
+				else if (code <= 0xffff) bytes.push(0xe0 | (code >> 12), 0x80 | ((code >> 6) & 0x3f), 0x80 | (code & 0x3f));
+				else bytes.push(0xf0 | (code >> 18), 0x80 | ((code >> 12) & 0x3f), 0x80 | ((code >> 6) & 0x3f), 0x80 | (code & 0x3f));
+			}
+			return Uint8Array.from(bytes);
+		},
+		_verifySavedFile(runtime, filePath, content) {
+			if (!filePath) throw new Error("save API returned no file path");
+			const target = runtime.path.resolve(String(filePath));
+			const stat = runtime.fs.statSync(target);
+			const expectedBytes = ExportService._utf8Bytes(content).length;
+			if (!stat.isFile()) throw new Error("save target is not a file");
+			if (stat.size !== expectedBytes) throw new Error(`saved file size mismatch (${stat.size} != ${expectedBytes})`);
+			return target;
+		},
+		_writeAndVerify(runtime, filePath, content) {
+			const target = runtime.path.resolve(String(filePath));
+			runtime.fs.mkdirSync(runtime.path.dirname(target), { recursive: true });
+			runtime.fs.writeFileSync(target, String(content), "utf8");
+			return ExportService._verifySavedFile(runtime, target, content);
+		},
+		_isCancel(error) {
+			return /cancel(?:led|ed)?/i.test(String(error && error.message || error));
+		},
+		async save(content, filename, overrides) {
+			const runtime = ExportService._runtime(overrides);
+			const safeName = runtime.path.basename(String(filename || "export.json"));
+			if (!safeName) throw mkError("EXPORT_FAILED", t("err_export_failed", { detail: "empty filename" }));
+			let lastError = null;
+			let downloadsDir = "";
+			try { downloadsDir = ExportService._downloadsDir(runtime); }
+			catch (e) { lastError = e; }
+			try {
+				if (runtime.ui && typeof runtime.ui.openDialog === "function") {
+					const extension = runtime.path.extname(safeName).replace(/^\./, "") || "json";
+					const result = await runtime.ui.openDialog({
 						mode: "save",
-						defaultPath: filename,
+						defaultPath: downloadsDir ? runtime.path.join(downloadsDir, safeName) : safeName,
+						filters: [{ name: extension.toUpperCase(), extensions: [extension] }],
 						showOverwriteConfirmation: true
 					});
-					if (result && (result.cancelled || result.canceled)) return { cancelled: true };
+					if (!result || result.cancelled || result.canceled) return { cancelled: true };
 					const filePath = result && (result.filePath || (Array.isArray(result.filePaths) && result.filePaths[0]));
-					if (filePath) {
-						require("fs").writeFileSync(filePath, content, "utf8");
-						return { saved: true, path: filePath };
-					}
-					if (result) return { cancelled: true };
+					if (!filePath) return { cancelled: true };
+					const savedPath = ExportService._writeAndVerify(runtime, filePath, content);
+					return { saved: true, path: savedPath };
 				}
 			} catch (e) {
 				lastError = e;
 				Logger.warn("openDialog save failed, falling back", e);
 			}
 			try {
-				if (window.DiscordNative && DiscordNative.fileManager && typeof DiscordNative.fileManager.saveWithDialog === "function") {
-					const directory = await DiscordNative.fileManager.saveWithDialog(new TextEncoder().encode(content), filename);
-					return { saved: true, path: directory ? require("path").join(directory, filename) : filename };
+				const fileManager = runtime.discordNative && runtime.discordNative.fileManager;
+				if (fileManager) {
+					const bytes = ExportService._utf8Bytes(content);
+					if (typeof fileManager.saveWithDialog2 === "function") {
+						const result = await fileManager.saveWithDialog2(bytes, safeName, downloadsDir || undefined, true);
+						if (!result || result.canceledByUser || result.cancelled || result.canceled) return { cancelled: true };
+						const filePath = result && (result.filePath || (result.directory && runtime.path.join(result.directory, safeName)));
+						if (!filePath) return { cancelled: true };
+						const savedPath = ExportService._verifySavedFile(runtime, filePath, content);
+						return { saved: true, path: savedPath };
+					}
+					if (typeof fileManager.saveWithDialog === "function") {
+						const result = await fileManager.saveWithDialog(bytes, safeName, downloadsDir || undefined);
+						if (!result) return { cancelled: true };
+						if (result && typeof result === "object" && (result.canceledByUser || result.cancelled || result.canceled)) {
+							return { cancelled: true };
+						}
+						const filePath = typeof result === "string"
+							? runtime.path.join(result, safeName)
+							: result && (result.filePath || (result.directory && runtime.path.join(result.directory, safeName)));
+						if (!filePath) return { cancelled: true };
+						const savedPath = ExportService._verifySavedFile(runtime, filePath, content);
+						return { saved: true, path: savedPath };
+					}
 				}
 			} catch (e) {
-				if (/cancel/i.test(String(e && e.message || e))) return { cancelled: true };
+				if (ExportService._isCancel(e)) return { cancelled: true };
 				lastError = e;
 				Logger.warn("saveWithDialog failed, falling back", e);
 			}
 			try {
-				const nodePath = require("path");
-				const home = (typeof process !== "undefined" && process.env && (process.env.USERPROFILE || process.env.HOME)) || "";
-				if (!home) throw new Error("no home directory");
-				const target = nodePath.join(home, "Downloads", filename);
-				require("fs").writeFileSync(target, content, "utf8");
-				return { saved: true, path: target };
+				if (!downloadsDir) downloadsDir = ExportService._downloadsDir(runtime);
+				const target = runtime.path.join(downloadsDir, safeName);
+				const savedPath = ExportService._writeAndVerify(runtime, target, content);
+				return { saved: true, path: savedPath };
 			} catch (e) {
 				lastError = e;
 			}
 			throw mkError("EXPORT_FAILED", t("err_export_failed", { detail: Utils.truncate(lastError && lastError.message || "unknown", 120) }));
 		}
 	};
-
 	// ==================== 15. STYLES ====================
 
 	const PLUGIN_CSS = `
@@ -2463,9 +2622,40 @@ module.exports = (() => {
 			font-weight: 500;
 			text-align: left;
 		}
+		.${CSS_PREFIX}-backup-block {
+			display: flex;
+			flex-direction: column;
+			gap: 8px;
+		}
 		.${CSS_PREFIX}-backup-choice-locked {
 			cursor: default;
 			color: var(--damc-text-faint, #949ba4);
+		}
+		.${CSS_PREFIX}-backup-format {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			margin-left: 24px;
+			font-size: 13px;
+			color: var(--damc-text-faint, #949ba4);
+		}
+		.${CSS_PREFIX}-backup-format-label {
+			flex: 0 0 auto;
+		}
+		.${CSS_PREFIX}-backup-format-select {
+			height: 30px;
+			min-width: 150px;
+			padding: 0 28px 0 8px;
+			border: 1px solid var(--damc-border, rgba(78, 80, 88, 0.48));
+			border-radius: 4px;
+			background: var(--damc-input-bg, #1e1f22);
+			color: var(--damc-text, #dbdee1);
+			font: inherit;
+			font-size: 13px;
+		}
+		.${CSS_PREFIX}-backup-format-select option {
+			background: var(--damc-surface, #2b2d31);
+			color: var(--damc-text, #dbdee1);
 		}
 		.${CSS_PREFIX}-pill {
 			position: fixed;
@@ -2989,7 +3179,6 @@ module.exports = (() => {
 		}
 		.${CSS_PREFIX}-diag-val { font-size: 14px; font-weight: 600; }
 	`;
-
 	// ==================== 16. LIFECYCLE REGISTRIES ====================
 
 	let PluginInstance = null;
@@ -3391,24 +3580,43 @@ module.exports = (() => {
 	// which the confirm handler reads at click time.
 	const BackupChoice = props => {
 		const [on, setOn] = useState(Boolean(props.initial));
-		return h("button", {
-			type: "button",
-			role: "checkbox",
-			"aria-checked": on,
-			"aria-disabled": Boolean(props.locked),
-			className: `${CSS_PREFIX}-check ${CSS_PREFIX}-backup-choice${props.locked ? ` ${CSS_PREFIX}-backup-choice-locked` : ""}`,
-			onClick: () => {
-				if (props.locked) return;
-				const next = !on;
-				setOn(next);
-				props.onChange(next);
-			}
-		},
-			h("span", {
-				className: `${CSS_PREFIX}-checkbox${on ? ` ${CSS_PREFIX}-checkbox-on` : ""}`,
-				dangerouslySetInnerHTML: { __html: on ? CHECK_MARK_SVG : "" }
-			}),
-			h("span", null, props.label)
+		const [format, setFormat] = useState(ExportService.normalizeFormat(props.initialFormat));
+		return h("div", { className: `${CSS_PREFIX}-backup-block` },
+			h("button", {
+				type: "button",
+				role: "checkbox",
+				"aria-checked": on,
+				"aria-disabled": Boolean(props.locked),
+				className: `${CSS_PREFIX}-check ${CSS_PREFIX}-backup-choice${props.locked ? ` ${CSS_PREFIX}-backup-choice-locked` : ""}`,
+				onClick: () => {
+					if (props.locked) return;
+					const next = !on;
+					setOn(next);
+					props.onChange(next);
+				}
+			},
+				h("span", {
+					className: `${CSS_PREFIX}-checkbox${on ? ` ${CSS_PREFIX}-checkbox-on` : ""}`,
+					dangerouslySetInnerHTML: { __html: on ? CHECK_MARK_SVG : "" }
+				}),
+				h("span", null, props.label)
+			),
+			on ? h("label", { className: `${CSS_PREFIX}-backup-format` },
+				h("span", { className: `${CSS_PREFIX}-backup-format-label` }, t("backup_format_label")),
+				h("select", {
+					className: `${CSS_PREFIX}-backup-format-select`,
+					value: format,
+					onChange: event => {
+						const next = ExportService.normalizeFormat(event.target.value);
+						setFormat(next);
+						props.onFormatChange(next);
+					}
+				},
+					h("option", { value: "md" }, t("backup_format_md")),
+					h("option", { value: "txt" }, t("backup_format_txt")),
+					h("option", { value: "json" }, t("backup_format_json"))
+			)
+		) : null
 		);
 	};
 
@@ -3909,17 +4117,19 @@ module.exports = (() => {
 			const mode = String(SettingsStore.get("delete.backupBeforeDelete") || "ask");
 			// "always" is a guarantee the user configured, so it is not togglable here.
 			const locked = mode === "always";
-			const choice = { backup: mode !== "never" };
+			const choice = { backup: mode !== "never", format: "md" };
 			const content = h("div", { className: `${CSS_PREFIX}-ui ${CSS_PREFIX}-confirm-body` },
 				overCap ? h("div", { className: `${CSS_PREFIX}-warn` },
 					t("delete_confirm_over_cap", { n: selected.size, max: maxPerRun })) : null,
 				h("div", null, t("delete_confirm_body", { n: items.length })),
-				h(BackupChoice, {
-					initial: choice.backup,
-					locked,
-					label: locked ? t("backup_choice_locked") : t("backup_choice_label"),
-					onChange: value => { choice.backup = value; }
-				})
+					h(BackupChoice, {
+						initial: choice.backup,
+						initialFormat: choice.format,
+						locked,
+						label: locked ? t("backup_choice_locked") : t("backup_choice_label"),
+						onChange: value => { choice.backup = value; },
+						onFormatChange: value => { choice.format = value; }
+					})
 			);
 			try {
 				BdApi.UI.showConfirmationModal(t("delete_confirm_title"), content, {
@@ -3927,7 +4137,7 @@ module.exports = (() => {
 					confirmText: t("delete_confirm_ok"),
 					cancelText: t("cancel"),
 					onConfirm: () => {
-						if (choice.backup) backupThenDelete(items);
+						if (choice.backup) backupThenDelete(items, choice.format);
 						else executeDelete(items);
 					}
 				});
@@ -3938,15 +4148,16 @@ module.exports = (() => {
 			}
 		};
 
-		// Export the JSON backup first; a failed or cancelled save cancels the
+		// Export the chosen backup format first; a failed or cancelled save cancels the
 		// deletion (the user asked for a backup, so proceeding would betray it).
-		const backupThenDelete = async items => {
+		const backupThenDelete = async (items, format) => {
 			const doBackup = async () => {
 				const chosenIds = new Set(items.map(item => item.id));
 				const messages = fetchResult.messages.filter(message => chosenIds.has(message.id));
 				try {
-					const content = ExportService.buildBackup(ctx, messages);
-					const filename = ExportService.buildFilename(ctx, "_backup", "json");
+					const targetFormat = ExportService.normalizeFormat(format);
+					const content = ExportService.buildBackup(ctx, messages, targetFormat, I18N.resolveUiLanguage());
+					const filename = ExportService.buildFilename(ctx, "_backup", targetFormat);
 					const result = await ExportService.save(content, filename);
 					if (result.cancelled) {
 						// Cancelling the backup save cancels the whole deletion.
@@ -3963,18 +4174,6 @@ module.exports = (() => {
 			};
 
 			if (await doBackup()) executeDelete(items);
-		};
-
-		const exportDeletionLog = async () => {
-			if (!deleteReport) return;
-			try {
-				const content = ExportService.buildLog(ctx, deleteReport);
-				const filename = ExportService.buildFilename(ctx, "_log", "json");
-				const result = await ExportService.save(content, filename);
-				if (!result.cancelled) BdApi.UI.showToast(t("delete_log_saved", { path: result.path }), { type: "success" });
-			} catch (e) {
-				BdApi.UI.showToast(e instanceof PluginError ? e.message : t("err_export_failed", { detail: String(e && e.message || e) }), { type: "error" });
-			}
 		};
 
 		const toggleSelected = id => {
@@ -4269,7 +4468,6 @@ module.exports = (() => {
 				));
 			}
 			children.push(h("div", { key: "dfooter", className: `${CSS_PREFIX}-actions ${CSS_PREFIX}-actions-footer` },
-				h(Btn, { tone: "secondary", onClick: exportDeletionLog }, t("delete_export_log")),
 				h(Btn, { onClick: () => setStage(fetchResult && fetchResult.messages.length ? "results" : "empty") }, t("done_back"))
 			));
 		}
@@ -4397,7 +4595,6 @@ module.exports = (() => {
 			MiniPill.show();
 		}
 	};
-
 	// ==================== 20. CHAT ENTRY (3 ENTRY POINTS) ====================
 
 	const ChatEntry = {

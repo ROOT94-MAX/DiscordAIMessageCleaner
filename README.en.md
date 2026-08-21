@@ -6,14 +6,14 @@
 
 [![Platform](https://img.shields.io/badge/Platform-Discord-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.com)
 [![Loader](https://img.shields.io/badge/Loader-BetterDiscord-4E5D94?style=flat-square)](https://betterdiscord.app)
-[![Version](https://img.shields.io/badge/Version-0.6.6-success?style=flat-square)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner)
+[![Version](https://img.shields.io/badge/Version-0.6.7-success?style=flat-square)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner)
 [![Dependency](https://img.shields.io/badge/Dependency-None-brightgreen?style=flat-square)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner)
 [![Verify](https://img.shields.io/github/actions/workflow/status/ROOT94-MAX/DiscordAIMessageCleaner/verify.yml?branch=main&style=flat-square&label=verify)](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/actions/workflows/verify.yml)
 [![License](https://img.shields.io/badge/License-GPL%20v2-blue?style=flat-square)](./LICENSE)
 
 A BetterDiscord plugin that uses AI to review and clean up **your own** past messages on Discord: search by account, review against your own policy, back up and confirm before deleting.
 
-**Current version: v0.6.6** · **Runtime: BetterDiscord (no third-party library)**
+**Current version: v0.6.7** · **Runtime: BetterDiscord (no third-party library)**
 
 [Download stable release](https://github.com/ROOT94-MAX/DiscordAIMessageCleaner/releases/latest/download/DiscordAIMessageCleaner.plugin.js) · [简体中文](README.md) · [Architecture](./ARCHITECTURE.md)
 
@@ -26,7 +26,7 @@ The messages you regret — violations, private info, throwaway lines — are sc
 - **Only touches your messages:** filters by the logged-in account's id, hitting only what you sent; other people's messages are read for context only and never deleted.
 - **Whole server in one pass:** switch scope between "this channel" and "whole server"; server scope sweeps every channel you can see at once, no channel-by-channel visits.
 - **You define the standard:** six built-in categories (abuse / privacy / NSFW / political / spam / other), plus any number of named custom policies you can switch between.
-- **Deletion safety first:** review-then-delete, manual selection, a second confirmation, optional JSON backup; deletion is strictly serial + throttled + rate-limit auto-pause + a per-run cap. Never deletes silently.
+- **Deletion safety first:** review-then-delete, manual selection, a second confirmation, optional MD / TXT / JSON export; deletion is strictly serial + throttled + rate-limit auto-pause + a per-run cap. Never deletes silently.
 - **Single-file install:** depends only on BetterDiscord's own `BdApi`, no third-party library; modular sources build deterministically into one readable plugin file.
 
 ## Features
@@ -36,7 +36,7 @@ The messages you regret — violations, private info, throwaway lines — are sc
 - **Run in background:** if review is slow, minimize it to a floating pill, keep chatting, and click the pill to return when done.
 - **Result triage:** "flagged only" filter, per-channel dropdown in server scope, inline custom emoji and image thumbnails (click to enlarge), and manual selection.
 - **Resumable scans:** if a scan is cancelled or hits the cap, continue scanning older messages from where it stopped, keeping your selection and verdicts.
-- **Safe deletion:** second confirmation → optional backup → throttled deletion with pausable/cancelable progress, ending in a deleted/skipped/failed report you can export.
+- **Safe deletion:** second confirmation → optional MD / TXT / JSON export → throttled deletion after a successful save, with pausable/cancelable progress and a deleted/skipped/failed report.
 
 ## Supported AI providers
 
@@ -76,7 +76,7 @@ One full pass:
 1. **Pick a scope**: this channel / whole server (server option only inside guilds), then a time range (1d / 7d / 30d / all / custom), and click "Scan my messages".
 2. **Review**: click "AI Review"; hits get a category, severity and reason and are auto-selected. Click "Run in background" if it's slow.
 3. **Filter & select**: toggle "Flagged only", filter by channel via the dropdown in server scope, adjust selection by hand.
-4. **Delete**: click "Delete selected" → an irreversible-warning confirmation → an optional backup per your setting → throttled deletion, ending in a report.
+4. **Delete**: click "Delete selected" → an irreversible-warning confirmation → opt into export and choose Markdown / TXT / JSON → save through the system dialog → throttled deletion, ending in a report.
 
 ## Settings
 
@@ -97,15 +97,18 @@ The settings panel has four tabs:
 - **Deep-paging cap:** the Discord search endpoint reaches back ~5000 results at most; beyond that it truncates with a notice, so use time ranges to work in passes.
 - **Bulk deletion is anti-spam sensitive:** default single-concurrency, 1200ms + jitter between deletes, auto-pause on repeated rate limits. Don't set the pacing too low.
 
-## Known issues (v0.6.6)
+## Export compatibility fix (v0.6.7)
 
-- **Export is currently unusable**: the pre-deletion JSON backup and the deletion-log export can fail end-to-end on some setups (all three tiers of the save chain — BD save dialog → Discord native save dialog → silent write to Downloads). Under investigation; a fix will ship in a later version.
-- It fails safe: if the backup box is ticked and the save fails or is cancelled, **the deletion is abandoned** — "deleted but not backed up" cannot happen.
-- Workaround: untick the backup box in the delete confirmation (or set the backup mode to "never" under Settings → Behavior). Deletion then proceeds, but without a backup net — keep runs small and be careful.
+- Fixes a v0.6.6 path where a save API could return no file path but still be reported as successful.
+- The save chain now tries the BetterDiscord dialog, Discord's native dialog, and a Downloads fallback; success is reported only after the target exists with the expected UTF-8 byte length.
+- The dialog receives an absolute Downloads default path and the selected format filter, with support for `saveWithDialog2`, legacy `saveWithDialog`, and multiple cancellation field names.
+- Adds the missing `sanitizeFilename` helper so server/channel names with spaces or special characters reach the save dialog; the duplicate post-deletion “Export deletion log” action is removed.
+- Aligns with the sibling summary plugin's runtime constraints by using only BetterDiscord-compatible `fs`, `path`, and `USERPROFILE/HOME`; bare `os` / `buffer` imports that the plugin loader misread as relative paths are removed.
+- Failure remains safe: when a pre-deletion backup was requested, cancelling or exhausting every save tier abandons deletion.
 
 ## Security & privacy
 
-- Deletion is **irreversible**. The default flow is review-then-delete with manual selection and a second confirmation; nothing is deleted silently. For your first runs, set the backup mode to "ask each time" and export a JSON backup before deleting.
+- Deletion is **irreversible**. The default flow is review-then-delete with manual selection and a second confirmation; nothing is deleted silently. For your first runs, set the backup mode to "ask each time" and export MD / TXT / JSON before deleting.
 - Your API key is stored in plain text in the local plugin config (a BD storage limitation); don't enter important keys on a shared machine. Local servers can be left blank.
 - Your message contents are sent only to the AI endpoint **you configure** — no telemetry, no third-party reporting. With a local model, content can stay entirely on your machine.
 - Logs record only progress and results, never message bodies or keys.

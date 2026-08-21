@@ -52,6 +52,9 @@
 			const d = new Date(ts);
 			return `${Utils.pad2(d.getHours())}:${Utils.pad2(d.getMinutes())}`;
 		},
+		sanitizeFilename(name) {
+			return String(name || "").replace(/[\\/:*?"<>|\s]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 60) || "channel";
+		},
 		formatDateTime(ts) {
 			return `${Utils.formatDate(ts)} ${Utils.formatTime(ts)}`;
 		},
@@ -96,4 +99,3 @@
 			}
 		}
 	};
-

@@ -99,24 +99,43 @@
 	// which the confirm handler reads at click time.
 	const BackupChoice = props => {
 		const [on, setOn] = useState(Boolean(props.initial));
-		return h("button", {
-			type: "button",
-			role: "checkbox",
-			"aria-checked": on,
-			"aria-disabled": Boolean(props.locked),
-			className: `${CSS_PREFIX}-check ${CSS_PREFIX}-backup-choice${props.locked ? ` ${CSS_PREFIX}-backup-choice-locked` : ""}`,
-			onClick: () => {
-				if (props.locked) return;
-				const next = !on;
-				setOn(next);
-				props.onChange(next);
-			}
-		},
-			h("span", {
-				className: `${CSS_PREFIX}-checkbox${on ? ` ${CSS_PREFIX}-checkbox-on` : ""}`,
-				dangerouslySetInnerHTML: { __html: on ? CHECK_MARK_SVG : "" }
-			}),
-			h("span", null, props.label)
+		const [format, setFormat] = useState(ExportService.normalizeFormat(props.initialFormat));
+		return h("div", { className: `${CSS_PREFIX}-backup-block` },
+			h("button", {
+				type: "button",
+				role: "checkbox",
+				"aria-checked": on,
+				"aria-disabled": Boolean(props.locked),
+				className: `${CSS_PREFIX}-check ${CSS_PREFIX}-backup-choice${props.locked ? ` ${CSS_PREFIX}-backup-choice-locked` : ""}`,
+				onClick: () => {
+					if (props.locked) return;
+					const next = !on;
+					setOn(next);
+					props.onChange(next);
+				}
+			},
+				h("span", {
+					className: `${CSS_PREFIX}-checkbox${on ? ` ${CSS_PREFIX}-checkbox-on` : ""}`,
+					dangerouslySetInnerHTML: { __html: on ? CHECK_MARK_SVG : "" }
+				}),
+				h("span", null, props.label)
+			),
+			on ? h("label", { className: `${CSS_PREFIX}-backup-format` },
+				h("span", { className: `${CSS_PREFIX}-backup-format-label` }, t("backup_format_label")),
+				h("select", {
+					className: `${CSS_PREFIX}-backup-format-select`,
+					value: format,
+					onChange: event => {
+						const next = ExportService.normalizeFormat(event.target.value);
+						setFormat(next);
+						props.onFormatChange(next);
+					}
+				},
+					h("option", { value: "md" }, t("backup_format_md")),
+					h("option", { value: "txt" }, t("backup_format_txt")),
+					h("option", { value: "json" }, t("backup_format_json"))
+			)
+		) : null
 		);
 	};
 
@@ -617,17 +636,19 @@
 			const mode = String(SettingsStore.get("delete.backupBeforeDelete") || "ask");
 			// "always" is a guarantee the user configured, so it is not togglable here.
 			const locked = mode === "always";
-			const choice = { backup: mode !== "never" };
+			const choice = { backup: mode !== "never", format: "md" };
 			const content = h("div", { className: `${CSS_PREFIX}-ui ${CSS_PREFIX}-confirm-body` },
 				overCap ? h("div", { className: `${CSS_PREFIX}-warn` },
 					t("delete_confirm_over_cap", { n: selected.size, max: maxPerRun })) : null,
 				h("div", null, t("delete_confirm_body", { n: items.length })),
-				h(BackupChoice, {
-					initial: choice.backup,
-					locked,
-					label: locked ? t("backup_choice_locked") : t("backup_choice_label"),
-					onChange: value => { choice.backup = value; }
-				})
+					h(BackupChoice, {
+						initial: choice.backup,
+						initialFormat: choice.format,
+						locked,
+						label: locked ? t("backup_choice_locked") : t("backup_choice_label"),
+						onChange: value => { choice.backup = value; },
+						onFormatChange: value => { choice.format = value; }
+					})
 			);
 			try {
 				BdApi.UI.showConfirmationModal(t("delete_confirm_title"), content, {
@@ -635,7 +656,7 @@
 					confirmText: t("delete_confirm_ok"),
 					cancelText: t("cancel"),
 					onConfirm: () => {
-						if (choice.backup) backupThenDelete(items);
+						if (choice.backup) backupThenDelete(items, choice.format);
 						else executeDelete(items);
 					}
 				});
@@ -646,15 +667,16 @@
 			}
 		};
 
-		// Export the JSON backup first; a failed or cancelled save cancels the
+		// Export the chosen backup format first; a failed or cancelled save cancels the
 		// deletion (the user asked for a backup, so proceeding would betray it).
-		const backupThenDelete = async items => {
+		const backupThenDelete = async (items, format) => {
 			const doBackup = async () => {
 				const chosenIds = new Set(items.map(item => item.id));
 				const messages = fetchResult.messages.filter(message => chosenIds.has(message.id));
 				try {
-					const content = ExportService.buildBackup(ctx, messages);
-					const filename = ExportService.buildFilename(ctx, "_backup", "json");
+					const targetFormat = ExportService.normalizeFormat(format);
+					const content = ExportService.buildBackup(ctx, messages, targetFormat, I18N.resolveUiLanguage());
+					const filename = ExportService.buildFilename(ctx, "_backup", targetFormat);
 					const result = await ExportService.save(content, filename);
 					if (result.cancelled) {
 						// Cancelling the backup save cancels the whole deletion.
@@ -671,18 +693,6 @@
 			};
 
 			if (await doBackup()) executeDelete(items);
-		};
-
-		const exportDeletionLog = async () => {
-			if (!deleteReport) return;
-			try {
-				const content = ExportService.buildLog(ctx, deleteReport);
-				const filename = ExportService.buildFilename(ctx, "_log", "json");
-				const result = await ExportService.save(content, filename);
-				if (!result.cancelled) BdApi.UI.showToast(t("delete_log_saved", { path: result.path }), { type: "success" });
-			} catch (e) {
-				BdApi.UI.showToast(e instanceof PluginError ? e.message : t("err_export_failed", { detail: String(e && e.message || e) }), { type: "error" });
-			}
 		};
 
 		const toggleSelected = id => {
@@ -977,7 +987,6 @@
 				));
 			}
 			children.push(h("div", { key: "dfooter", className: `${CSS_PREFIX}-actions ${CSS_PREFIX}-actions-footer` },
-				h(Btn, { tone: "secondary", onClick: exportDeletionLog }, t("delete_export_log")),
 				h(Btn, { onClick: () => setStage(fetchResult && fetchResult.messages.length ? "results" : "empty") }, t("done_back"))
 			));
 		}
@@ -1105,4 +1114,3 @@
 			MiniPill.show();
 		}
 	};
-
