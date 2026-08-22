@@ -27,9 +27,9 @@ src/header.js                BD 元数据头 + IIFE 包装开头（@version 在�
 src/sections/NN-*.js         25 个分区模块，文件名编号 = 拼装顺序 = 依赖顺序
 src/footer.js                IIFE 包装收尾
 tools/build.js               确定性构建：零依赖、零转换，按文件名序逐字节拼装出根目录插件文件
-tools/verify.js              三条不变量：src 重建与产物逐字节一致；产物通过 node --check；@version == PLUGIN_VERSION
+tools/verify.js              五条不变量：src/产物一致；语法通过；代码版本一致；README 版本一致；i18n 无反向运行时依赖
 tools/smoke_test.js          离线冒烟：桩化 BdApi 跑生命周期、设置页各标签渲染、配置迁移
-tools/test_harness.js        离线功能测试（46 项）：注入方式暴露内部服务，用假 REST/假 AI 驱动
+tools/test_harness.js        离线功能测试（47 项）：注入方式暴露内部服务，用假 REST/假 AI 驱动
 REGRESSION.md                发版前的人工回归清单（自动化测不到的 UI/真实删除路径）
 .github/workflows/verify.yml 每次推送跑 verify + 两套测试
 ```

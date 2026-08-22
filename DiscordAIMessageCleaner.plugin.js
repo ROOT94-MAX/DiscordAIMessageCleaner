@@ -732,12 +732,16 @@ module.exports = (() => {
 	};
 
 	const I18N = {
+		_languageSources: null,
+		bindLanguageSources(sources) {
+			I18N._languageSources = sources && typeof sources === "object" ? sources : null;
+		},
 		resolveUiLanguage() {
 			try {
-				const pref = SettingsStore.get("general.interfaceLanguage");
+				const sources = I18N._languageSources;
+				const pref = sources && typeof sources.getPreference === "function" ? sources.getPreference() : null;
 				if (pref && pref !== "system") return I18N.normalize(pref);
-				const localeStore = DiscordAdapter.getStore("LocaleStore");
-				const discordLocale = localeStore && (localeStore.locale || (typeof localeStore.getLocale === "function" && localeStore.getLocale()));
+				const discordLocale = sources && typeof sources.getDiscordLocale === "function" ? sources.getDiscordLocale() : null;
 				if (discordLocale) return I18N.normalize(discordLocale);
 			} catch (e) { /* fall through */ }
 			return I18N.normalize(navigator.language || "en-US");
@@ -1131,6 +1135,17 @@ module.exports = (() => {
 			return Object.assign({}, DiscordAdapter._health);
 		}
 	};
+
+	// Keep the early translation table independent of later runtime services.
+	// The callbacks stay lazy so loading the plugin does not resolve Discord
+	// stores or initialize settings before the normal start() lifecycle.
+	I18N.bindLanguageSources({
+		getPreference: () => SettingsStore.get("general.interfaceLanguage"),
+		getDiscordLocale: () => {
+			const localeStore = DiscordAdapter.getStore("LocaleStore");
+			return localeStore && (localeStore.locale || (typeof localeStore.getLocale === "function" && localeStore.getLocale()));
+		}
+	});
 	// ==================== 08. CHANNEL CONTEXT ====================
 
 	const ChannelContext = {
