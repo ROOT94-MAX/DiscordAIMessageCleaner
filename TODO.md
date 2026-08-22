@@ -21,12 +21,6 @@ Suggested shape:
 19e-ui-cleaner-modal.js
 ```
 
-## P2 — Restore strict dependency direction
-
-- Remove the lazy reverse references from `04-i18n.js` to `SettingsStore` and `DiscordAdapter`.
-- Move runtime locale resolution to a later section or inject the required values.
-- Keep translation tables in `04-i18n.js` and retain the current locale behavior.
-
 ## P3 — Split large presentation modules
 
 - Divide `15-styles.js` into tokens, cleaner-modal styles, and settings styles while composing one final `PLUGIN_CSS` value.

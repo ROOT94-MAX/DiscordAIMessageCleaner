@@ -292,3 +292,14 @@
 			return Object.assign({}, DiscordAdapter._health);
 		}
 	};
+
+	// Keep the early translation table independent of later runtime services.
+	// The callbacks stay lazy so loading the plugin does not resolve Discord
+	// stores or initialize settings before the normal start() lifecycle.
+	I18N.bindLanguageSources({
+		getPreference: () => SettingsStore.get("general.interfaceLanguage"),
+		getDiscordLocale: () => {
+			const localeStore = DiscordAdapter.getStore("LocaleStore");
+			return localeStore && (localeStore.locale || (typeof localeStore.getLocale === "function" && localeStore.getLocale()));
+		}
+	});

@@ -103,6 +103,23 @@ api.SettingsStore.set("delete.pacingMs", 300);
 const ctx = { channelId: "200000000000000001", isPrivate: false };
 
 (async () => {
+	section("I18N: injected runtime language sources");
+	await test("explicit preference wins and system mode follows Discord locale", async () => {
+		const originalGetStore = api.DiscordAdapter.getStore;
+		try {
+			api.DiscordAdapter.getStore = name => name === "LocaleStore" ? { locale: "en-US" } : null;
+			api.SettingsStore.set("general.interfaceLanguage", "zh-CN");
+			assert.strictEqual(api.I18N.resolveUiLanguage(), "zh-CN", "explicit preference wins");
+
+			api.SettingsStore.set("general.interfaceLanguage", "system");
+			api.DiscordAdapter.getStore = name => name === "LocaleStore" ? { getLocale: () => "zh-TW" } : null;
+			assert.strictEqual(api.I18N.resolveUiLanguage(), "zh-CN", "Discord locale is normalized");
+		} finally {
+			api.DiscordAdapter.getStore = originalGetStore;
+			api.SettingsStore.set("general.interfaceLanguage", "system");
+		}
+	});
+
 	section("DeleteService: happy path");
 	await test("all messages deleted, in order, pacing applied", async () => {
 		const rest = makeFakeRest({});
